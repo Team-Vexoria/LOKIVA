@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import {
   Zap,
   Sparkles,
@@ -125,6 +126,20 @@ export default function LoginPage() {
 
         {/* Regular Login / Register Form */}
         <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
+          <GoogleSignInButton
+            role={tab === 'register' ? role : 'traveler'}
+            redirectTo={role === 'provider' ? '/provider' : '/explore'}
+            text="Continue with Google"
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-slate-800 w-full" />
+            <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Or with email
+            </span>
+            <div className="border-t border-slate-800 w-full" />
+          </div>
+
           <div className="flex border-b border-slate-800 pb-2">
             <button
               onClick={() => setTab('login')}

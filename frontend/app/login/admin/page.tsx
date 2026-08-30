@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton';
 import {
   ShieldCheck,
   Lock,
@@ -31,7 +32,7 @@ export default function AdminLoginPage() {
       await login(email, password, 'admin');
       router.push('/admin');
     } catch (err: any) {
-      setError(err.message || 'Invalid administrator credentials');
+      setError(err.message || 'Invalid admin credentials');
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +45,7 @@ export default function AdminLoginPage() {
       await demoLogin('admin');
       router.push('/admin');
     } catch (err: any) {
-      setError(err.message || 'Admin login failed');
+      setError(err.message || 'Demo admin login failed');
     } finally {
       setIsLoading(false);
     }
@@ -63,20 +64,20 @@ export default function AdminLoginPage() {
         </Link>
       </div>
 
-      {/* Main Admin Login Card */}
+      {/* Main Card */}
       <div className="max-w-md mx-auto w-full py-8 space-y-6">
         <div className="text-center space-y-2">
-          {/* Admin Shield Badge */}
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-rose-600 p-0.5 shadow-lg shadow-purple-500/20 mb-2">
+          {/* Admin Badge */}
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-violet-500 p-0.5 shadow-lg shadow-purple-500/20 mb-2">
             <div className="w-full h-full bg-white dark:bg-slate-950 rounded-[14px] flex items-center justify-center">
               <ShieldCheck className="w-6 h-6 text-purple-500" />
             </div>
           </div>
           <div className="inline-block px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-            SECURE ACCESS
+            RESTRICTED ACCESS
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100">
-            LOKIVA Administration
+            Admin Command Center
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             Secure administrator access for platform operations & moderation.
@@ -106,6 +107,16 @@ export default function AdminLoginPage() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+          <GoogleSignInButton role="admin" redirectTo="/admin" text="Continue with Google" />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Or with admin credentials
+            </span>
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+          </div>
+
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold">
               {error}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../../lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 import { TravelerHeader } from './TravelerHeader';
 import { ProviderHeader } from './ProviderHeader';
 import { AdminHeader } from './AdminHeader';

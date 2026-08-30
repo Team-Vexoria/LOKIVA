@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton';
 import {
   Building,
   User,
@@ -31,7 +32,7 @@ export default function ProviderLoginPage() {
       await login(email, password, 'provider');
       router.push('/provider');
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || 'Invalid partner email or password');
     } finally {
       setIsLoading(false);
     }
@@ -66,20 +67,17 @@ export default function ProviderLoginPage() {
       {/* Main Card */}
       <div className="max-w-md mx-auto w-full py-8 space-y-6">
         <div className="text-center space-y-2">
-          {/* Provider Logo Badge */}
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-500 p-0.5 shadow-lg shadow-blue-500/20 mb-2">
+          {/* Provider Badge */}
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 p-0.5 shadow-lg shadow-blue-500/20 mb-2">
             <div className="w-full h-full bg-white dark:bg-slate-950 rounded-[14px] flex items-center justify-center">
               <Building className="w-6 h-6 text-blue-500" />
             </div>
           </div>
-          <div className="inline-block px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-            LOKIVA FOR BUSINESS
-          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100">
-            Welcome, Local Partner
+            Host & Provider Portal
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Connect your workshop or local tour with travelers across India.
+            Manage your experiences, capacity slots, and traveler bookings.
           </p>
         </div>
 
@@ -106,6 +104,16 @@ export default function ProviderLoginPage() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+          <GoogleSignInButton role="provider" redirectTo="/provider" text="Continue with Google" />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Or with email
+            </span>
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+          </div>
+
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold">
               {error}

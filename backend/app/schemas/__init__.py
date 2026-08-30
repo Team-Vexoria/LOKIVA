@@ -65,6 +65,13 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class FirebaseLoginRequest(BaseModel):
+    id_token: Optional[str] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = "traveler"
+    firebase_uid: Optional[str] = None
+
 class TravelerProfileOut(BaseModel):
     traveler_type: str
     group_size: int

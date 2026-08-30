@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { api } from '../../lib/api';
-import { Experience } from '../../types';
+import { api } from '@/lib/api';
+import { Experience } from '@/types';
 import { ExperienceCard } from '../../components/ExperienceCard';
 import { RouteGuard } from '../../components/RouteGuard';
 import { Bookmark, Compass, ArrowRight, Trash2 } from 'lucide-react';

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
 from backend.app.models import User, TravelerProfile, Provider
-from backend.app.schemas import UserCreate, UserLogin, UserOut, Token, TravelerProfileOut
+from backend.app.schemas import UserCreate, UserLogin, UserOut, Token, TravelerProfileOut, FirebaseLoginRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -130,6 +130,71 @@ def demo_login(role: str, db: Session = Depends(get_db)):
             p = TravelerProfile(user_id=user.id, traveler_type="Family", group_size=4, budget=2000.0, interests=["food", "culture"], accessibility_prefs={"low_walking": True})
             db.add(p)
             db.commit()
+
+    access_token = create_access_token(subject=user.id, role=user.role)
+    user_out = UserOut.model_validate(user)
+    return Token(access_token=access_token, token_type="bearer", user=user_out)
+
+
+@router.post("/firebase-login", response_model=Token)
+def firebase_login(req: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    """
+    Synchronizes Firebase Authenticated users (Google Sign-In / Firebase Email) with the LOKIVA database.
+    Creates unified User record and default role profile if logging in for the first time.
+    """
+    email = req.email.lower().strip() if req.email else None
+    
+    # Try decoding token payload or reading claims if provided
+    if req.id_token and not email:
+        try:
+            from jose import jwt as jose_jwt
+            claims = jose_jwt.get_unverified_claims(req.id_token)
+            email = claims.get("email", "").lower().strip()
+            if not req.full_name and "name" in claims:
+                req.full_name = claims["name"]
+        except Exception:
+            pass
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid Firebase authentication: email is required")
+
+    user = db.query(User).filter(User.email == email).first()
+    target_role = req.role or "traveler"
+
+    if not user:
+        # Auto-create user from Firebase credentials
+        display_name = req.full_name or email.split("@")[0].replace(".", " ").title()
+        user = User(
+            email=email,
+            full_name=display_name,
+            hashed_password=get_password_hash("firebase_oauth_session"),
+            role=target_role,
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        if target_role == "traveler":
+            profile = TravelerProfile(
+                user_id=user.id,
+                traveler_type="Family",
+                group_size=4,
+                budget=2000.0,
+                interests=["food", "culture"],
+                accessibility_prefs={"low_walking": True}
+            )
+            db.add(profile)
+            db.commit()
+        elif target_role == "provider":
+            provider = Provider(
+                user_id=user.id,
+                business_name=f"{display_name}'s Heritage Collective",
+                is_verified=False
+            )
+            db.add(provider)
+            db.commit()
+        db.refresh(user)
 
     access_token = create_access_token(subject=user.id, role=user.role)
     user_out = UserOut.model_validate(user)

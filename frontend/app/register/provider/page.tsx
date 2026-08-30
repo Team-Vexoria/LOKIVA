@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton';
 import { Building, Lock, Mail, User, ArrowRight, ChevronLeft, MapPin } from 'lucide-react';
 
 export default function ProviderRegisterPage() {
@@ -62,6 +63,16 @@ export default function ProviderRegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+          <GoogleSignInButton role="provider" redirectTo="/provider" text="Sign up with Google" />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Or with business email
+            </span>
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+          </div>
+
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold">
               {error}

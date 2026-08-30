@@ -1,4 +1,4 @@
-# Node dependencies & Next.js build
+# Node dependencies & Vite / Next.js build
 node_modules/
 .next/
 out/
@@ -52,3 +52,4 @@ wheels/
 .idea/
 .DS_Store
 Thumbs.db
+scratch/
