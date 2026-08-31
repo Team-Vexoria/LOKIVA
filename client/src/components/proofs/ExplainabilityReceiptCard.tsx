@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Star, Clock, MapPin, ShieldCheck, FileText, ArrowUpRight } from 'lucide-react';
+import { CheckCircle2, Clock, MapPin, FileText } from 'lucide-react';
 
 export function ExplainabilityReceiptCard() {
   const [isHovered, setIsHovered] = useState(false);
@@ -10,13 +10,8 @@ export function ExplainabilityReceiptCard() {
       {/* Proof Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
-              Interactive Proof 03 · Explainability
-            </span>
-            <span className="text-[11px] font-mono text-dusk">
-              Hover/Tap Card to Inspect Proof Receipt
-            </span>
+          <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
+            Explainability: Inspect Proof Receipt
           </div>
           <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">
             Deterministic "Why This For You" Layer
@@ -81,13 +76,16 @@ export function ExplainabilityReceiptCard() {
             </div>
           </motion.div>
 
-          {/* Foreground Experience Card */}
+          {/* Foreground Experience Card (Lifts on hover) */}
           <motion.div
             animate={{
-              y: isHovered ? 40 : 0,
+              y: isHovered ? 24 : 0,
+              boxShadow: isHovered
+                ? '0 20px 25px -5px rgba(18, 33, 59, 0.15)'
+                : '0 4px 6px -1px rgba(18, 33, 59, 0.05)',
             }}
             transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
-            className="relative z-10 bg-white rounded-3xl border border-paper-400 p-6 space-y-4 shadow-lg hover:border-ink/50 transition-colors"
+            className="relative bg-paper-50 rounded-2xl border border-paper-300 p-6 space-y-4 z-10 select-none"
           >
             <div className="flex items-start justify-between">
               <div className="space-y-1">
@@ -95,40 +93,37 @@ export function ExplainabilityReceiptCard() {
                   <span className="px-2 py-0.5 rounded-full bg-paper-200 text-ink font-bold uppercase text-[10px]">
                     Artisan Workshop
                   </span>
-                  <span className="text-dusk flex items-center gap-1 font-semibold">
-                    <MapPin className="w-3.5 h-3.5 text-marigold" />
-                    Pali Hill, Bandra West
-                  </span>
+                  <span className="text-dusk">Pali Hill, Bandra</span>
                 </div>
                 <h4 className="text-lg font-display font-bold text-ink">
-                  Sanganeri Hand-Block Printing Atelier
+                  Indigo Vat Dyeing & Hand-Block Masterclass
                 </h4>
               </div>
 
-              <span className="px-3 py-1 bg-ink text-marigold font-mono text-xs font-extrabold rounded-xl">
-                ₹350 / pax
-              </span>
+              <div className="text-right">
+                <span className="text-sm font-mono font-bold text-teal block">₹350 / pax</span>
+                <span className="text-[10px] font-mono text-dusk">50 mins</span>
+              </div>
             </div>
 
-            <p className="text-xs text-dusk-600 font-sans leading-relaxed">
-              Hands-on botanical indigo stamping masterclass guided by 5th-generation Rajasthani textile artisans residing in Bandra.
-            </p>
-
-            <div className="pt-3 border-t border-paper-300 flex items-center justify-between text-xs font-mono">
-              <div className="flex items-center gap-3 text-dusk">
-                <span className="flex items-center gap-1 text-ink font-bold">
-                  <Star className="w-3.5 h-3.5 text-marigold fill-marigold" /> 4.9 (42)
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> 50 mins
-                </span>
+            {/* Deterministic "Why This Fits You" Box */}
+            <div className="p-3 bg-white rounded-xl border border-paper-300 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-teal-800">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal" />
+                <span>Why this fits your plan</span>
               </div>
+              <p className="text-xs text-dusk-600 font-sans leading-relaxed">
+                "Selected because it fits your 2.0-hour window, is 350m from your hotel base, and features verified ground-floor ramp access for your group."
+              </p>
+            </div>
 
-              <span className="text-[11px] font-bold text-teal flex items-center gap-1 group-hover:underline">
-                {isHovered ? '✓ Receipt Revealed' : 'Hover to Inspect Match'}
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </span>
+            {/* Hover Prompt Cue */}
+            <div className="text-[11px] font-mono text-center text-dusk pt-1">
+              {isHovered ? (
+                <span className="text-marigold font-bold">Audit Receipt Revealed (Solver Proof-of-Work)</span>
+              ) : (
+                <span className="text-dusk-600">Hover or tap to reveal solver audit receipt</span>
+              )}
             </div>
           </motion.div>
         </div>

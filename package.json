@@ -1,0 +1,12 @@
+{
+  "name": "lokiva-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LOKIVA — India Local Cultural Discovery Engine",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server start",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix client run dev"
+  }
+}

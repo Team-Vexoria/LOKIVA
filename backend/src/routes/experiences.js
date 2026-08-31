@@ -91,9 +91,9 @@ experiencesRouter.get('/', async (req, res) => {
       params.push(state.toLowerCase());
     }
     if (q) {
-      sql += ' AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(area_name) LIKE ? OR LOWER(city) LIKE ? OR LOWER(state) LIKE ?)';
+      sql += ' AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(area_name) LIKE ?)';
       const term = `%${q.toLowerCase()}%`;
-      params.push(term, term, term, term, term);
+      params.push(term, term, term);
     }
     if (max_price) {
       sql += ' AND price <= ?';
@@ -116,7 +116,7 @@ experiencesRouter.get('/', async (req, res) => {
       sql += ' AND is_indoor = 1';
     }
 
-    sql += ' ORDER BY notability_score DESC, COALESCE(rating, 4.5) DESC LIMIT ? OFFSET ?';
+    sql += ' ORDER BY rating DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit, 10), parseInt(offset, 10));
 
     const rows = await dbAll(sql, params);

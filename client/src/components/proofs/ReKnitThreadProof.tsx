@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
-import { Umbrella, Sun, MapPin, Clock, CheckCircle2, Navigation } from 'lucide-react';
+import { Umbrella, Sun, MapPin, CheckCircle2 } from 'lucide-react';
 
 interface StopNode {
   id: string;
@@ -12,7 +12,6 @@ interface StopNode {
   price: string;
   isIndoor: boolean;
   whyThis: string;
-  icon: string;
 }
 
 export function ReKnitThreadProof() {
@@ -31,7 +30,6 @@ export function ReKnitThreadProof() {
     price: '₹350 / pax',
     isIndoor: false,
     whyThis: 'Step-free pavement, 5 mins from hotel',
-    icon: '🏛️',
   };
 
   const stop3: StopNode = {
@@ -43,7 +41,6 @@ export function ReKnitThreadProof() {
     price: '₹300 / pax',
     isIndoor: true,
     whyThis: 'Ground floor seating, fits budget ceiling',
-    icon: '☕',
   };
 
   // Stop 2 swaps on rain trigger
@@ -56,7 +53,6 @@ export function ReKnitThreadProof() {
     price: '₹250 / pax',
     isIndoor: false,
     whyThis: 'Seaside breeze, wheelchair-paved promenade',
-    icon: '🌊',
   };
 
   const indoorStop2: StopNode = {
@@ -68,7 +64,6 @@ export function ReKnitThreadProof() {
     price: '₹450 / pax',
     isIndoor: true,
     whyThis: '100% sheltered studio, ramp access, zero rain exposure',
-    icon: '🎨',
   };
 
   const activeStop2 = isRaining ? indoorStop2 : outdoorStop2;
@@ -83,7 +78,6 @@ export function ReKnitThreadProof() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion || !pathRef.current) return;
 
-    // Animate the dotted SVG thread breaking and redrawing with a snappy curve
     const path = pathRef.current;
     const length = path.getTotalLength ? path.getTotalLength() : 400;
 
@@ -121,13 +115,8 @@ export function ReKnitThreadProof() {
       {/* Proof Label & Disruption Toggle Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
-              Interactive Proof 01 · Live Re-Plan
-            </span>
-            <span className="text-[11px] font-mono text-dusk">
-              Sharma Family · 2.0 hrs · ₹1,500
-            </span>
+          <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
+            Sharma Family Scenario: 2.0 hrs · ₹1,500 Budget
           </div>
           <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">
             {isRaining ? (
@@ -179,7 +168,7 @@ export function ReKnitThreadProof() {
         <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300">
           <span className="text-dusk block text-[10px] uppercase">Transit Buffers</span>
           <strong className="text-ink text-sm">~18 mins auto</strong>
-          <span className="text-[10px] text-teal block">✓ Included in solve</span>
+          <span className="text-[10px] text-teal block">Included in solve</span>
         </div>
         <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300">
           <span className="text-dusk block text-[10px] uppercase">Solver Status</span>
@@ -211,11 +200,11 @@ export function ReKnitThreadProof() {
           <div className="bg-paper-50 rounded-2xl border border-paper-300 p-4 space-y-2.5 shadow-sm flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-dusk uppercase text-[10px]">Stop 1 · {stop1.category}</span>
+                <span className="text-dusk uppercase text-[10px]">Stop 1: {stop1.category}</span>
                 <span className="font-bold text-ink">{stop1.price}</span>
               </div>
               <h4 className="text-sm font-display font-bold text-ink leading-snug">
-                {stop1.icon} {stop1.title}
+                {stop1.title}
               </h4>
             </div>
             <div className="text-[11px] font-mono text-dusk flex items-center gap-1.5">
@@ -245,21 +234,29 @@ export function ReKnitThreadProof() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className={`uppercase text-[10px] font-bold ${isRaining ? 'text-clay' : 'text-dusk'}`}>
-                    Stop 2 · {isRaining ? 'Indoor Re-knit' : activeStop2.category}
+                    Stop 2: {isRaining ? 'Indoor Re-knit' : activeStop2.category}
                   </span>
                   <span className="font-bold text-ink">{activeStop2.price}</span>
                 </div>
                 <h4 className="text-sm font-display font-bold text-ink leading-snug">
-                  {activeStop2.icon} {activeStop2.title}
+                  {activeStop2.title}
                 </h4>
               </div>
               <div className="text-[11px] font-mono text-dusk flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-marigold" />
                 <span>{activeStop2.area} · {activeStop2.duration}</span>
               </div>
-              <div className="p-2 bg-white rounded-xl text-[10px] text-ink font-sans flex items-start gap-1 border border-paper-300">
-                <CheckCircle2 className="w-3 h-3 text-teal flex-shrink-0 mt-0.5" />
-                <span><strong>Why this fits:</strong> {activeStop2.whyThis}</span>
+              <div
+                className={`p-2 rounded-xl text-[10px] font-sans flex items-start gap-1 ${
+                  isRaining ? 'bg-clay-100 text-clay-900' : 'bg-paper-200/80 text-teal-800'
+                }`}
+              >
+                <CheckCircle2
+                  className={`w-3 h-3 flex-shrink-0 mt-0.5 ${
+                    isRaining ? 'text-clay' : 'text-teal'
+                  }`}
+                />
+                <span>{activeStop2.whyThis}</span>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -268,11 +265,11 @@ export function ReKnitThreadProof() {
           <div className="bg-paper-50 rounded-2xl border border-paper-300 p-4 space-y-2.5 shadow-sm flex flex-col justify-between">
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-dusk uppercase text-[10px]">Stop 3 · {stop3.category}</span>
+                <span className="text-dusk uppercase text-[10px]">Stop 3: {stop3.category}</span>
                 <span className="font-bold text-ink">{stop3.price}</span>
               </div>
               <h4 className="text-sm font-display font-bold text-ink leading-snug">
-                {stop3.icon} {stop3.title}
+                {stop3.title}
               </h4>
             </div>
             <div className="text-[11px] font-mono text-dusk flex items-center gap-1.5">
@@ -285,15 +282,6 @@ export function ReKnitThreadProof() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Transit Isochrone Note */}
-      <div className="pt-2 flex items-center justify-between text-xs font-mono text-dusk border-t border-paper-300">
-        <span className="flex items-center gap-1.5">
-          <Navigation className="w-3.5 h-3.5 text-marigold" />
-          <span>Real auto-rickshaw transit buffers calculated between stops</span>
-        </span>
-        <span className="text-teal font-semibold">100% Deterministic Backtracking</span>
       </div>
     </div>
   );

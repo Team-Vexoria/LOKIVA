@@ -1,7 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Experience } from '../../types';
-import { MapPin, Clock, Star, Bookmark, CheckCircle2, Shield, Sparkles } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  Star,
+  Bookmark,
+  Shield,
+  Palette,
+  Landmark,
+  Utensils,
+  Music,
+  Trees,
+  Compass,
+  Building2,
+  Accessibility,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface ExperienceCardProps {
@@ -34,21 +48,39 @@ export function ExperienceCard({
     }
   };
 
-  // Category Icon Map
-  const categoryIconMap: Record<string, string> = {
-    'Food & Culinary': '🍲',
-    'Art & Craft': '🎨',
-    'Heritage & History': '🏛️',
-    'Music & Dance': '🎭',
-    'Nature & Wildlife': '🌿',
-    'Wellness & Spiritual': '🧘',
-    'Local Markets': '🛍️',
+  // Category Icon Component (Clean, No Emojis)
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Food & Culinary':
+        return <Utensils className="w-3.5 h-3.5" />;
+      case 'Art & Craft':
+        return <Palette className="w-3.5 h-3.5" />;
+      case 'Heritage & History':
+        return <Landmark className="w-3.5 h-3.5" />;
+      case 'Music & Dance':
+        return <Music className="w-3.5 h-3.5" />;
+      case 'Nature & Wildlife':
+        return <Trees className="w-3.5 h-3.5" />;
+      case 'Spiritual & Wellness':
+      case 'Wellness & Spiritual':
+        return <Compass className="w-3.5 h-3.5" />;
+      default:
+        return <Building2 className="w-3.5 h-3.5" />;
+    }
   };
 
-  const icon = categoryIconMap[experience.category] || '✨';
+  const imageUrl =
+    experience.image_url ||
+    (experience.image_urls && experience.image_urls.length > 0 ? experience.image_urls[0] : null) ||
+    (experience.images && experience.images.length > 0 ? experience.images[0] : null);
 
-  // Compute a deterministic Local Impact Score (85% - 98%)
-  const localImpact = Math.min(98, 85 + ((experience.id * 7) % 14));
+  const hasRating =
+    experience.rating !== null &&
+    experience.rating !== undefined &&
+    typeof experience.rating === 'number';
+
+  const duration = experience.duration_mins || experience.approx_duration_mins || 60;
+  const isWheelchair = experience.wheelchair_accessible ?? experience.accessibility_wheelchair;
 
   return (
     <Link
@@ -56,103 +88,126 @@ export function ExperienceCard({
       className="group bg-white rounded-2xl overflow-hidden border border-paper-400 hover:border-ink/40 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
     >
       {/* Image Thumbnail with Overlay Badges */}
-      <div className="relative h-48 sm:h-52 bg-paper-300 overflow-hidden">
-        {experience.image_url ? (
+      <div className="relative h-48 sm:h-52 bg-paper-200 overflow-hidden">
+        {imageUrl ? (
           <img
-            src={experience.image_url}
+            src={imageUrl}
             alt={experience.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-paper-200 text-dusk font-mono text-xs">
-            {experience.title}
+        ) : null}
+        {(!imageUrl || true) && (
+          /* Editorial Illustrated Placeholder behind image */
+          <div className="absolute inset-0 -z-10 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#F5F2EB] to-[#E8E2D5] text-ink">
+            <div className="w-12 h-12 rounded-xl bg-white border border-[#D0D7CF] shadow-xs flex items-center justify-center text-ink mb-2.5 group-hover:scale-110 transition-transform">
+              {getCategoryIcon(experience.category)}
+            </div>
+            <span className="text-[13px] font-serif font-bold text-ink text-center line-clamp-1 max-w-[200px]">
+              {experience.title}
+            </span>
+            <span className="text-[9px] font-mono text-dusk tracking-wider uppercase mt-1">
+              {experience.source === 'osm_overpass' ? 'OSM Open Data' : experience.source === 'national_gi_registry' ? 'National GI Heritage' : 'Cultural Registry'}
+            </span>
           </div>
         )}
 
         {/* Top Badges */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
           <span className="px-2.5 py-1 rounded-lg bg-ink/90 backdrop-blur-md text-white text-[11px] font-mono font-semibold flex items-center gap-1.5 shadow-md">
-            <span>{icon}</span>
+            <span>{getCategoryIcon(experience.category)}</span>
             <span>{experience.category}</span>
           </span>
 
           <button
             onClick={handleToggleBookmark}
             disabled={isSaving}
-            className="pointer-events-auto p-2 rounded-xl bg-white/90 hover:bg-white text-ink hover:text-clay backdrop-blur-md shadow-md transition"
-            title="Save to Wishlist"
+            aria-label={isSaved ? 'Remove from saved' : 'Save experience'}
+            className={`pointer-events-auto w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              isSaved
+                ? 'bg-clay text-white shadow-md'
+                : 'bg-white/90 backdrop-blur-md text-ink hover:bg-white hover:text-clay shadow-sm'
+            }`}
           >
-            <Bookmark
-              className={`w-4 h-4 ${
-                isSaved ? 'fill-marigold text-marigold' : 'text-ink'
-              }`}
-            />
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
           </button>
         </div>
 
-        {/* Local Impact Score Pill */}
-        <div className="absolute bottom-3 left-3">
-          <span className="px-2 py-0.5 rounded-full bg-teal-50/95 backdrop-blur-md text-teal-700 text-[10px] font-mono font-bold border border-teal-200 flex items-center gap-1 shadow-sm">
-            <span>🌿</span>
-            <span>{localImpact}% Local Community Spend</span>
-          </span>
-        </div>
+        {/* Step-Free / Wheelchair Tag */}
+        {isWheelchair && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-xs text-ink text-[10px] font-mono border border-paper-400 shadow-xs">
+            <Accessibility className="w-3 h-3 text-pine" />
+            <span>Step-Free Ramp</span>
+          </div>
+        )}
       </div>
 
-      {/* Card Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-        <div className="space-y-1.5">
-          {/* Location & Rating */}
-          <div className="flex items-center justify-between text-xs font-mono text-dusk">
-            <span className="flex items-center gap-1 text-ink font-semibold truncate max-w-[180px]">
-              <MapPin className="w-3.5 h-3.5 text-marigold flex-shrink-0" />
-              {experience.city_name || experience.area_name || 'Bandra West'}
+      {/* Content Area */}
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+        <div>
+          {/* Location & Heritage Tag */}
+          <div className="flex items-center justify-between text-xs text-dusk mb-1.5 font-mono">
+            <span className="flex items-center gap-1 line-clamp-1">
+              <MapPin className="w-3.5 h-3.5 text-clay shrink-0" />
+              <span>
+                {experience.area_name || experience.neighborhood || experience.city || experience.city_name || experience.state || 'Local District'}
+              </span>
             </span>
-            <span className="flex items-center gap-1 text-ink font-bold">
-              <Star className="w-3.5 h-3.5 text-marigold fill-marigold" />
-              {experience.rating ? experience.rating.toFixed(1) : '4.9'}
-              <span className="text-dusk font-normal">({experience.review_count || 32})</span>
-            </span>
+
+            {experience.is_hidden_gem && (
+              <span className="text-[10px] font-mono uppercase text-pine font-bold tracking-wider">
+                Offbeat
+              </span>
+            )}
           </div>
 
           {/* Title */}
-          <h3 className="text-base font-display font-bold text-ink group-hover:text-marigold-700 transition line-clamp-2 leading-snug">
+          <h3 className="font-serif font-bold text-ink text-base sm:text-lg group-hover:text-clay transition-colors line-clamp-1 leading-snug mb-1">
             {experience.title}
           </h3>
 
-          {/* Description snippet */}
-          <p className="text-xs text-dusk-600 line-clamp-2 leading-relaxed">
-            {experience.description}
+          {/* Description */}
+          <p className="text-xs text-dusk line-clamp-2 leading-relaxed mb-3">
+            {experience.tagline || experience.description}
           </p>
         </div>
 
-        {/* "Why This For You" Explainability Layer */}
-        <div className="p-2.5 bg-paper-100 rounded-xl border border-paper-300 text-[11px] text-ink/90 flex items-start gap-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-teal flex-shrink-0 mt-0.5" />
-          <span className="leading-tight">
-            <strong className="text-teal font-semibold">Why this fits:</strong>{' '}
-            {experience.why_it_fits ||
-              `Fits within ₹${experience.price} budget, ${experience.approx_duration_mins || 60}m duration, verified step-free.`}
-          </span>
-        </div>
+        {/* Card Footer: Honest Ratings, Duration & Pricing */}
+        <div className="pt-3 border-t border-paper-300 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs">
+            {hasRating ? (
+              <div className="flex items-center gap-1 font-mono font-bold text-ink">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span>{experience.rating?.toFixed(1)}</span>
+                {experience.review_count ? (
+                  <span className="text-dusk font-normal text-[10px]">({experience.review_count})</span>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-dusk text-[11px] font-mono">
+                <Shield className="w-3 h-3 text-pine" />
+                <span>Verified POI</span>
+              </div>
+            )}
 
-        {/* Footer: Price & Duration (JetBrains Mono) */}
-        <div className="pt-3 border-t border-paper-300 flex items-center justify-between font-mono text-xs">
-          <div>
-            <span className="text-[10px] text-dusk uppercase block">Investment</span>
-            <span className="text-sm font-extrabold text-ink">
-              ₹{experience.price}
-              <span className="text-[11px] font-normal text-dusk"> / person</span>
-            </span>
+            <div className="flex items-center gap-1 text-dusk font-mono text-[11px]">
+              <Clock className="w-3 h-3 text-dusk" />
+              <span>{duration}m</span>
+            </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] text-dusk uppercase block">Duration</span>
-            <span className="text-xs font-bold text-dusk-700 flex items-center gap-1 justify-end">
-              <Clock className="w-3 h-3 text-dusk" />
-              {experience.approx_duration_mins || 60} mins
-            </span>
+            {experience.price === 0 ? (
+              <span className="text-xs font-mono font-bold text-pine uppercase">Free Entry</span>
+            ) : (
+              <div className="flex items-baseline gap-0.5 justify-end">
+                <span className="text-xs font-mono text-dusk">₹</span>
+                <span className="font-mono font-bold text-base text-ink">{experience.price}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

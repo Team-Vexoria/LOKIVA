@@ -143,13 +143,13 @@ export interface Experience {
   category: string;
   cultural_context?: string;
   country?: string;
-  state: string;
-  city: string;
+  state?: string;
+  city?: string;
   city_name?: string;
   neighborhood?: string;
   area_name?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   address?: string;
   price: number;
   currency?: string;
@@ -161,9 +161,9 @@ export interface Experience {
   max_capacity?: number;
   min_group?: number;
   max_group?: number;
-  is_indoor: boolean;
+  is_indoor?: boolean;
   is_rain_safe?: boolean;
-  is_hidden_gem: boolean;
+  is_hidden_gem?: boolean;
   accessibility_low_walking?: boolean;
   low_walking?: boolean;
   accessibility_wheelchair?: boolean;
@@ -175,18 +175,24 @@ export interface Experience {
   dietary_vegetarian?: boolean;
   dietary_vegan?: boolean;
   dietary_jain?: boolean;
-  rating: number;
-  review_count: number;
+  rating?: number | null;
+  review_count?: number;
   popularity_score?: number;
-  tags: string[];
+  notability_score?: number | null;
+  osm_id?: string;
+  osm_type?: string;
+  otm_xid?: string;
+  wikidata_id?: string;
+  source?: string;
+  tags?: string[];
   image_url?: string;
   images?: string[];
   image_urls?: string[];
   why_it_fits?: string;
   target_audience?: string[];
   is_verified?: boolean;
-  is_active: boolean;
-  created_at: string;
+  is_active?: boolean;
+  created_at?: string;
   provider?: Provider;
   reviews?: Review[];
 }
@@ -226,18 +232,22 @@ export interface ReplanResult {
 }
 
 export interface StructuredIntent {
+  prompt?: string;
+  limit?: number;
+  city?: string;
+  state?: string;
   destination_city?: string;
   destination_state?: string;
   destination?: string;
   location?: string;
   duration_minutes?: number;
   available_hours?: number;
-  budget: number;
+  budget?: number;
   currency?: string;
-  interests: string[];
+  interests?: string[];
   group_type?: string;
   traveler_type?: string;
-  group_size: number;
+  group_size?: number;
   accessibility?: {
     low_walking?: boolean;
     wheelchair?: boolean;

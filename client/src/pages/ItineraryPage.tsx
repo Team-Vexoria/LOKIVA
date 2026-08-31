@@ -3,6 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { Experience } from '../types';
 import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
+import { ItineraryRouteMap } from '../components/map/ItineraryRouteMap';
+import {
+  saveActiveItineraryOffline,
+  getOfflineItinerary,
+  useNetworkStatus,
+} from '../lib/offlineStorage';
 import {
   Calendar,
   Clock,
@@ -15,9 +21,12 @@ import {
   ShieldCheck,
   Share2,
   Navigation,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 
 export function ItineraryPage() {
+  const isOnline = useNetworkStatus();
   const [availableExperiences, setAvailableExperiences] = useState<Experience[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
   const [feasibility, setFeasibility] = useState<any>(null);
@@ -25,20 +34,32 @@ export function ItineraryPage() {
   const [isReplanning, setIsReplanning] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [generation, setGeneration] = useState(1);
+  const [isRaining, setIsRaining] = useState(false);
+  const [isOfflineCached, setIsOfflineCached] = useState(false);
 
   useEffect(() => {
     async function loadInitial() {
       try {
-        const exps = await api.getExperiences({ city: 'Jaipur', limit: 12 });
+        const exps = await api.getExperiences({ city: 'Mumbai', limit: 12 });
         setAvailableExperiences(exps);
         if (exps.length >= 3) {
           const ids = [exps[0].id, exps[1].id, exps[2].id];
           setSelectedIds(ids);
           const fRes = await api.checkFeasibility(ids);
           setFeasibility(fRes);
+
+          const activeExps = [exps[0], exps[1], exps[2]];
+          saveActiveItineraryOffline({ title: 'Bandra West Circuit' }, activeExps);
+          setIsOfflineCached(true);
         }
       } catch (err) {
-        console.error('Failed to load itinerary planner:', err);
+        console.warn('Network fetch failed, attempting offline cache:', err);
+        const cached = getOfflineItinerary();
+        if (cached && cached.experiences.length > 0) {
+          setAvailableExperiences(cached.experiences);
+          setSelectedIds(cached.experiences.map((e) => e.id));
+          setIsOfflineCached(true);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -51,6 +72,12 @@ export function ItineraryPage() {
     try {
       const fRes = await api.checkFeasibility(ids);
       setFeasibility(fRes);
+
+      const activeExps = ids
+        .map((id) => availableExperiences.find((e) => e.id === id))
+        .filter(Boolean) as Experience[];
+      saveActiveItineraryOffline({ title: 'Bandra West Circuit' }, activeExps);
+      setIsOfflineCached(true);
     } catch (err) {
       console.error(err);
     }
@@ -68,12 +95,21 @@ export function ItineraryPage() {
 
   const handleReplan = async (reason: string) => {
     setIsReplanning(true);
+    if (reason === 'rain') {
+      setIsRaining(true);
+    }
     try {
-      const res = await api.replanItinerary(selectedIds, reason, 'Jaipur');
+      const res = await api.replanItinerary(selectedIds, reason, 'Mumbai');
       if (res.new_experience_ids && res.new_experience_ids.length > 0) {
         setSelectedIds(res.new_experience_ids);
         setFeasibility(res.feasibility);
         setGeneration((g) => g + 1);
+
+        const activeExps = res.new_experience_ids
+          .map((id) => availableExperiences.find((e) => e.id === id))
+          .filter(Boolean) as Experience[];
+        saveActiveItineraryOffline({ title: 'Bandra West Circuit (ReKnitted)' }, activeExps);
+        setIsOfflineCached(true);
       }
     } catch (err) {
       console.error('Replanning error:', err);
@@ -85,9 +121,9 @@ export function ItineraryPage() {
   const handleSaveItinerary = async () => {
     try {
       await api.createItinerary({
-        title: 'Jaipur Heritage & Craft Day Journey',
-        city: 'Jaipur',
-        state: 'Rajasthan',
+        title: 'Bandra Cultural & Artisan Feasible Day Journey',
+        city: 'Mumbai',
+        state: 'Maharashtra',
         experience_ids: selectedIds,
       });
       setIsSaved(true);
@@ -96,6 +132,24 @@ export function ItineraryPage() {
       console.error('Failed to save itinerary:', err);
     }
   };
+
+  const selectedList = selectedIds
+    .map((id) => availableExperiences.find((e) => e.id === id))
+    .filter(Boolean) as Experience[];
+
+  const mapStops = selectedList.map((exp, idx) => ({
+    id: exp.id,
+    title: exp.title,
+    category: exp.category,
+    lat: exp.latitude || 19.0558 + idx * 0.005,
+    lng: exp.longitude || 72.8295 + idx * 0.003,
+    duration: `${exp.duration_mins || 45} mins`,
+    price: `₹${exp.price}`,
+    isIndoor: exp.is_indoor,
+    wheelchair: exp.accessibility_wheelchair || exp.wheelchair_accessible,
+    whyThis: exp.why_it_fits || 'Vetted step-free access for family group',
+    icon: exp.category?.includes('Food') ? '🍲' : exp.category?.includes('Art') ? '🎨' : '🏛️',
+  }));
 
   if (isLoading) {
     return (
@@ -106,20 +160,43 @@ export function ItineraryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-paper text-ink py-8 sm:py-12">
+    <div className="min-h-screen bg-paper text-ink py-6 sm:py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Network & Offline Status Banner */}
+        {!isOnline && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-mono text-amber-900 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>Offline Mode Active: Viewing locally cached itinerary & maps for Bandra West</span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px]">
+              Offline Ready ✓
+            </span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-marigold" />
-              <span>Dynamic ReKnit Feasibility Solver</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-marigold" />
+                <span>Dynamic ReKnit Feasibility Solver · Gen #{generation}</span>
+              </div>
+
+              {isOfflineCached && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 border border-teal-200 text-teal-800 rounded-full text-[11px] font-mono font-bold shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal" />
+                  <span>Offline Ready ✓</span>
+                </div>
+              )}
             </div>
+
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-ink mt-2">
               Sequenced Day Itinerary
             </h1>
             <p className="text-xs text-dusk-600 font-mono mt-1">
-              Start: Hotel Diggi Palace · 9:00 AM · Real-time auto-rickshaw transit isochrones
+              Start: Bandra West Base · 9:30 AM · Real-time auto-rickshaw transit isochrones
             </p>
           </div>
 
@@ -136,127 +213,161 @@ export function ItineraryPage() {
 
         {/* Two Column Layout: ReKnit Timeline vs Feasibility Engine */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left 2 Cols: Timed Timeline */}
+          {/* Left 2 Cols: Timed Timeline & Interactive Route Map */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-display font-bold text-ink flex items-center gap-2">
-                <Clock className="w-5 h-5 text-marigold" />
-                Chronological Sequence & Pacing
-              </h2>
-              <span className="text-xs font-mono text-dusk">
-                Generation #{generation}
-              </span>
-            </div>
+            {/* Interactive Spatial Feasibility Map */}
+            <ItineraryRouteMap
+              stops={mapStops}
+              hotelLat={19.0522}
+              hotelLng={72.8258}
+              hotelName="Bandra West Hotel Base"
+              isRaining={isRaining}
+            />
 
-            {feasibility?.items && feasibility.items.length > 0 ? (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={generation}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4 relative before:absolute before:inset-0 before:left-6 before:w-0.5 before:bg-paper-400"
-                >
-                  {feasibility.items.map((item: any, idx: number) => (
-                    <div key={idx} className="relative pl-12">
-                      {/* Node Dot */}
-                      <div className="absolute left-3.5 top-6 w-5 h-5 -translate-x-1/2 rounded-full bg-ink text-marigold font-mono font-extrabold text-[10px] flex items-center justify-center shadow-md border-2 border-paper">
-                        {item.item_order}
+            {/* Timeline Header */}
+            <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 space-y-6 shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-display font-bold text-ink">
+                    Chronological ReKnit Timeline
+                  </h3>
+                  <p className="text-xs text-dusk-600 font-mono">
+                    Deterministic packing order with transit buffers
+                  </p>
+                </div>
+                <span className="px-3 py-1 bg-paper-100 rounded-xl text-xs font-mono font-bold text-teal border border-paper-300">
+                  {selectedList.length} Experiences Packed
+                </span>
+              </div>
+
+              {/* Connected Step Sequence */}
+              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-marigold before:border-l before:border-dashed before:border-marigold">
+                {/* Hotel Base Origin */}
+                <div className="relative">
+                  <div className="absolute -left-6 sm:-left-8 top-1.5 w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center text-xs shadow-md border-2 border-white">
+                    🏨
+                  </div>
+                  <div className="p-3.5 bg-paper-100 rounded-2xl border border-paper-300 flex items-center justify-between text-xs font-mono">
+                    <div>
+                      <strong className="text-ink">Hotel Base (Bandra West)</strong>
+                      <span className="text-dusk block text-[11px]">Departure 9:30 AM</span>
+                    </div>
+                    <span className="text-teal font-semibold">Origin Anchor</span>
+                  </div>
+                </div>
+
+                {/* Itinerary Stops */}
+                <AnimatePresence>
+                  {selectedList.map((exp, index) => (
+                    <motion.div
+                      key={exp.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-4"
+                    >
+                      {/* Transit Buffer */}
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-dusk-600 py-1">
+                        <Navigation className="w-3.5 h-3.5 text-marigold" />
+                        <span>~12-15 min Auto-rickshaw transfer (Traffic & Ramp buffer)</span>
                       </div>
 
-                      {/* Timeline Card */}
-                      <div className="bg-white rounded-3xl border border-paper-400 p-5 sm:p-6 space-y-3 shadow-md hover:border-ink/30 transition">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-teal">
-                              <span>{item.start_time} - {item.end_time}</span>
-                              <span className="text-paper-400">•</span>
-                              <span className="text-dusk font-normal uppercase text-[10px]">{item.category}</span>
+                      {/* Stop Card */}
+                      <div className="relative">
+                        <div className="absolute -left-6 sm:-left-8 top-3 w-6 h-6 rounded-full bg-marigold text-ink font-mono font-extrabold flex items-center justify-center text-xs shadow-md border-2 border-white">
+                          {index + 1}
+                        </div>
+
+                        <div className="p-5 bg-paper-50 hover:bg-white rounded-2xl border border-paper-300 shadow-sm transition space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-xs font-mono">
+                                <span className="px-2 py-0.5 rounded-full bg-paper-200 text-ink font-bold uppercase text-[10px]">
+                                  {exp.category}
+                                </span>
+                                <span className="text-dusk">
+                                  {exp.area_name || exp.city}
+                                </span>
+                              </div>
+                              <h4 className="text-base font-display font-bold text-ink">
+                                {exp.title}
+                              </h4>
                             </div>
-                            <h3 className="text-base font-display font-bold text-ink">
-                              {item.title}
-                            </h3>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-teal">
+                                ₹{exp.price} / pax
+                              </span>
+                              <button
+                                onClick={() => handleRemoveExperience(exp.id)}
+                                className="p-1.5 text-dusk hover:text-clay hover:bg-paper-200 rounded-lg transition"
+                                title="Remove from plan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
 
-                          <button
-                            onClick={() => handleRemoveExperience(item.experience_id)}
-                            className="text-dusk hover:text-clay p-1.5 rounded-lg hover:bg-paper-200 transition"
-                            title="Remove stop"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                          <p className="text-xs text-dusk-600 font-sans leading-relaxed">
+                            {exp.description}
+                          </p>
 
-                        {/* Explainability Tag */}
-                        <div className="p-2.5 bg-paper-100 rounded-xl border border-paper-300 text-[11px] text-ink flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-teal flex-shrink-0 mt-0.5" />
-                          <span>
-                            <strong className="text-teal font-semibold">Why this fits:</strong>{' '}
-                            {item.why_it_fits ||
-                              `Ground-floor step-free access, 10 mins from prior stop, fits budget.`}
-                          </span>
-                        </div>
-
-                        {/* Travel buffer badge to next stop */}
-                        {item.travel_time_to_next_mins > 0 && (
-                          <div className="p-2 bg-paper-100 rounded-xl border border-paper-300 text-[11px] font-mono text-dusk-700 flex items-center gap-2">
-                            <Navigation className="w-3.5 h-3.5 text-marigold" />
+                          {/* "Why This Fits You" Deterministic Explainability Line */}
+                          <div className="p-2.5 bg-white rounded-xl border border-paper-300 text-xs font-sans text-teal-800 flex items-start gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-teal flex-shrink-0 mt-0.5" />
                             <span>
-                              <strong>{item.travel_time_to_next_mins} mins</strong> auto transfer buffer ({item.distance_km} km)
+                              <strong>Why this fits:</strong> {exp.why_it_fits || 'Fits your time window, 500m radius, ground-floor step-free access.'}
                             </span>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
-                </motion.div>
-              </AnimatePresence>
-            ) : (
-              <div className="p-10 bg-white rounded-3xl border border-paper-400 text-center space-y-2 font-mono text-xs text-dusk">
-                <p>No experiences selected in the timeline.</p>
-              </div>
-            )}
-
-            {/* Add Nearby Experiences Section */}
-            <div className="pt-6 space-y-4">
-              <h3 className="text-base font-display font-bold text-ink">
-                Add Nearby Feasible Cultural Experiences
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {availableExperiences
-                  .filter((e) => !selectedIds.includes(e.id))
-                  .slice(0, 4)
-                  .map((e) => (
-                    <div
-                      key={e.id}
-                      className="p-3.5 bg-white rounded-2xl border border-paper-400 flex items-center justify-between gap-3 shadow-sm hover:border-ink/30 transition"
-                    >
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-ink truncate font-display">{e.title}</h4>
-                        <span className="text-[10px] font-mono text-dusk">₹{e.price} · {e.approx_duration_mins} mins</span>
-                      </div>
-                      <button
-                        onClick={() => handleAddExperience(e.id)}
-                        className="p-2 bg-paper-200 hover:bg-ink hover:text-paper text-ink rounded-xl text-xs font-mono transition"
-                        title="Add to Itinerary"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                </AnimatePresence>
               </div>
             </div>
           </div>
 
-          {/* Right Col: Feasibility Panel */}
-          <div>
-            <div className="sticky top-24">
-              <FeasibilityPanel
-                feasibility={feasibility}
-                onReplan={handleReplan}
-                isReplanning={isReplanning}
-              />
+          {/* Right Col: Feasibility Panel with 4 Disruption Triggers */}
+          <div className="space-y-6">
+            <FeasibilityPanel
+              feasibility={feasibility}
+              onReplan={handleReplan}
+              isReplanning={isReplanning}
+              selectedCount={selectedList.length}
+            />
+
+            {/* Quick Add Available Gems */}
+            <div className="bg-white rounded-3xl border border-paper-400 p-6 space-y-4 shadow-md">
+              <h4 className="text-sm font-display font-bold text-ink">
+                Add Nearby Cultural Gems
+              </h4>
+              <div className="space-y-2.5">
+                {availableExperiences
+                  .filter((e) => !selectedIds.includes(e.id))
+                  .slice(0, 3)
+                  .map((gem) => (
+                    <div
+                      key={gem.id}
+                      className="p-3 bg-paper-50 rounded-xl border border-paper-300 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5 truncate pr-2">
+                        <strong className="block text-ink truncate">{gem.title}</strong>
+                        <span className="text-[10px] font-mono text-dusk">
+                          {gem.duration_mins || 45} mins · ₹{gem.price}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleAddExperience(gem.id)}
+                        className="p-1.5 bg-ink text-paper hover:bg-marigold hover:text-ink rounded-lg transition flex-shrink-0 shadow-sm"
+                        title="Add to Itinerary"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         </div>
