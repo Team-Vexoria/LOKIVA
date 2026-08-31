@@ -4,6 +4,7 @@ import { queryOverpassBbox } from './overpass.js';
 import { queryWikidataBbox } from './wikidata.js';
 import { enrichPlace } from './opentripmap.js';
 import { fetchWikiPlaceDetails } from './wikiImageFetcher.js';
+import { fetchPexelsPhotos } from '../pexelsService.js';
 
 const CACHE_FRESHNESS_DAYS = 30;
 
@@ -152,6 +153,19 @@ export async function resolveExperiencesForLocation(locationInput, options = {})
         }
         if (wikiInfo.extract && !enriched.enrichedDescription) {
           enriched.enrichedDescription = wikiInfo.extract;
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+
+    // If still no image, query high-resolution Pexels API dynamically
+    if (!enriched.imageUrl && !raw.imageUrl) {
+      try {
+        const pexelsRes = await fetchPexelsPhotos(`${cityOrDistrict || state} ${raw.category} ${raw.title} India`, 1);
+        if (pexelsRes && pexelsRes.photoUrl) {
+          enriched.imageUrl = pexelsRes.photoUrl;
+          placesEnriched++;
         }
       } catch {
         // Non-blocking

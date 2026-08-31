@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { City, Experience } from '../types';
+import { City, DestinationDetail, Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { MapPin, ArrowLeft, Sparkles, Clock, Calendar } from 'lucide-react';
 
 export function DestinationDetailPage() {
   const { state, city } = useParams<{ state: string; city: string }>();
-  const [cityData, setCityData] = useState<City | null>(null);
+  const [cityData, setCityData] = useState<DestinationDetail | City | null>(null);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,26 +42,39 @@ export function DestinationDetailPage() {
           <span>Back to All Destinations</span>
         </Link>
 
-        {/* Hero Banner for Destination */}
-        <div className="bg-ink text-paper rounded-3xl p-8 sm:p-12 space-y-4 shadow-2xl relative overflow-hidden">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-ink-800 border border-ink-700 text-marigold rounded-full text-xs font-mono font-bold">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{state} Heritage Enclave</span>
-          </div>
+        {/* Hero Banner for Destination with Pexels Background Cover */}
+        <div className="bg-ink text-paper rounded-3xl p-8 sm:p-12 space-y-4 shadow-2xl relative overflow-hidden group">
+          {cityData?.image_url && (
+            <div className="absolute inset-0 z-0">
+              <img
+                src={cityData.image_url}
+                alt={city}
+                className="w-full h-full object-cover opacity-35 scale-105 group-hover:scale-100 transition-transform duration-700 filter brightness-90"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/80 to-transparent" />
+            </div>
+          )}
 
-          <h1 className="text-3xl sm:text-5xl font-display font-bold text-white">
-            {city}
-          </h1>
+          <div className="relative z-10 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-ink/80 backdrop-blur-md border border-ink-700 text-marigold rounded-full text-xs font-mono font-bold">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{state} Heritage Enclave</span>
+            </div>
 
-          <p className="text-xs sm:text-sm text-dusk-100 max-w-2xl leading-relaxed font-sans">
-            {cityData?.description ||
-              `Discover verified local workshops, artisanal guilds, and authentic heritage walks in ${city}, packed into feasible micro-moment itineraries.`}
-          </p>
+            <h1 className="text-3xl sm:text-5xl font-display font-bold text-white">
+              {city}
+            </h1>
 
-          <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-teal-100">
-            <span>{experiences.length} Feasible Experiences</span>
-            <span>•</span>
-            <span>Wheelchair & Low Walking Vetted</span>
+            <p className="text-xs sm:text-sm text-dusk-100 max-w-2xl leading-relaxed font-sans">
+              {cityData?.description ||
+                `Discover verified local workshops, artisanal guilds, and authentic heritage walks in ${city}, packed into feasible micro-moment itineraries.`}
+            </p>
+
+            <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-teal-100">
+              <span>{experiences.length} Feasible Experiences</span>
+              <span>•</span>
+              <span>Wheelchair & Low Walking Vetted</span>
+            </div>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import { dbAll, dbGet, dbRun } from '../db/db.js';
+import { enrichExperienceWithPexels } from '../services/pexelsService.js';
 
 export const experiencesRouter = express.Router();
 
@@ -120,7 +121,19 @@ experiencesRouter.get('/', async (req, res) => {
     params.push(parseInt(limit, 10), parseInt(offset, 10));
 
     const rows = await dbAll(sql, params);
-    res.json(rows.map(formatExperience));
+    const formattedRows = rows.map(formatExperience);
+
+    // Enrich missing/generic photos in parallel with cached Pexels resolution
+    const enrichedList = await Promise.all(
+      formattedRows.map(async (exp) => {
+        if (!exp.image_url || exp.image_url.includes('placeholder') || exp.image_url.includes('source.unsplash.com')) {
+          return enrichExperienceWithPexels(exp);
+        }
+        return exp;
+      })
+    );
+
+    res.json(enrichedList);
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }
@@ -136,9 +149,10 @@ experiencesRouter.get('/:id', async (req, res) => {
     const reviews = await dbAll('SELECT * FROM reviews WHERE experience_id = ? ORDER BY created_at DESC LIMIT 10', [exp.id]);
 
     const formatted = formatExperience(exp);
-    formatted.provider = provider;
-    formatted.reviews = reviews;
-    res.json(formatted);
+    const enriched = await enrichExperienceWithPexels(formatted);
+    enriched.provider = provider;
+    enriched.reviews = reviews;
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }

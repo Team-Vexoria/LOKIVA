@@ -1,5 +1,6 @@
 import express from 'express';
 import { dbAll, dbGet } from '../db/db.js';
+import { enrichDestinationWithPexels, enrichExperienceWithPexels } from '../services/pexelsService.js';
 
 export const destinationsRouter = express.Router();
 
@@ -13,6 +14,7 @@ destinationsRouter.get('/', async (req, res) => {
     for (const c of cities) {
       const expCountRow = await dbGet('SELECT COUNT(*) as count FROM experiences WHERE city = ?', [c.name]);
       const categoriesRows = await dbAll('SELECT DISTINCT category FROM experiences WHERE city = ? LIMIT 3', [c.name]);
+      const enrichedCity = await enrichDestinationWithPexels(c);
       results.push({
         id: c.id,
         name: c.name,
@@ -21,7 +23,7 @@ destinationsRouter.get('/', async (req, res) => {
         tagline: c.tagline,
         latitude: c.latitude,
         longitude: c.longitude,
-        image_url: c.image_url,
+        image_url: enrichedCity.image_url,
         experience_count: expCountRow ? expCountRow.count : 0,
         popular_categories: categoriesRows.map((r) => r.category),
       });
@@ -70,27 +72,33 @@ destinationsRouter.get('/:state/:city', async (req, res) => {
     );
     if (!cityRow) return res.status(404).json({ detail: 'Destination not found' });
 
+    const enrichedCity = await enrichDestinationWithPexels(cityRow);
     const areas = await dbAll('SELECT * FROM areas WHERE city_id = ?', [cityRow.id]);
     const topExp = await dbAll('SELECT * FROM experiences WHERE city = ? ORDER BY rating DESC LIMIT 6', [cityRow.name]);
 
-    const formattedExp = topExp.map((e) => ({
-      ...e,
-      tags: typeof e.tags === 'string' ? JSON.parse(e.tags || '[]') : e.tags || [],
-      image_urls: typeof e.image_urls === 'string' ? JSON.parse(e.image_urls || '[]') : e.image_urls || [],
-    }));
+    const formattedExp = await Promise.all(
+      topExp.map(async (e) => {
+        const item = {
+          ...e,
+          tags: typeof e.tags === 'string' ? JSON.parse(e.tags || '[]') : e.tags || [],
+          image_urls: typeof e.image_urls === 'string' ? JSON.parse(e.image_urls || '[]') : e.image_urls || [],
+        };
+        return enrichExperienceWithPexels(item);
+      })
+    );
 
     res.json({
-      id: cityRow.id,
-      name: cityRow.name,
-      state_name: cityRow.state_name,
-      state_code: cityRow.state_code,
-      tagline: cityRow.tagline,
-      description: cityRow.description,
-      latitude: cityRow.latitude,
-      longitude: cityRow.longitude,
-      image_url: cityRow.image_url,
-      culture_summary: cityRow.culture_summary,
-      best_time_to_visit: cityRow.best_time_to_visit,
+      id: enrichedCity.id,
+      name: enrichedCity.name,
+      state_name: enrichedCity.state_name,
+      state_code: enrichedCity.state_code,
+      tagline: enrichedCity.tagline,
+      description: enrichedCity.description,
+      latitude: enrichedCity.latitude,
+      longitude: enrichedCity.longitude,
+      image_url: enrichedCity.image_url,
+      culture_summary: enrichedCity.culture_summary,
+      best_time_to_visit: enrichedCity.best_time_to_visit,
       areas: areas,
       top_experiences: formattedExp,
       weather_summary: { temp_c: 28, condition: 'Sunny', is_raining: false },

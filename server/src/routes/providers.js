@@ -1,5 +1,6 @@
 import express from 'express';
 import { dbAll, dbGet, dbRun } from '../db/db.js';
+import { fetchPexelsPhotos, enrichExperienceWithPexels } from '../services/pexelsService.js';
 
 export const providersRouter = express.Router();
 
@@ -19,6 +20,12 @@ providersRouter.get('/me', async (req, res) => {
         review_count: 38,
       };
     }
+
+    if (!provider.cover_image_url) {
+      const pexelsPhoto = await fetchPexelsPhotos(`${provider.city || 'India'} artisan craft workshop India`, 1);
+      provider.cover_image_url = pexelsPhoto.photoUrl;
+    }
+
     res.json(provider);
   } catch (err) {
     res.status(500).json({ detail: err.message });
@@ -41,7 +48,17 @@ providersRouter.get('/experiences', async (req, res) => {
       tags: typeof e.tags === 'string' ? JSON.parse(e.tags || '[]') : e.tags || [],
       image_urls: typeof e.image_urls === 'string' ? JSON.parse(e.image_urls || '[]') : e.image_urls || [],
     }));
-    res.json(formatted);
+
+    const enriched = await Promise.all(
+      formatted.map(async (exp) => {
+        if (!exp.image_url || exp.image_url.includes('placeholder')) {
+          return enrichExperienceWithPexels(exp);
+        }
+        return exp;
+      })
+    );
+
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }

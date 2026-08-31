@@ -83,12 +83,19 @@ export interface DestinationSummary {
 }
 
 export interface DestinationDetail {
-  city: City;
+  id?: number;
+  name?: string;
+  tagline?: string;
+  description?: string;
+  image_url?: string;
+  city?: City;
   state_name: string;
   state_code: string;
-  weather_context: string;
-  areas: string[];
-  experiences: Experience[];
+  culture_summary?: string;
+  best_time_to_visit?: string;
+  weather_context?: string;
+  areas: any[];
+  experiences?: Experience[];
   top_experiences?: Experience[];
   weather_summary?: { temp_c: number; condition: string; is_raining: boolean };
 }

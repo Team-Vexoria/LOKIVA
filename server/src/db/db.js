@@ -311,6 +311,17 @@ export async function initDb() {
     )
   `);
 
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS pexels_image_cache (
+      query TEXT PRIMARY KEY,
+      photo_url TEXT NOT NULL,
+      photo_urls TEXT,
+      photographer TEXT,
+      photographer_url TEXT,
+      cached_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Safe migration check for new columns on existing database
   try {
     const tableInfo = await dbAll("PRAGMA table_info(experiences)");

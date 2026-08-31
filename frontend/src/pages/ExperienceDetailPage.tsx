@@ -21,6 +21,7 @@ export function ExperienceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [experience, setExperience] = useState<Experience | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [partySize, setPartySize] = useState(2);
   const [isBooked, setIsBooked] = useState(false);
@@ -58,6 +59,16 @@ export function ExperienceDetailPage() {
       </div>
     );
   }
+
+  const galleryImages =
+    experience.image_urls && experience.image_urls.length > 0
+      ? experience.image_urls
+      : experience.image_url
+      ? [experience.image_url]
+      : [];
+
+  const currentDisplayImage =
+    galleryImages[selectedImageIndex] || experience.image_url || null;
 
   const localImpact = Math.min(98, 85 + ((experience.id * 7) % 14));
 
@@ -110,17 +121,45 @@ export function ExperienceDetailPage() {
               </div>
             </div>
 
-            {/* Main Image */}
-            <div className="h-80 sm:h-96 rounded-3xl overflow-hidden bg-paper-300 border border-paper-400 shadow-md">
-              {experience.image_url ? (
-                <img
-                  src={experience.image_url}
-                  alt={experience.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-mono text-sm text-dusk">
-                  {experience.title}
+            {/* Main Image with Pexels Attribution */}
+            <div className="space-y-3">
+              <div className="relative h-80 sm:h-96 rounded-3xl overflow-hidden bg-paper-300 border border-paper-400 shadow-md group">
+                {currentDisplayImage ? (
+                  <img
+                    src={currentDisplayImage}
+                    alt={experience.title}
+                    className="w-full h-full object-cover transition-all duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-mono text-sm text-dusk">
+                    {experience.title}
+                  </div>
+                )}
+
+                {/* Pexels Attribution Badge */}
+                <div className="absolute bottom-3 right-3 px-3 py-1 bg-ink/80 backdrop-blur-md rounded-full text-[10px] font-mono text-paper-200 shadow-sm flex items-center gap-1.5 pointer-events-none">
+                  <Sparkles className="w-3 h-3 text-marigold" />
+                  <span>Curated via Pexels</span>
+                </div>
+              </div>
+
+              {/* Dynamic Photo Gallery Strip */}
+              {galleryImages.length > 1 && (
+                <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                  {galleryImages.map((imgUrl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`relative flex-shrink-0 w-20 h-16 sm:w-24 sm:h-20 rounded-2xl overflow-hidden border-2 transition ${
+                        selectedImageIndex === idx
+                          ? 'border-marigold scale-105 shadow-md'
+                          : 'border-paper-300 hover:border-ink/40 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={imgUrl} alt={`View ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

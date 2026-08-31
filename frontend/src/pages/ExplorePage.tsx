@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
+import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
+import { SurpriseMe } from '../components/surprise/SurpriseMe';
 import {
   Search,
   Filter,
@@ -229,15 +231,15 @@ export function ExplorePage() {
 
         {/* Filter & Live Location Resolution Panel */}
         <div className="bg-white rounded-3xl border border-paper-400 p-5 sm:p-6 shadow-md space-y-6">
-          <form onSubmit={handleResolveLocation} className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
+          <form onSubmit={handleResolveLocation} className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-center">
             {/* Live Location Query (Covers ANY place in India) */}
-            <div className="sm:col-span-5 relative">
+            <div className="sm:col-span-4 relative">
               <MapPin className="w-4 h-4 text-marigold absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
-                placeholder="Enter any Indian town/district (e.g. Solapur, Almora, Koramangala)..."
+                placeholder="Enter town/district (e.g. Solapur, Almora, Bandra)..."
                 className="w-full pl-10 pr-4 py-2.5 bg-paper-100 border border-paper-300 rounded-xl text-xs text-ink placeholder-dusk focus:outline-none focus:border-marigold font-sans"
               />
             </div>
@@ -254,17 +256,17 @@ export function ExplorePage() {
               />
             </div>
 
-            {/* Resolve Button */}
-            <div className="sm:col-span-3">
+            {/* Action Buttons: Live Resolve & Surprise Me */}
+            <div className="sm:col-span-4 flex items-center gap-2">
               <button
                 type="submit"
                 disabled={isResolvingLocation}
-                className="w-full py-2.5 px-4 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-2.5 px-3 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 whitespace-nowrap"
               >
                 {isResolvingLocation ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-marigold" />
-                    <span>Resolving OSM...</span>
+                    <span>Resolving...</span>
                   </>
                 ) : (
                   <>
@@ -273,6 +275,16 @@ export function ExplorePage() {
                   </>
                 )}
               </button>
+
+              <SurpriseMe
+                experiences={experiences}
+                currentCity={locationInput}
+                maxBudget={maxPrice}
+                availableHours={3}
+                activeCategory={selectedCategory}
+                wheelchairOnly={wheelchairOnly}
+                lowWalkingOnly={lowWalkingOnly}
+              />
             </div>
           </form>
 
@@ -343,6 +355,11 @@ export function ExplorePage() {
             </div>
           </div>
         </div>
+
+        {/* LOKIVA MOMENTS - IMMERSIVE VISUAL EXPERIENCE DISCOVERY */}
+        {experiences.length > 0 && (
+          <LokivaMomentsSection experiences={experiences} selectedCity={locationInput} />
+        )}
 
         {/* Results Grid */}
         <div className="space-y-4">

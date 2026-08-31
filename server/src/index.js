@@ -12,6 +12,7 @@ import { providersRouter } from './routes/providers.js';
 import { adminRouter } from './routes/admin.js';
 import { reviewsRouter } from './routes/reviews.js';
 import { router as ingestionRouter } from './routes/ingestion.js';
+import { mediaRouter } from './routes/media.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/v1/providers', providersRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/reviews', reviewsRouter);
 app.use('/api/v1/ingestion', ingestionRouter);
+app.use('/api/v1/media', mediaRouter);
 
 // Root and Health Endpoints
 app.get('/', (req, res) => {

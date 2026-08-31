@@ -8,6 +8,9 @@ import { ExplainabilityReceiptCard } from '../components/proofs/ExplainabilityRe
 import { ProviderCopilotProof } from '../components/proofs/ProviderCopilotProof';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
+import { FaqSection } from '../components/faq/FaqSection';
+import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
+import { SurpriseMe } from '../components/surprise/SurpriseMe';
 import { api } from '../lib/api';
 import { Experience } from '../types';
 import {
@@ -297,13 +300,24 @@ export function HomePage() {
                 </label>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono text-xs font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2"
-              >
-                <span>Pack Feasible Plan</span>
-                <ArrowRight className="w-3.5 h-3.5 text-marigold" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono text-xs font-bold rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <span>Pack Plan</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-marigold" />
+                </button>
+
+                <SurpriseMe
+                  experiences={experiences}
+                  currentCity={selectedCity}
+                  maxBudget={budgetCeiling}
+                  availableHours={availableHours}
+                  wheelchairOnly={wheelchairAccess}
+                  lowWalkingOnly={lowWalking}
+                />
+              </div>
             </div>
           </form>
         </div>
@@ -368,7 +382,13 @@ export function HomePage() {
         )}
       </section>
 
-      {/* 5. THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
+      {/* 5. LOKIVA MOMENTS - IMMERSIVE VISUAL EXPERIENCE DISCOVERY */}
+      <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
+
+      {/* 6. FREQUENTLY ASKED QUESTIONS */}
+      <FaqSection />
+
+      {/* 7. THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-paper-400 p-8 sm:p-12 space-y-8">
           <div className="max-w-2xl space-y-2">

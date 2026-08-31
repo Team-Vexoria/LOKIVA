@@ -1,0 +1,183 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Experience } from '../../types';
+import { MapPin, Star, Clock, ArrowRight, Sparkles } from 'lucide-react';
+
+interface MomentCardProps {
+  experience: Experience;
+}
+
+// Category fallback images (high-res Pexels CDN)
+const CATEGORY_FALLBACKS: Record<string, string[]> = {
+  food: [
+    'https://images.pexels.com/photos/4602266/pexels-photo-4602266.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/16308804/pexels-photo-16308804.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+  art: [
+    'https://images.pexels.com/photos/28389703/pexels-photo-28389703.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/2166559/pexels-photo-2166559.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/1047540/pexels-photo-1047540.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+  adventure: [
+    'https://images.pexels.com/photos/36870020/pexels-photo-36870020.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/1365425/pexels-photo-1365425.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+  nature: [
+    'https://images.pexels.com/photos/1483053/pexels-photo-1483053.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/931018/pexels-photo-931018.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+  nightlife: [
+    'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/789750/pexels-photo-789750.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+  culture: [
+    'https://images.pexels.com/photos/27833051/pexels-photo-27833051.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg?auto=compress&cs=tinysrgb&w=800',
+    'https://images.pexels.com/photos/3581368/pexels-photo-3581368.jpeg?auto=compress&cs=tinysrgb&w=800',
+  ],
+};
+
+function getCardFallback(category: string = '', id: number = 1): string {
+  const cat = category.toLowerCase();
+  if (cat.includes('food') || cat.includes('culinary')) return CATEGORY_FALLBACKS.food[id % CATEGORY_FALLBACKS.food.length];
+  if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop')) return CATEGORY_FALLBACKS.art[id % CATEGORY_FALLBACKS.art.length];
+  if (cat.includes('adventure') || cat.includes('trek') || cat.includes('sport')) return CATEGORY_FALLBACKS.adventure[id % CATEGORY_FALLBACKS.adventure.length];
+  if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('beach')) return CATEGORY_FALLBACKS.nature[id % CATEGORY_FALLBACKS.nature.length];
+  if (cat.includes('night') || cat.includes('evening') || cat.includes('sunset')) return CATEGORY_FALLBACKS.nightlife[id % CATEGORY_FALLBACKS.nightlife.length];
+  return CATEGORY_FALLBACKS.culture[id % CATEGORY_FALLBACKS.culture.length];
+}
+
+export function MomentCard({ experience }: MomentCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Category Emoji
+  const getCategoryEmoji = (category: string) => {
+    const cat = category.toLowerCase();
+    if (cat.includes('food') || cat.includes('culinary') || cat.includes('dining')) return '🍜';
+    if (cat.includes('culture') || cat.includes('heritage') || cat.includes('history')) return '🎭';
+    if (cat.includes('adventure') || cat.includes('trek') || cat.includes('sport')) return '🏔';
+    if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('beach')) return '🌿';
+    if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop') || cat.includes('pottery')) return '🎨';
+    if (cat.includes('night') || cat.includes('evening') || cat.includes('sunset')) return '🌙';
+    if (cat.includes('spiritual') || cat.includes('wellness')) return '✨';
+    return '💎';
+  };
+
+  const rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
+  const isWikimedia = rawImage && rawImage.includes('upload.wikimedia.org');
+
+  // If wikimedia or failed, use distinct category-specific Pexels fallback
+  const finalImageSrc =
+    !imageError && rawImage && !isWikimedia
+      ? rawImage
+      : getCardFallback(experience.category, experience.id);
+
+  const rating = experience.rating ? experience.rating.toFixed(1) : '4.8';
+  const duration = experience.approx_duration_mins
+    ? experience.approx_duration_mins >= 60
+      ? `${Math.round(experience.approx_duration_mins / 60)} hrs`
+      : `${experience.approx_duration_mins} mins`
+    : '2 hrs';
+
+  const locationDisplay = `${experience.city || experience.city_name || 'Mumbai'}${
+    experience.state ? `, ${experience.state}` : ''
+  }`;
+
+  const oneLineQuote =
+    experience.tagline ||
+    experience.why_it_fits ||
+    (experience.description ? experience.description.slice(0, 80) + '...' : 'Discover authentic local moments.');
+
+  return (
+    <Link
+      to={`/experience/${experience.id}`}
+      className="group relative flex-shrink-0 w-[280px] sm:w-[320px] md:w-[340px] h-[460px] sm:h-[500px] rounded-3xl overflow-hidden border border-paper-400 hover:border-marigold/70 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col justify-end select-none snap-start bg-ink-900"
+    >
+      {/* Background Image with Zoom on Hover */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-ink-950">
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-paper-300 animate-pulse" />
+        )}
+        <img
+          src={finalImageSrc}
+          alt={experience.title}
+          loading="lazy"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            setImageError(true);
+            setImageLoaded(true);
+          }}
+          className={`w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out filter brightness-[0.9] ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+
+        {/* Editorial Vignette & Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/65 to-transparent opacity-95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink-950/35 via-transparent to-transparent" />
+      </div>
+
+      {/* Top Header Tags Overlay */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between gap-2">
+        <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[11px] font-mono font-bold text-ink border border-white/20 shadow-xs flex items-center gap-1.5">
+          <span>{getCategoryEmoji(experience.category)}</span>
+          <span className="uppercase tracking-wider text-[10px]">{experience.category}</span>
+        </span>
+
+        {experience.is_hidden_gem && (
+          <span className="px-2.5 py-1 bg-marigold text-ink-950 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+            <Sparkles className="w-3 h-3 fill-ink-950" />
+            <span>Hidden Gem</span>
+          </span>
+        )}
+      </div>
+
+      {/* Card Content Information Panel */}
+      <div className="relative z-10 p-5 sm:p-6 space-y-3 text-white">
+        {/* Location Row */}
+        <div className="flex items-center gap-1.5 text-paper-200 text-xs font-mono">
+          <MapPin className="w-3.5 h-3.5 text-marigold flex-shrink-0" />
+          <span className="truncate">{locationDisplay}</span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl sm:text-2xl font-display font-bold text-white leading-snug line-clamp-2 group-hover:text-marigold transition-colors duration-300">
+          {experience.title}
+        </h3>
+
+        {/* Key Metrics: Price · Duration · Rating */}
+        <div className="flex items-center gap-2 text-xs font-mono text-paper-100 pt-0.5">
+          <span className="font-bold text-marigold text-sm">₹{experience.price}</span>
+          <span className="text-white/40">•</span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-paper-300" />
+            {duration}
+          </span>
+          <span className="text-white/40">•</span>
+          <span className="flex items-center gap-1 font-bold text-amber-300">
+            <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
+            {rating}
+          </span>
+        </div>
+
+        {/* Editorial Quote / Description */}
+        <p className="text-xs font-sans text-paper-200/90 line-clamp-2 leading-relaxed italic border-l-2 border-marigold/60 pl-2.5">
+          "{oneLineQuote}"
+        </p>
+
+        {/* Action Link: Why you'll love it → */}
+        <div className="pt-2 flex items-center justify-between border-t border-white/15 text-xs font-mono font-bold">
+          <span className="text-marigold group-hover:text-marigold-300 flex items-center gap-1.5 transition-colors">
+            <span>Why you'll love it</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </span>
+          <span className="text-[10px] text-paper-300 uppercase tracking-widest font-mono">
+            Vetted Local
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
