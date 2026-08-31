@@ -168,7 +168,7 @@ export function ItineraryPage() {
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-mono text-amber-900 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
               <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>Offline Mode Active — Viewing locally cached itinerary & maps for Bandra West</span>
+              <span>Offline Mode Active: Viewing locally cached itinerary & maps for Bandra West</span>
             </div>
             <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px]">
               Offline Ready ✓

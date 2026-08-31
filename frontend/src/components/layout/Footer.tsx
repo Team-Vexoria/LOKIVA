@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, Sparkles, Heart, ShieldCheck, MapPin } from 'lucide-react';
+import { ShieldCheck, MapPin } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -10,19 +10,17 @@ export function Footer() {
           {/* Brand & Manifesto */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-white border border-ink-600 p-1 flex items-center justify-center shadow-md">
-                <img
-                  src="/assets/logo-icon.png"
-                  alt="LOKIVA Platform Logo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
+              <img
+                src="/logo.png"
+                alt="LOKIVA Platform Logo"
+                className="h-8 w-auto object-contain"
+              />
               <span className="text-2xl font-bold font-display text-white tracking-tight">
                 LOKIVA
               </span>
             </Link>
             <p className="text-xs text-dusk-100 leading-relaxed max-w-md">
-              The first live constraint-solver & feasibility engine for authentic Indian cultural discovery. We don't just rank options—we guarantee they fit your exact time, travel buffer, and budget, and adapt the moment life changes.
+              The first live constraint solver and feasibility engine for authentic Indian cultural discovery. We don't just rank options, we guarantee they fit your exact time, travel buffer, and budget, and adapt the moment life changes.
             </p>
             <div className="pt-2 flex items-center gap-4 text-[11px] font-mono text-teal-100">
               <span className="flex items-center gap-1">
@@ -95,7 +93,7 @@ export function Footer() {
             © {new Date().getFullYear()} LOKIVA. Handcrafted for authentic regional discovery across India.
           </div>
           <div className="flex items-center gap-2">
-            <span>Built with Fraunces & JetBrains Mono</span>
+            <span>Fraunces & JetBrains Mono typography</span>
           </div>
         </div>
       </div>

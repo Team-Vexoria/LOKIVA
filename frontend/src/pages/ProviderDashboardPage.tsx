@@ -251,7 +251,7 @@ export function ProviderDashboardPage() {
               Turn 1 Sentence into a Feasibility-Ready Listing
             </h3>
             <p className="text-xs text-dusk-600 font-sans">
-              Local guides don't need marketing skills or SEO budgets — describe your craft in plain language and our co-pilot structures prices, constraints, and categories.
+              Local guides don't need marketing skills or SEO budgets: describe your craft in plain language and our co-pilot structures prices, constraints, and categories.
             </p>
           </div>
 

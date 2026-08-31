@@ -105,11 +105,11 @@ export function ExplorePage() {
 
       if (res.isLiveIngested) {
         setIngestionBanner(
-          `✓ Live OSM Open Data Ingested: ${res.experiences.length} cultural places found in ${res.location.city || locationInput} (${res.stats?.durationMs || 400}ms)`
+          `Live OSM Open Data Ingested: ${res.experiences.length} cultural places found in ${res.location.city || locationInput} (${res.stats?.durationMs || 400}ms)`
         );
       } else {
         setIngestionBanner(
-          `✓ Cached Indian Heritage Region: ${res.experiences.length} places served from 30-day verified cache`
+          `Cached Indian Heritage Region: ${res.experiences.length} places served from 30-day verified cache`
         );
       }
 
@@ -117,7 +117,7 @@ export function ExplorePage() {
       const stats = await api.getIngestionStatus();
       setIngestionStats(stats);
     } catch (err: any) {
-      setIngestionBanner(`⚠️ Location resolution note: ${err.message}`);
+      setIngestionBanner(`Location resolution note: ${err.message}`);
     } finally {
       setIsResolvingLocation(false);
     }
@@ -142,17 +142,14 @@ export function ExplorePage() {
         {/* Header with Coverage Badge */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
-              <Database className="w-3.5 h-3.5 text-marigold" />
-              <span>
-                Pan-India Dynamic Ingestion · {ingestionStats?.coverage?.total_experiences || 229}+ POIs Cached
-              </span>
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
+              Pan-India Dynamic Ingestion: {ingestionStats?.coverage?.total_experiences || 229}+ POIs Cached
             </div>
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-ink">
               Cultural Experiences Engine
             </h1>
             <p className="text-xs text-dusk-600 font-mono">
-              Zero hardcoded cities — query any town, tehsil, or district across India with live OpenStreetMap resolution.
+              Zero hardcoded cities: query any town, tehsil, or district across India with live OpenStreetMap resolution.
             </p>
           </div>
 
@@ -307,7 +304,7 @@ export function ExplorePage() {
                   onChange={(e) => setWheelchairOnly(e.target.checked)}
                   className="rounded text-teal focus:ring-teal"
                 />
-                <span className="text-ink font-semibold">♿ Step-Free Wheelchair Access</span>
+                <span className="text-ink font-semibold">Step-Free Wheelchair Access</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -317,7 +314,7 @@ export function ExplorePage() {
                   onChange={(e) => setLowWalkingOnly(e.target.checked)}
                   className="rounded text-teal focus:ring-teal"
                 />
-                <span className="text-ink font-semibold">🚶 Low Walking (Seated)</span>
+                <span className="text-ink font-semibold">Low Walking (Seated)</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -327,7 +324,7 @@ export function ExplorePage() {
                   onChange={(e) => setRainSafeOnly(e.target.checked)}
                   className="rounded text-teal focus:ring-teal"
                 />
-                <span className="text-ink font-semibold">🌧️ 100% Rain Safe / Indoor</span>
+                <span className="text-ink font-semibold">100% Rain Safe / Indoor</span>
               </label>
 
               <div className="flex items-center gap-2 ml-auto">
@@ -364,7 +361,6 @@ export function ExplorePage() {
             </div>
           ) : experiences.length === 0 ? (
             <div className="py-16 text-center space-y-3 bg-white rounded-3xl border border-paper-400 p-8 shadow-sm">
-              <div className="text-3xl">🏛️</div>
               <h3 className="text-lg font-display font-bold text-ink">No experiences match your active constraints</h3>
               <p className="text-xs text-dusk-600 font-mono max-w-md mx-auto">
                 Try clicking "Live Resolve" above to pull fresh open cultural data for your searched town, or relax hard filters.

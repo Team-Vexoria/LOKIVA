@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, CheckCircle2, XCircle, MapPin, Clock, Info } from 'lucide-react';
+import { CheckCircle2, XCircle, MapPin, Clock, Info } from 'lucide-react';
 
 interface AccessibilityItem {
   id: string;
@@ -11,7 +11,6 @@ interface AccessibilityItem {
   price: string;
   wheelchairAccessible: boolean;
   accessDetail: string;
-  icon: string;
 }
 
 export function AccessibilityConstraintProof() {
@@ -27,7 +26,6 @@ export function AccessibilityConstraintProof() {
       price: '₹350 / pax',
       wheelchairAccessible: true,
       accessDetail: 'Paved street level, zero steps, ramped heritage bakeries',
-      icon: '🏛️',
     },
     {
       id: 'exp-2',
@@ -38,7 +36,6 @@ export function AccessibilityConstraintProof() {
       price: '₹200 / pax',
       wheelchairAccessible: false,
       accessDetail: '42 stone steps, no elevator or ramp available',
-      icon: '⛰️',
     },
     {
       id: 'exp-3',
@@ -49,7 +46,6 @@ export function AccessibilityConstraintProof() {
       price: '₹450 / pax',
       wheelchairAccessible: true,
       accessDetail: 'Ground floor entrance, 36" wide doorways, step-free',
-      icon: '🎨',
     },
   ];
 
@@ -58,13 +54,8 @@ export function AccessibilityConstraintProof() {
       {/* Proof Header & Filter Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
-              Interactive Proof 02 · Hard Pre-Filter
-            </span>
-            <span className="text-[11px] font-mono text-dusk">
-              Filtered before scoring · Never soft-ranked
-            </span>
+          <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
+            Hard Pre-Filter: Filtered Before Scoring
           </div>
           <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">
             Accessibility as a Hard Constraint
@@ -92,7 +83,7 @@ export function AccessibilityConstraintProof() {
             />
           </div>
           <span className="text-xs font-mono font-bold text-ink flex items-center gap-1.5">
-            <span>♿ Wheelchair Access Required</span>
+            <span>Wheelchair Access Required</span>
           </span>
         </label>
       </div>
@@ -132,7 +123,7 @@ export function AccessibilityConstraintProof() {
                 </div>
 
                 <h4 className="text-base font-display font-bold text-ink leading-snug">
-                  {item.icon} {item.title}
+                  {item.title}
                 </h4>
 
                 <div className="text-xs font-mono text-dusk flex items-center gap-2">
@@ -140,29 +131,36 @@ export function AccessibilityConstraintProof() {
                     <MapPin className="w-3.5 h-3.5 text-marigold" />
                     {item.area}
                   </span>
-                  <span>•</span>
-                  <span>{item.duration}</span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-teal" />
+                    {item.duration}
+                  </span>
                 </div>
+
+                <p className="text-xs text-dusk-600 font-sans leading-relaxed">
+                  {item.accessDetail}
+                </p>
               </div>
 
               {/* Status Badge */}
-              <div className="pt-3 border-t border-paper-300">
+              <div
+                className={`p-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 ${
+                  isFailing
+                    ? 'bg-clay-100 text-clay-900 border border-clay-300'
+                    : 'bg-teal-50 text-teal-900 border border-teal-200'
+                }`}
+              >
                 {isFailing ? (
-                  <div className="p-2.5 bg-clay-50 border border-clay-200 rounded-xl text-[11px] font-mono text-clay flex items-start gap-1.5">
-                    <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block uppercase text-[10px]">Filtered by Solver</strong>
-                      <span>{item.accessDetail}</span>
-                    </div>
-                  </div>
+                  <>
+                    <XCircle className="w-4 h-4 text-clay" />
+                    <span>Hard Filter Rejected (Steps)</span>
+                  </>
                 ) : (
-                  <div className="p-2.5 bg-teal-50 border border-teal-200 rounded-xl text-[11px] font-mono text-teal-800 flex items-start gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block uppercase text-[10px]">Verified Accessible</strong>
-                      <span>{item.accessDetail}</span>
-                    </div>
-                  </div>
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-teal" />
+                    <span>Feasible (Step-Free Verified)</span>
+                  </>
                 )}
               </div>
             </motion.div>

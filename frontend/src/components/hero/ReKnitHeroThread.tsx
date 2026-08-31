@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Clock, MapPin, CheckCircle2, ShieldCheck, AlertCircle, ArrowRight, RefreshCw, Umbrella, Sun } from 'lucide-react';
+import { Sparkles, Clock, MapPin, CheckCircle2, Umbrella, Sun } from 'lucide-react';
 
 export function ReKnitHeroThread() {
   const [isRaining, setIsRaining] = useState(false);
@@ -14,7 +14,7 @@ export function ReKnitHeroThread() {
   // Scenario 1: Sunny / Default (Sharma family in Bandra)
   const sunnyPlan = {
     title: 'Sunny Stroll Plan',
-    generationLabel: 'Plan Generation #1 — Feasible',
+    generationLabel: 'Plan Generation #1: Feasible',
     totalTime: '1 hr 50 min',
     timeBudget: '2.0 hrs available',
     totalCost: '₹750',
@@ -31,7 +31,6 @@ export function ReKnitHeroThread() {
         distance: '250m away',
         whyThis: 'Step-free pavement, 5 mins from your location, fits 2h window',
         isIndoor: false,
-        icon: '🏛️',
       },
       {
         id: 2,
@@ -43,7 +42,6 @@ export function ReKnitHeroThread() {
         distance: '450m away',
         whyThis: 'Ground floor seating, family friendly, under ₹1,500 ceiling',
         isIndoor: false,
-        icon: '☕',
       },
     ],
     transitMins: 15,
@@ -52,7 +50,7 @@ export function ReKnitHeroThread() {
   // Scenario 2: Rain Disruption (Instant Plan B Re-knit)
   const rainPlan = {
     title: 'Rain-Adapted Indoor Route',
-    generationLabel: `Plan Generation #${generation} — Re-knit in 340ms`,
+    generationLabel: `Plan Generation #${generation}: Re-knit in 340ms`,
     totalTime: '1 hr 45 min',
     timeBudget: '2.0 hrs available',
     totalCost: '₹800',
@@ -69,7 +67,6 @@ export function ReKnitHeroThread() {
         distance: '300m away',
         whyThis: '100% indoor covered studio, ramp access, zero rain exposure',
         isIndoor: true,
-        icon: '🎨',
       },
       {
         id: 4,
@@ -81,7 +78,6 @@ export function ReKnitHeroThread() {
         distance: '200m away',
         whyThis: 'Indoor seating, warm herbal spices, fits family pacing',
         isIndoor: true,
-        icon: '🫖',
       },
     ],
     transitMins: 10,
@@ -97,13 +93,8 @@ export function ReKnitHeroThread() {
       {/* Header with Scenario Context & Disruption Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-ink-700/80 relative z-10">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-teal/20 text-teal-100 border border-teal/40">
-              Live Constraint Solver
-            </span>
-            <span className="text-xs text-dusk-200 font-mono">
-              The Sharma Family · Bandra · Wheelchair access
-            </span>
+          <div className="text-xs text-dusk-200 font-mono">
+            Sharma Family Scenario · Bandra · Wheelchair access
           </div>
           <h3 className="text-xl sm:text-2xl font-display font-bold text-white">
             {isRaining ? (
@@ -158,7 +149,7 @@ export function ReKnitHeroThread() {
         <div className="bg-ink-800/90 p-3 rounded-xl border border-ink-700">
           <span className="text-dusk-200 block text-[10px] uppercase">Transit Buffer</span>
           <span className="text-white font-bold text-sm">~{activePlan.transitMins} mins auto</span>
-          <span className="text-[10px] text-teal-100 block">✓ Included in solve</span>
+          <span className="text-[10px] text-teal-100 block">Included in solve</span>
         </div>
         <div className="bg-ink-800/90 p-3 rounded-xl border border-ink-700">
           <span className="text-dusk-200 block text-[10px] uppercase">Solver Score</span>
@@ -185,16 +176,13 @@ export function ReKnitHeroThread() {
               >
                 {/* Node Top Indicator */}
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{stop.icon}</span>
-                    <div>
-                      <span className="text-[10px] font-mono text-dusk-200 uppercase tracking-wider block">
-                        Stop {idx + 1} · {stop.category}
-                      </span>
-                      <h4 className="text-base font-display font-bold text-white leading-tight">
-                        {stop.title}
-                      </h4>
-                    </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-dusk-200 uppercase tracking-wider block">
+                      Stop {idx + 1}: {stop.category}
+                    </span>
+                    <h4 className="text-base font-display font-bold text-white leading-tight">
+                      {stop.title}
+                    </h4>
                   </div>
 
                   <span className="px-2.5 py-1 rounded-lg bg-ink-950 text-marigold font-mono text-xs font-bold border border-ink-700 flex-shrink-0">

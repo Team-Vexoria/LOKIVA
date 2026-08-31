@@ -11,10 +11,8 @@ import { SplitWords } from '../components/ui/SplitWords';
 import { api } from '../lib/api';
 import { Experience } from '../types';
 import {
-  Sparkles,
   ArrowRight,
   CheckCircle2,
-  SlidersHorizontal,
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -151,11 +149,6 @@ export function HomePage() {
       {/* 1. HERO SECTION WITH PROOF 01: REKNIT THREAD REDRAW */}
       <section className="reveal-section pt-8 sm:pt-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-marigold" />
-            <span>Feasibility-Packed · Live Real-World Adaptation</span>
-          </div>
-
           <h1 className="text-4xl sm:text-6xl font-display font-extrabold text-ink tracking-tight leading-[1.1]">
             <SplitWords text="We don't rank places." />
             <br />
@@ -165,25 +158,25 @@ export function HomePage() {
           </h1>
 
           <p className="text-sm sm:text-base text-dusk-600 leading-relaxed font-sans max-w-2xl mx-auto">
-            Traditional travel apps give endless lists of uncoordinated spots. LOKIVA calculates your exact time, travel buffer, budget, and accessibility—and rebuilds your day instantly when reality changes.
+            Traditional travel apps give endless lists of uncoordinated spots. LOKIVA calculates your exact time, travel buffer, budget, and accessibility, and rebuilds your day instantly when reality changes.
           </p>
         </div>
 
-        {/* Live Proof 01: ReKnit Thread Redraw */}
+        {/* Live Proof: ReKnit Thread Redraw */}
         <ReKnitThreadProof />
       </section>
 
-      {/* 2. THE 3 INTERACTIVE ARCHITECTURE PROOFS (ORYZO-STYLE CLAIM VERIFICATION) */}
+      {/* 2. THE 3 INTERACTIVE ARCHITECTURE PROOFS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-teal">
+          <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
             Interactive Verification
-          </span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-display font-bold text-ink">
             Don't trust our words. Test our logic live.
           </h2>
           <p className="text-xs text-dusk-600 font-sans">
-            Interact with the actual algorithmic rules that govern LOKIVA before running your own journey.
+            Interact with the algorithmic rules that govern LOKIVA before running your own journey.
           </p>
         </div>
 
@@ -256,7 +249,7 @@ export function HomePage() {
                 className="w-full h-2 bg-paper-300 rounded-lg appearance-none cursor-pointer accent-marigold"
               />
               <span className="text-[10px] text-dusk font-mono block">
-                Includes transit & buffer
+                Includes transit and buffer
               </span>
             </div>
 
@@ -291,7 +284,7 @@ export function HomePage() {
                     onChange={(e) => setWheelchairAccess(e.target.checked)}
                     className="rounded text-marigold focus:ring-marigold"
                   />
-                  <span>♿ Wheelchair</span>
+                  <span>Wheelchair</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer font-bold text-ink">
                   <input
@@ -300,7 +293,7 @@ export function HomePage() {
                     onChange={(e) => setLowWalking(e.target.checked)}
                     className="rounded text-marigold focus:ring-marigold"
                   />
-                  <span>🚶 Low Walking</span>
+                  <span>Low Walking</span>
                 </label>
               </div>
 
@@ -320,9 +313,9 @@ export function HomePage() {
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-teal">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
               Curated Cultural Catalog
-            </span>
+            </div>
             <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink">
               <SplitWords text="Verified Indian Cultural Experiences" />
             </h2>
@@ -379,9 +372,9 @@ export function HomePage() {
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-paper-400 p-8 sm:p-12 space-y-8">
           <div className="max-w-2xl space-y-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-teal">
-              Why LOKIVA Wins
-            </span>
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
+              Algorithmic Guarantees
+            </div>
             <h3 className="text-2xl sm:text-3xl font-display font-bold text-ink">
               <SplitWords text="The 11 Context Signals Checked on Every Solve" />
             </h3>
@@ -392,14 +385,14 @@ export function HomePage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs font-mono">
             {[
-              { label: 'Time Window', desc: 'Exact hours before flight/dinner' },
+              { label: 'Time Window', desc: 'Exact hours before flight or dinner' },
               { label: 'Real Travel Time', desc: 'Isochrones with local auto traffic' },
               { label: 'Hard Budget Ceiling', desc: 'Not a sort filter, a strict ceiling' },
-              { label: 'Hard Accessibility', desc: 'Wheelchair & sensory pre-filtered' },
+              { label: 'Hard Accessibility', desc: 'Wheelchair and sensory pre-filtered' },
               { label: 'Live Opening Hours', desc: 'Vetted slot fits inside your gap' },
-              { label: 'Group Consensus', desc: 'Kids & elderly joint happiness' },
+              { label: 'Group Consensus', desc: 'Kids and elderly joint happiness' },
               { label: 'Explainability', desc: 'Honest "why this fits" sentence' },
-              { label: 'Instant Re-Planning', desc: 'Rain & delay live adaptation' },
+              { label: 'Instant Re-Planning', desc: 'Rain and delay live adaptation' },
             ].map((sig, idx) => (
               <div
                 key={idx}
