@@ -61,11 +61,16 @@ import { seedMasterCityPlaces } from './services/ingestion/masterCityDataset.js'
 import { seedDefinitiveFamousPlaces } from './services/ingestion/definitiveMajorCitiesRegistry.js';
 import { seedMumbaiMasterCatalog } from './services/ingestion/mumbaiMasterCatalog.js';
 import { seedArtisansAndGuides } from './services/ingestion/artisansAndGuidesCatalog.js';
+<<<<<<< HEAD
+=======
+import { seedPanIndiaCompleteNetwork } from './services/ingestion/panIndiaCompleteDataset.js';
+>>>>>>> d303bac (feat: implement Pan-India destination architecture)
 
 // Initialize database and start listening
 async function startServer() {
   await initDb();
   await seedDatabase();
+  await seedPanIndiaCompleteNetwork();
   await seedPanIndiaCulturalMesh();
   await seedMasterCityPlaces();
   await seedDefinitiveFamousPlaces();

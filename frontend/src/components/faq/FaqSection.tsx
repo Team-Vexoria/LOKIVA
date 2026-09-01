@@ -46,8 +46,8 @@ const CORE_FAQS: FaqItem[] = [
     badge: 'Pan-India',
     question: 'Can I discover experiences and hidden gems across all of India?',
     answer:
-      'Yes. LOKIVA combines 229+ hand-verified foundational experiences across 15 state enclaves with a live OpenStreetMap (OSM) ingestion engine spanning all 28 states and union territories.',
-    tags: ['15 State Enclaves', 'Live OSM Ingestion', 'Hidden Gems'],
+      'Yes. LOKIVA provides complete coverage across all 28 Indian States and 8 Union Territories, indexing Tier 1, Tier 2, and Tier 3 cities, artisan guilds, and local heritage destinations with live discovery.',
+    tags: ['36 States & UTs', 'Pan-India Network', 'Hidden Gems'],
   },
   {
     id: 'provider-hub',

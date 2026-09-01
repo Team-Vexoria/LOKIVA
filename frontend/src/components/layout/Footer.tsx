@@ -28,7 +28,7 @@ export function Footer() {
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4 text-marigold" /> 15 Indian States
+                <MapPin className="w-4 h-4 text-marigold" /> 36 States & UTs (Pan-India)
               </span>
             </div>
           </div>
@@ -41,7 +41,7 @@ export function Footer() {
             <ul className="space-y-2 text-xs text-dusk-100 font-medium">
               <li>
                 <Link to="/explore" className="hover:text-white transition">
-                  Browse 229 Experiences
+                  Browse Pan-India Experiences
                 </Link>
               </li>
               <li>

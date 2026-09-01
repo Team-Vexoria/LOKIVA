@@ -5,6 +5,8 @@ import {
   DestinationSummary,
   State,
   City,
+  SearchResponse,
+  NearbyResponse,
   ScoredExperience,
   StructuredIntent,
   FeasibilityResult,
@@ -74,17 +76,53 @@ export const api = {
     return request<any[]>(`/experiences/categories${qs ? `?${qs}` : ''}`);
   },
 
-  // Destinations
-  async getDestinations(limit: number = 20): Promise<DestinationSummary[]> {
+  // Destinations & Pan-India Network
+  async getDestinations(limit: number = 30): Promise<DestinationSummary[]> {
     return request<DestinationSummary[]>(`/destinations?limit=${limit}`);
   },
 
-  async getStates(): Promise<State[]> {
-    return request<State[]>('/destinations/states');
+  async getStates(params: { region?: string; is_ut?: boolean; q?: string } = {}): Promise<State[]> {
+    const qs = new URLSearchParams();
+    if (params.region && params.region !== 'All') qs.append('region', params.region);
+    if (params.is_ut !== undefined) qs.append('is_ut', String(params.is_ut));
+    if (params.q) qs.append('q', params.q);
+    const query = qs.toString();
+    return request<State[]>(`/destinations/states${query ? `?${query}` : ''}`);
   },
 
-  async getCities(stateCode?: string): Promise<City[]> {
-    return request<City[]>(`/destinations/cities${stateCode ? `?state_code=${stateCode}` : ''}`);
+  async getCities(params: { state_code?: string; state_name?: string; region?: string; limit?: number; offset?: number; q?: string } = {}): Promise<City[]> {
+    const qs = new URLSearchParams();
+    if (params.state_code) qs.append('state_code', params.state_code);
+    if (params.state_name) qs.append('state_name', params.state_name);
+    if (params.region && params.region !== 'All') qs.append('region', params.region);
+    if (params.limit) qs.append('limit', String(params.limit));
+    if (params.offset) qs.append('offset', String(params.offset));
+    if (params.q) qs.append('q', params.q);
+    const query = qs.toString();
+    return request<City[]>(`/destinations/cities${query ? `?${query}` : ''}`);
+  },
+
+  async searchDestinations(query: string): Promise<SearchResponse> {
+    return request<SearchResponse>(`/destinations/search?q=${encodeURIComponent(query)}`);
+  },
+
+  async getNearbyDestinations(lat: number, lng: number, radiusKm: number = 300): Promise<NearbyResponse> {
+    return request<NearbyResponse>(`/destinations/nearby?lat=${lat}&lng=${lng}&radius=${radiusKm}`);
+  },
+
+  async getFeaturedDestinations(): Promise<City[]> {
+    return request<City[]>('/destinations/featured');
+  },
+
+  async getSurpriseDestination(params: { lat?: number; lng?: number; budget?: number; time_hours?: number; interest?: string } = {}) {
+    const qs = new URLSearchParams();
+    if (params.lat) qs.append('lat', String(params.lat));
+    if (params.lng) qs.append('lng', String(params.lng));
+    if (params.budget) qs.append('budget', String(params.budget));
+    if (params.time_hours) qs.append('time_hours', String(params.time_hours));
+    if (params.interest) qs.append('interest', params.interest);
+    const query = qs.toString();
+    return request<{ surprise_experience: Experience; rationale: string }>(`/destinations/surprise${query ? `?${query}` : ''}`);
   },
 
   async getDestination(state: string, city: string): Promise<DestinationDetail> {
@@ -235,10 +273,78 @@ export const api = {
     return request<Provider[]>('/admin/providers');
   },
 
+  async createAdminProvider(data: Partial<Provider>): Promise<Provider> {
+    return request<Provider>('/admin/providers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   async verifyProvider(id: number, isVerified: boolean = true): Promise<Provider> {
     return request<Provider>(`/admin/providers/${id}/verify`, {
       method: 'PUT',
       body: JSON.stringify({ is_verified: isVerified }),
+    });
+  },
+
+  async deleteAdminProvider(id: number): Promise<{ success: boolean; message: string }> {
+    return request(`/admin/providers/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getAdminExperiences(params: { q?: string; city?: string; state?: string; limit?: number; offset?: number } = {}): Promise<Experience[]> {
+    const qs = new URLSearchParams();
+    if (params.q) qs.append('q', params.q);
+    if (params.city) qs.append('city', params.city);
+    if (params.state) qs.append('state', params.state);
+    if (params.limit) qs.append('limit', String(params.limit));
+    if (params.offset) qs.append('offset', String(params.offset));
+    const query = qs.toString();
+    return request<Experience[]>(`/admin/experiences${query ? `?${query}` : ''}`);
+  },
+
+  async createAdminExperience(data: Partial<Experience>): Promise<Experience> {
+    return request<Experience>('/admin/experiences', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateAdminExperience(id: number, data: Partial<Experience>): Promise<Experience> {
+    return request<Experience>(`/admin/experiences/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteAdminExperience(id: number): Promise<{ success: boolean; message: string }> {
+    return request(`/admin/experiences/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async moderateExperience(id: number, isActive: boolean): Promise<Experience> {
+    return request<Experience>(`/admin/experiences/${id}/moderate`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: isActive }),
+    });
+  },
+
+  async getAdminUsers(): Promise<Array<{ id: number; email: string; full_name: string; role: string; is_active: boolean; created_at: string }>> {
+    return request('/admin/users');
+  },
+
+  async createAdminUser(data: { email: string; full_name: string; role?: string; password?: string }): Promise<any> {
+    return request('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteAdminUser(id: number): Promise<{ success: boolean; message: string }> {
+    return request(`/admin/users/${id}`, {
+      method: 'DELETE',
     });
   },
 

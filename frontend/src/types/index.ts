@@ -32,8 +32,11 @@ export interface State {
   name: string;
   code: string;
   region: string;
+  is_union_territory?: boolean;
   image_url?: string;
   description?: string;
+  city_count?: number;
+  heritage_count?: number;
   experience_count?: number;
 }
 
@@ -47,10 +50,32 @@ export interface City {
   longitude: number;
   image_url?: string;
   is_popular?: boolean;
+  is_heritage_hub?: boolean;
+  is_hidden_gem?: boolean;
+  tier?: string;
   state_name?: string;
+  state_code?: string;
   experience_count?: number;
+  heritage_count?: number;
+  popular_categories?: string[];
+  categories?: string[];
+  aliases?: string[];
+  distance_km?: number;
   culture_summary?: string;
   best_time_to_visit?: string;
+}
+
+export interface SearchResponse {
+  states: State[];
+  cities: City[];
+  experiences: Experience[];
+}
+
+export interface NearbyResponse {
+  user_coords: { lat: number; lng: number };
+  nearest_city: City | null;
+  nearby_cities: City[];
+  nearby_experiences: Experience[];
 }
 
 export interface Area {
@@ -317,4 +342,8 @@ export interface AdminStats {
   total_experiences: number;
   total_providers: number;
   total_revenue: number;
+  total_cities?: number;
+  total_bookings?: number;
+  pending_verifications?: number;
+  recent_activity?: Array<{ id: string | number; type: string; title: string; timestamp: string }>;
 }

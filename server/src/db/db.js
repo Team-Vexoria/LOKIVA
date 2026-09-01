@@ -324,6 +324,22 @@ export async function initDb() {
 
   // Safe migration check for new columns on existing database
   try {
+    const stateInfo = await dbAll("PRAGMA table_info(states)");
+    const stateCols = stateInfo.map((c) => c.name);
+    if (!stateCols.includes('description')) await dbRun("ALTER TABLE states ADD COLUMN description TEXT");
+    if (!stateCols.includes('heritage_count')) await dbRun("ALTER TABLE states ADD COLUMN heritage_count INTEGER DEFAULT 0");
+    if (!stateCols.includes('is_union_territory')) await dbRun("ALTER TABLE states ADD COLUMN is_union_territory BOOLEAN DEFAULT 0");
+
+    const cityInfo = await dbAll("PRAGMA table_info(cities)");
+    const cityCols = cityInfo.map((c) => c.name);
+    if (!cityCols.includes('aliases')) await dbRun("ALTER TABLE cities ADD COLUMN aliases TEXT DEFAULT '[]'");
+    if (!cityCols.includes('categories')) await dbRun("ALTER TABLE cities ADD COLUMN categories TEXT DEFAULT '[]'");
+    if (!cityCols.includes('heritage_count')) await dbRun("ALTER TABLE cities ADD COLUMN heritage_count INTEGER DEFAULT 0");
+    if (!cityCols.includes('is_popular')) await dbRun("ALTER TABLE cities ADD COLUMN is_popular BOOLEAN DEFAULT 0");
+    if (!cityCols.includes('is_heritage_hub')) await dbRun("ALTER TABLE cities ADD COLUMN is_heritage_hub BOOLEAN DEFAULT 0");
+    if (!cityCols.includes('is_hidden_gem')) await dbRun("ALTER TABLE cities ADD COLUMN is_hidden_gem BOOLEAN DEFAULT 0");
+    if (!cityCols.includes('tier')) await dbRun("ALTER TABLE cities ADD COLUMN tier TEXT DEFAULT 'Tier 2'");
+
     const tableInfo = await dbAll("PRAGMA table_info(experiences)");
     const cols = tableInfo.map((c) => c.name);
     if (!cols.includes('osm_id')) await dbRun("ALTER TABLE experiences ADD COLUMN osm_id TEXT");
