@@ -20,6 +20,59 @@ function formatExperience(e) {
   };
 }
 
+// GET /experiences/proxy-image - Universal robust image proxy
+experiencesRouter.get('/proxy-image', async (req, res) => {
+  try {
+    const rawUrl = req.query.url;
+    if (!rawUrl || typeof rawUrl !== 'string') {
+      return res.status(400).send('Missing image url');
+    }
+
+    const cleanUrl = decodeURIComponent(rawUrl);
+
+    // If it's a Wikimedia 1280px URL, normalize to 800px or direct URL to avoid 404 scaler bugs
+    let fetchUrl = cleanUrl;
+    if (fetchUrl.includes('upload.wikimedia.org') && fetchUrl.includes('/1280px-')) {
+      fetchUrl = fetchUrl.replace('/1280px-', '/800px-');
+    }
+
+    const response = await fetch(fetchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      },
+    });
+
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      const arrayBuffer = await response.arrayBuffer();
+      return res.send(Buffer.from(arrayBuffer));
+    }
+
+    // Secondary attempt if 800px failed: try 640px or original image
+    if (fetchUrl.includes('/800px-')) {
+      const fallbackUrl = fetchUrl.replace('/800px-', '/640px-');
+      const fallbackRes = await fetch(fallbackUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      if (fallbackRes.ok) {
+        res.setHeader('Content-Type', fallbackRes.headers.get('content-type') || 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        const arrayBuffer = await fallbackRes.arrayBuffer();
+        return res.send(Buffer.from(arrayBuffer));
+      }
+    }
+
+    return res.status(404).send('Image not found');
+  } catch (err) {
+    return res.status(500).send('Proxy error');
+  }
+});
+
 // GET /experiences/categories - summary of categories
 experiencesRouter.get('/categories', async (req, res) => {
   try {

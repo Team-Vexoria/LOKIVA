@@ -93,31 +93,30 @@ export function ExperienceCard({
           <img
             src={imageUrl}
             alt={experience.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
             loading="lazy"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
             onError={(e) => {
-              // Gracefully hide broken image and let container show stylized editorial card
               e.currentTarget.style.display = 'none';
             }}
           />
         ) : null}
-        {(!imageUrl || true) && (
-          /* Editorial Illustrated Placeholder behind image */
-          <div className="absolute inset-0 -z-10 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#F5F2EB] to-[#E8E2D5] text-ink">
-            <div className="w-12 h-12 rounded-xl bg-white border border-[#D0D7CF] shadow-xs flex items-center justify-center text-ink mb-2.5 group-hover:scale-110 transition-transform">
-              {getCategoryIcon(experience.category)}
-            </div>
-            <span className="text-[13px] font-serif font-bold text-ink text-center line-clamp-1 max-w-[200px]">
-              {experience.title}
-            </span>
-            <span className="text-[9px] font-mono text-dusk tracking-wider uppercase mt-1">
-              {experience.source === 'osm_overpass' ? 'OSM Open Data' : experience.source === 'national_gi_registry' ? 'National GI Heritage' : 'Cultural Registry'}
-            </span>
+        {/* Editorial Illustrated Card if image fails or is missing */}
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#F5F2EB] to-[#E8E2D5] text-ink">
+          <div className="w-12 h-12 rounded-xl bg-white border border-[#D0D7CF] shadow-xs flex items-center justify-center text-ink mb-2.5 group-hover:scale-110 transition-transform">
+            {getCategoryIcon(experience.category)}
           </div>
-        )}
+          <span className="text-[13px] font-serif font-bold text-ink text-center line-clamp-1 max-w-[200px]">
+            {experience.title}
+          </span>
+          <span className="text-[9px] font-mono text-dusk tracking-wider uppercase mt-1">
+            {experience.source === 'osm_overpass' ? 'OSM Open Data' : experience.source === 'national_gi_registry' ? 'National GI Heritage' : 'Cultural Registry'}
+          </span>
+        </div>
 
         {/* Top Badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
           <span className="px-2.5 py-1 rounded-lg bg-ink/90 backdrop-blur-md text-white text-[11px] font-mono font-semibold flex items-center gap-1.5 shadow-md">
             <span>{getCategoryIcon(experience.category)}</span>
             <span>{experience.category}</span>

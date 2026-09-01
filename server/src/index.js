@@ -59,6 +59,8 @@ app.get('/health', (req, res) => {
 import { seedPanIndiaCulturalMesh } from './services/ingestion/panIndiaSeeder.js';
 import { seedMasterCityPlaces } from './services/ingestion/masterCityDataset.js';
 import { seedDefinitiveFamousPlaces } from './services/ingestion/definitiveMajorCitiesRegistry.js';
+import { seedMumbaiMasterCatalog } from './services/ingestion/mumbaiMasterCatalog.js';
+import { seedArtisansAndGuides } from './services/ingestion/artisansAndGuidesCatalog.js';
 
 // Initialize database and start listening
 async function startServer() {
@@ -67,6 +69,8 @@ async function startServer() {
   await seedPanIndiaCulturalMesh();
   await seedMasterCityPlaces();
   await seedDefinitiveFamousPlaces();
+  await seedMumbaiMasterCatalog();
+  await seedArtisansAndGuides();
 
   app.listen(PORT, () => {
     console.log(`LOKIVA Backend API listening at http://localhost:${PORT}`);

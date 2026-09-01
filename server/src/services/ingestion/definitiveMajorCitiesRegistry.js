@@ -34,7 +34,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'agra_taj_mahal_famous_01',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/1280px-Taj_Mahal_%28Edited%29.jpeg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/11948442/pexels-photo-11948442.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Agra Fort (Red Fort of Agra)',
@@ -52,7 +52,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'agra_fort_famous_02',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Agra_Fort_in_India.jpg/1280px-Agra_Fort_in_India.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/19195952/pexels-photo-19195952.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Fatehpur Sikri & Buland Darwaza',
@@ -70,7 +70,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'agra_fatehpur_sikri_03',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Buland_Darwaza%2C_Fatehpur_Sikri.jpg/1280px-Buland_Darwaza%2C_Fatehpur_Sikri.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/36132711/pexels-photo-36132711.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Tomb of I\'timad-ud-Daulah (Baby Taj)',
@@ -88,7 +88,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'agra_itmad_ud_daulah_04',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Tomb_of_Itmad-ud-Daula%2C_Agra.jpg/1280px-Tomb_of_Itmad-ud-Daula%2C_Agra.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/19149628/pexels-photo-19149628.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Mehtab Bagh (Moonlight Garden)',
@@ -106,7 +106,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'agra_mehtab_bagh_05',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Taj_Mahal_from_Mehtab_Bagh_Agra.jpg/1280px-Taj_Mahal_from_Mehtab_Bagh_Agra.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/11948442/pexels-photo-11948442.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Sadar Bazaar Traditional Agra Petha & Chaat Trail',
@@ -124,7 +124,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'agra_petha_guild_06',
-    image_urls: JSON.stringify(['https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=1000&q=80']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/11484120/pexels-photo-11484120.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
 
   // =========================================================================
@@ -146,7 +146,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'jaipur_amer_fort_01',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Amber_Fort_Jaipur.jpg/1280px-Amber_Fort_Jaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/33448400/pexels-photo-33448400.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Hawa Mahal (Palace of Winds)',
@@ -164,7 +164,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 0, // Ramp-slopes but multi-tier
     osm_id: 'jaipur_hawa_mahal_02',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Hawa_Mahal_2011.jpg/1280px-Hawa_Mahal_2011.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/34086724/pexels-photo-34086724.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Jantar Mantar Astronomical Observatory',
@@ -182,7 +182,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'jaipur_jantar_mantar_03',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Jantar_Mantar%2C_Jaipur%2C_India.jpg/1280px-Jantar_Mantar%2C_Jaipur%2C_India.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/30358327/pexels-photo-30358327.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'City Palace of Jaipur & Chandra Mahal',
@@ -200,7 +200,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'jaipur_city_palace_04',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/City_Palace_Jaipur.jpg/1280px-City_Palace_Jaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/32261804/pexels-photo-32261804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Nahargarh Fort Sunset Point',
@@ -218,7 +218,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'jaipur_nahargarh_05',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Nahargarh_Fort_Jaipur.jpg/1280px-Nahargarh_Fort_Jaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/3581368/pexels-photo-3581368.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Jaipur Traditional Blue Pottery Artisan Studio',
@@ -258,7 +258,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'udaipur_city_palace_01',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/City_Palace_Udaipur.jpg/1280px-City_Palace_Udaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/17397822/pexels-photo-17397822.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Lake Palace (Jag Niwas) & Lake Pichola Boat Cruise',
@@ -276,7 +276,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'udaipur_lake_palace_02',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Lake_Palace_Udaipur_India.jpg/1280px-Lake_Palace_Udaipur_India.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/7195782/pexels-photo-7195782.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Jagdish Temple',
@@ -294,7 +294,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 0, // High flights of marble steps
     osm_id: 'udaipur_jagdish_temple_03',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Jagdish_Temple_Udaipur.jpg/1280px-Jagdish_Temple_Udaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/30722659/pexels-photo-30722659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Saheliyon-ki-Bari (Courtyard of Maidens)',
@@ -312,7 +312,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'udaipur_saheliyon_04',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Saheliyon-ki-Bari_Udaipur.jpg/1280px-Saheliyon-ki-Bari_Udaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/570031/pexels-photo-570031.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Bagore Ki Haveli & Dharohar Rajasthani Folk Show',
@@ -330,7 +330,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'udaipur_bagore_haveli_05',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Bagore_Ki_Haveli_Udaipur.jpg/1280px-Bagore_Ki_Haveli_Udaipur.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/7195782/pexels-photo-7195782.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
 
   // =========================================================================
@@ -352,7 +352,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1, // Full ramp & volunteer wheelchair service
     osm_id: 'amritsar_golden_temple_01',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Golden_Temple_India.jpg/1280px-Golden_Temple_India.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/14890717/pexels-photo-14890717.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Jallianwala Bagh National Memorial',
@@ -370,7 +370,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'amritsar_jallianwala_02',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Jallianwala_Bagh_Memorial.jpg/1280px-Jallianwala_Bagh_Memorial.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/14890717/pexels-photo-14890717.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Partition Museum at Town Hall',
@@ -388,7 +388,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'amritsar_partition_museum_03',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Partition_Museum_Amritsar.jpg/1280px-Partition_Museum_Amritsar.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/28867943/pexels-photo-28867943.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Traditional Amritsari Kulcha & Lassi Food Trail',
@@ -428,7 +428,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 1,
     osm_id: 'hyd_charminar_01',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Charminar_Hyderabad.jpg/1280px-Charminar_Hyderabad.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/34083887/pexels-photo-34083887.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Golconda Fort & Acoustic Whispering Gallery',
@@ -446,7 +446,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 0,
     wheelchair_accessible: 0, // High stone steps
     osm_id: 'hyd_golconda_02',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Golconda_Fort_Hyderabad.jpg/1280px-Golconda_Fort_Hyderabad.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/29221917/pexels-photo-29221917.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Chowmahalla Palace of the Nizams',
@@ -464,7 +464,7 @@ export const DEFINITIVE_FAMOUS_PLACES = [
     is_indoor: 1,
     wheelchair_accessible: 1,
     osm_id: 'hyd_chowmahalla_03',
-    image_urls: JSON.stringify(['https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Chowmahalla_Palace_Hyderabad.jpg/1280px-Chowmahalla_Palace_Hyderabad.jpg']),
+    image_urls: JSON.stringify(['https://images.pexels.com/photos/32261804/pexels-photo-32261804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940']),
   },
   {
     title: 'Authentic Hyderabadi Dum Biryani Culinary Trail',
