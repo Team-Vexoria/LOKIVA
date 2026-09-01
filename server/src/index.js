@@ -56,15 +56,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', coverage: 'pan_india_dynamic' });
 });
 
+import { seedPanIndiaCompleteNetwork } from './services/ingestion/panIndiaCompleteDataset.js';
 import { seedPanIndiaCulturalMesh } from './services/ingestion/panIndiaSeeder.js';
 import { seedMasterCityPlaces } from './services/ingestion/masterCityDataset.js';
 import { seedDefinitiveFamousPlaces } from './services/ingestion/definitiveMajorCitiesRegistry.js';
 import { seedMumbaiMasterCatalog } from './services/ingestion/mumbaiMasterCatalog.js';
 import { seedArtisansAndGuides } from './services/ingestion/artisansAndGuidesCatalog.js';
-<<<<<<< HEAD
-=======
-import { seedPanIndiaCompleteNetwork } from './services/ingestion/panIndiaCompleteDataset.js';
->>>>>>> d303bac (feat: implement Pan-India destination architecture)
 
 // Initialize database and start listening
 async function startServer() {
