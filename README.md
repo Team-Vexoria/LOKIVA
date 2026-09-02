@@ -1,550 +1,158 @@
-Absolutely. Copy everything below and paste it directly into your GitHub `README.md`:
-
-````markdown
 # 🌍 LOKIVA
 
-### Discover India Beyond the Tourist Map
+### Discover India Beyond the Tourist Map · Feasibility-Packed Cultural Travel Engine
 
-LOKIVA is an AI-powered local discovery and travel experience platform designed to help travelers discover **authentic local experiences, hidden gems, culture, food, heritage, festivals, workshops, communities, and activities across India**.
+**LOKIVA** is an AI-powered local discovery and deterministic travel packing platform designed to help travelers discover **authentic local experiences, hidden crafts, heirloom cuisine, heritage corridors, workshops, and community-hosted traditions across India**.
 
-Instead of showing only popular tourist attractions, LOKIVA helps travelers discover the places, people, traditions, and experiences that make every destination unique.
-
----
-
-## ✨ Features
-
-### 🗺️ Pan-India Destination Discovery
-
-Explore destinations across:
-
-- 🇮🇳 28 Indian States
-- 🏝️ 8 Union Territories
-- 🏙️ Major cities
-- 🏛️ Heritage destinations
-- 🎨 Cultural hubs
-- 💎 Hidden gems
-- 🤝 Local communities
-
-LOKIVA follows a scalable destination structure:
-
-**India → State/UT → City → Destination → Experience**
+Instead of commercial ranking algorithms, pay-to-play listings, and scattered recommendations, LOKIVA uses a **deterministic constraint solver** to pack feasible day plans that honor real travel buffers, opening hours, budget ceilings, and verified step-free accessibility.
 
 ---
 
-### 🤖 AI Concierge
+## ✨ Key Capabilities & Highlights
 
-LOKIVA's AI Concierge helps travelers discover experiences based on their personal requirements.
+### ⚡ 1. One Connected Ecosystem
+LOKIVA connects traveler intent with grassroots cultural masters in one continuous loop:
+- **Traveler**: *"I tell LOKIVA what I want."* — Express natural desires, time windows, and physical accessibility without endless search.
+- **LOKIVA AI**: *"Understands intent & matches feasible craft."* — Algorithmic feasibility matching without commercial advertising bias.
+- **Local Provider**: *"Fulfills demand & earns 100% directly."* — Grassroots artisans and heritage guides get discovered with zero commission ad-tax.
 
-Users can provide:
+### ⏱️ 2. "I Have Exactly ___ Hours" Micro-Moment Solver
+- **Context City**: Dynamic destination selector covering verified cultural hubs across India (Mumbai, Jaipur, Kochi, Goa, Delhi, Varanasi, Udaipur, Bengaluru, Kolkata, Agra, Amritsar, Rishikesh).
+- **Available Window**: Continuous slider (1 to 8 hours) with automated transit buffers.
+- **Hard Budget Ceiling**: Strict price filter (₹300 to ₹5,000) ensuring plans stay within reality.
+- **Hard Pre-Filters**: Certified step-free wheelchair ramp verification and low-walking accessibility filters.
 
-- 📍 Location
-- 💰 Budget
-- ⏱️ Available time
-- ❤️ Interests
-- 👨‍👩‍👧 Travel group
-- 🎒 Travel style
+### 🤖 3. Dedicated Providers Console & AI Co-Pilot Studio (`/provider`)
+- **Natural Language Listing Assembly**: Artisans and guides describe their craft or walking tours in plain words (voice or text).
+- **Structured Feasibility Extraction**: Auto-extracts title, duration, local fair price benchmark, category, and step-free accessibility constraints.
+- **Draft & Publish**: Review, edit, save drafts, and publish listings directly to the live verified catalog.
 
-The AI then recommends relevant destinations and local experiences.
+### 🧭 4. Chronological Feasibility Itinerary (`/itinerary`)
+- **Sequenced Timeline**: Detailed stop-by-stop schedule windows (e.g. `10:00 AM – 11:15 AM`).
+- **Transit Buffer Indicators**: Automated auto-rickshaw and walking transit buffers between stops.
+- **Explainability Receipts**: Every recommendation provides an algorithmic receipt explaining *"Why this fits your day"*.
 
----
-
-### 🎲 Surprise Me
-
-Don't know what to do?
-
-Use **✨ Surprise Me** to discover an experience based on your:
-
-- Current location
-- Budget
-- Available time
-- Interests
-- Travel preferences
-
-Example:
-
-> 🎲 **Your Surprise Experience**  
-> Discover a traditional local craft and food trail near you.
+### 🎲 5. Surprise Me Engine
+- Discover spontaneous verified cultural experiences matching current GPS/city, budget limit, and available hours in a single click.
 
 ---
 
-### 🧭 Smart Itinerary
+## 🏛️ Scalable Pan-India Coverage
 
-Create personalized travel itineraries based on:
-
-- Destination
-- Duration
-- Budget
-- Interests
-- Travel style
-
-Organize destinations and experiences into a practical travel plan.
-
----
-
-### ❤️ Saved Experiences
-
-Save destinations and experiences that you want to revisit later.
-
-Users can build their own collection of:
-
-- Places
-- Experiences
-- Food spots
-- Heritage sites
-- Activities
-- Hidden gems
-
----
-
-### 🔎 Powerful Search
-
-Search across the Pan-India destination network using:
-
-- State
-- Union Territory
-- City
-- Destination
-- Heritage
-- Food
-- Culture
-- Festivals
-- Activities
-- Hidden gems
-
-Example searches:
-
-```text
-Mumbai
-Maharashtra
-Hampi
-Heritage
-Pottery
-Street Food
-Beaches
-Festivals
-````
-
----
-
-### 🏛️ Heritage & Culture
-
-Discover India's diverse cultural heritage including:
-
-* 🏛️ Historical places
-* 🎨 Traditional arts
-* 🏗️ Architecture
-* 🧵 Local crafts
-* 🎭 Festivals
-* 🛕 Spiritual destinations
-* 🍛 Traditional food
-* 🤝 Community experiences
-
----
-
-## 🎯 Problem We Solve
-
-Traditional travel platforms mainly focus on popular tourist attractions.
-
-However, travelers often want to experience:
-
-* Authentic local food
-* Traditional crafts
-* Cultural activities
-* Local festivals
-* Community-hosted experiences
-* Workshops
-* Hidden places
-* Local markets
-* Adventure activities
-* Regional traditions
-
-This information is often scattered across different websites and social platforms.
-
-### LOKIVA brings these experiences together in one intelligent platform.
-
----
-
-## 🏗️ Platform Architecture
-
-```text
-                         ┌─────────────────────┐
-                         │       LOKIVA        │
-                         └──────────┬──────────┘
-                                    │
-                ┌───────────────────┼───────────────────┐
-                │                   │                   │
-                ▼                   ▼                   ▼
-          Destination          AI Concierge        Itinerary
-           Discovery
-                │                   │                   │
-                ▼                   ▼                   ▼
-        State / UT             Preferences          Trip Plan
-                │                   │
-                ▼                   ▼
-              City          Recommendations
-                │
-                ▼
-          Destination
-                │
-                ▼
-           Experience
-```
-
----
-
-## 🧩 Main Modules
-
-| Module          | Description                                   |
-| --------------- | --------------------------------------------- |
-| 🗺️ Explore     | Discover local experiences                    |
-| 📍 Destinations | Explore India state-by-state and city-by-city |
-| 🤖 AI Concierge | AI-powered travel recommendations             |
-| 🧭 Itinerary    | Build personalized trip plans                 |
-| ❤️ Saved        | Save destinations and experiences             |
-| 🎲 Surprise Me  | Get spontaneous recommendations               |
-| 🔎 Search       | Search across destinations and experiences    |
-| 🏛️ Heritage    | Discover historical and cultural experiences  |
-
----
-
-## 🗂️ Destination Hierarchy
-
-LOKIVA uses a scalable destination model:
+LOKIVA is built to scale across all **28 Indian States and 8 Union Territories**:
 
 ```text
 India
-│
-├── Maharashtra
-│   ├── Mumbai
-│   │   ├── Heritage
-│   │   ├── Food
-│   │   ├── Culture
-│   │   └── Experiences
-│   │
-│   └── Pune
-│       ├── Heritage
-│       ├── Food
-│       ├── Culture
-│       └── Experiences
-│
-├── Karnataka
-│   ├── Bengaluru
-│   ├── Mysuru
-│   ├── Hampi
-│   └── Udupi
-│
-├── Rajasthan
-│   ├── Jaipur
-│   ├── Udaipur
-│   ├── Jodhpur
-│   └── Jaisalmer
-│
-└── ... all Indian States & Union Territories
+ └── State / Union Territory
+      └── City / Hub (e.g., Mumbai, Jaipur, Kochi, Varanasi, Goa, Delhi)
+           └── Heritage Corridors & Neighborhoods (e.g., Bandra, Fort, Pink City)
+                └── Verified Community Experiences & Workshops
 ```
 
----
-
-## 🇮🇳 Pan-India Coverage
-
-LOKIVA is designed to support all **28 States and 8 Union Territories** of India.
-
-### States
-
-* Andhra Pradesh
-* Arunachal Pradesh
-* Assam
-* Bihar
-* Chhattisgarh
-* Goa
-* Gujarat
-* Haryana
-* Himachal Pradesh
-* Jharkhand
-* Karnataka
-* Kerala
-* Madhya Pradesh
-* Maharashtra
-* Manipur
-* Meghalaya
-* Mizoram
-* Nagaland
-* Odisha
-* Punjab
-* Rajasthan
-* Sikkim
-* Tamil Nadu
-* Telangana
-* Tripura
-* Uttar Pradesh
-* Uttarakhand
-* West Bengal
-
-### Union Territories
-
-* Andaman and Nicobar Islands
-* Chandigarh
-* Dadra and Nagar Haveli and Daman and Diu
-* Delhi
-* Jammu and Kashmir
-* Ladakh
-* Lakshadweep
-* Puducherry
+### Verified Cultural Catalog Hubs (with authentic photography):
+- **Mumbai**: Bandra West Hand-Block Printing, Koli Coastal Cuisine, Heritage Bazaars
+- **Jaipur**: Sanganer Block-Printing, Amber Fort Walking Corridors, Blue Pottery
+- **Kochi**: Fort Kochi Spice Trails, Mattancherry Kathakali Guilds
+- **Delhi**: Old Delhi Culinary Corridors, Mehrauli Architectural Walks
+- **Goa**: Fontainhas Latin Quarter Trails, Ancestral Konkan Culinary Workshops
+- **Varanasi**: Ancient Ghat Weaving Guilds, Morning Classical Sangeet
+- **Udaipur, Bengaluru, Kolkata, Agra, Amritsar, Rishikesh, and beyond**.
 
 ---
 
-## 🎲 Surprise Me Flow
+## 🏗️ Technical Architecture
 
 ```text
-User
- │
- ├── 📍 Location
- ├── 💰 Budget
- ├── ⏱️ Time
- ├── ❤️ Interests
- └── 🎒 Travel Style
-          │
-          ▼
-    LOKIVA AI Engine
-          │
-          ▼
-   Destination Database
-          │
-          ▼
- Personalized Experience
+                       ┌───────────────────────────────┐
+                       │          LOKIVA UI            │
+                       │     (React + TypeScript)      │
+                       └───────────────┬───────────────┘
+                                       │
+            ┌──────────────────────────┼──────────────────────────┐
+            ▼                          ▼                          ▼
+   Experience Exchange        Micro-Moment Solver        Providers Console
+ (Traveler ↔ Host Loop)     (Deterministic Packing)      (AI Co-Pilot Studio)
+            │                          │                          │
+            └──────────────────────────┼──────────────────────────┘
+                                       │ HTTP / REST
+                                       ▼
+                       ┌───────────────────────────────┐
+                       │       Node.js / Express       │
+                       │          API Backend          │
+                       └───────────────┬───────────────┘
+                                       │
+            ┌──────────────────────────┼──────────────────────────┐
+            ▼                          ▼                          ▼
+     SQLite Database             AI Parsing            Feasibility Engine
+  (400+ Cultural Hubs)       (NLP Intent & Pricing)     (Buffers & Timelines)
 ```
 
-Example:
-
-```text
-Location: Pune
-Budget: ₹1,500
-Time: 4 Hours
-Interest: Culture
-
-            ↓
-
-🎲 Surprise Experience
-
-Traditional Craft & Food Trail
-```
+### Technology Stack:
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite, Lucide Icons, Framer Motion, GSAP ScrollTrigger
+- **Backend**: Node.js, Express, Better-SQLite3
+- **Database**: `server/lokiva.sqlite` (pre-seeded with 437+ verified pan-India listings, tags, and coordinates)
+- **Design System**: Warm paper tones (`bg-paper`), rich ink typography (`font-display`), marigold gold accents, and teal feasibility indicators.
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Quick Start & Local Setup
 
-LOKIVA is built using a modern web application architecture.
-
-### Frontend
-
-* React
-* TypeScript
-* Responsive UI
-* Component-based architecture
-* Modern web technologies
-
-### Backend
-
-* API-based architecture
-* Destination services
-* Experience services
-* Authentication
-* User preferences
-* Saved experiences
-* Itinerary management
-
-### AI
-
-* AI-powered recommendations
-* Natural-language destination discovery
-* Personalized experience suggestions
-* AI Concierge
-* Smart itinerary generation
-
-### Data Architecture
-
-```text
-State / UT
-     ↓
-   City
-     ↓
-Destination
-     ↓
-Experience
-```
-
----
-
-## 📱 Responsive Design
-
-LOKIVA is designed for:
-
-* 💻 Desktop
-* 💻 Laptop
-* 📱 Mobile
-* 📲 Tablet
-
-Responsive destination layout:
-
-```text
-Desktop  → 3 Columns
-Tablet   → 2 Columns
-Mobile   → 1 Column
-```
-
----
-
-## ⚡ Performance
-
-The Pan-India destination architecture is designed to support a large destination dataset efficiently.
-
-Key techniques include:
-
-* Pagination
-* Lazy loading
-* Debounced search
-* Image lazy loading
-* API-side filtering
-* Caching
-* Optimized queries
-
-LOKIVA does not need to render thousands of destinations simultaneously.
-
----
-
-## 🔐 Authentication
-
-Authenticated users can access personalized features such as:
-
-* ❤️ Saved destinations
-* ⭐ Saved experiences
-* 🤖 Personalized recommendations
-* 🧭 Itineraries
-* 👤 Travel preferences
-
-Authentication is integrated with the application's existing authentication architecture.
-
----
-
-## 🚀 Getting Started
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- `npm`
 
 ### 1. Clone the Repository
-
 ```bash
 git clone https://github.com/Team-Vexoria/LOKIVA.git
-```
-
-### 2. Navigate to the Project
-
-```bash
 cd LOKIVA
 ```
 
-### 3. Install Dependencies
-
+### 2. Start the Backend API Server
 ```bash
+cd server
 npm install
-```
-
-If the project contains separate frontend and backend applications, install dependencies inside their respective directories.
-
-### 4. Configure Environment Variables
-
-Create the required `.env` file according to the project's environment configuration.
-
-Example:
-
-```env
-API_URL=
-AI_API_KEY=
-DATABASE_URL=
-AUTH_SECRET=
-```
-
-> ⚠️ Never commit real API keys, passwords, database credentials, or other secrets to GitHub.
-
-### 5. Start the Development Server
-
-```bash
 npm run dev
 ```
+*The backend server will run on `http://localhost:8000` with the SQLite database pre-configured.*
 
-Use the scripts available in `package.json` if the project uses different commands.
-
----
-
-## 🔮 Future Roadmap
-
-* 🗺️ Interactive India experience map
-* 📍 Real-time nearby experiences
-* 🤝 Local community hosts
-* 🎟️ Experience booking
-* 💳 Integrated payments
-* ⭐ Reviews and ratings
-* 🗣️ Multilingual destination discovery
-* 🧠 Advanced AI trip planning
-* 📅 Live festival and event discovery
-* 🚆 Transport-aware itinerary planning
-* 🌱 Sustainable travel recommendations
-* 📊 Personalized traveler profiles
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch
-
+### 3. Start the Frontend Application
+In a separate terminal window:
 ```bash
-git checkout -b feature/your-feature
+cd frontend
+npm install
+npm run dev
 ```
-
-3. Make your changes
-4. Test the application
-5. Commit your changes
-
-```bash
-git add .
-git commit -m "feat: add your feature"
-```
-
-6. Push your branch
-
-```bash
-git push origin feature/your-feature
-```
-
-7. Create a Pull Request
+*The React application will launch on `http://localhost:3000`.*
 
 ---
 
-## 👥 Team
+## 📱 Core Pages & Routes
 
-### Team Vexoria
-
-Building technology to help travelers discover the real India.
-
----
-
-## 🌏 Vision
-
-> **LOKIVA — Discover the India that locals know.**
-
-From famous heritage cities to neighborhood food trails, traditional artisans, community experiences, hidden destinations, and local festivals — LOKIVA aims to make authentic discovery accessible across India.
+| Route | Purpose |
+| :--- | :--- |
+| `/` | **Home Landing Page**: Hero, One Connected Ecosystem, Interactive Proofs, Micro-Moment Solver, Catalog |
+| `/explore` | **Full Catalogue Explorer**: Dynamic search, state & city filters, budget ceilings, accessibility toggles |
+| `/itinerary` | **Chronological Day Itinerary**: Feasibility schedule, transit buffers, time windows, and explainability callouts |
+| `/provider` | **Providers Console & AI Co-Pilot**: Artisan onboarding studio, listing generator, pricing benchmark, draft & publishing |
+| `/experience/:id` | **Experience Detail Page**: Full cultural context, timings, host credentials, and instant booking |
 
 ---
 
-## 🔗 Repository
+## 🛡️ Algorithmic Guarantees
 
-**GitHub:**
-[https://github.com/Team-Vexoria/LOKIVA.git](https://github.com/Team-Vexoria/LOKIVA.git)
+LOKIVA checks **11 core context signals** simultaneously before finalizing any itinerary recommendation:
+1. **Available Time Window**: Strict boundaries before dinner or transit departure.
+2. **Real Travel Buffer**: Traffic-aware transit between neighboring stops.
+3. **Hard Budget Ceiling**: Strict max price threshold rather than a loose sort order.
+4. **Certified Accessibility**: Wheelchair step-free and ramp access validation.
+5. **Live Opening Hours**: Verification that venues are open during the assigned slot.
+6. **Zero Ad-Tax**: Organic matching based on feasibility and cultural authenticity, not ad spend.
+7. **Direct Payout**: 100% direct traveler payments to grassroots local hosts.
+8. **Explainability**: Clear reason codes detailing why each stop fits the user's constraints.
 
 ---
 
-<p align="center">
-  Made with ❤️ by <b>Team Vexoria</b>
-</p>
-```
+## 👥 Team & License
+
+Developed with ❤️ by **Team Vexoria**.  
+Dedicated to preserving grassroots cultural heritage and empowering local artisans across India.

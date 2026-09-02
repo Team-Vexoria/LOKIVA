@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ReKnitThreadProof } from '../components/proofs/ReKnitThreadProof';
+import { LokivaExperienceExchange } from '../components/exchange/LokivaExperienceExchange';
 import { AccessibilityConstraintProof } from '../components/proofs/AccessibilityConstraintProof';
 import { ExplainabilityReceiptCard } from '../components/proofs/ExplainabilityReceiptCard';
-import { ProviderCopilotProof } from '../components/proofs/ProviderCopilotProof';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { api } from '../lib/api';
@@ -16,6 +15,22 @@ import {
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Only include cities that have verified experiences and real images available in the catalogue
+const VERIFIED_IMAGE_CITIES = [
+  { value: 'Mumbai', label: 'Mumbai (Bandra West)' },
+  { value: 'Jaipur', label: 'Jaipur (Pink City)' },
+  { value: 'Kochi', label: 'Kochi (Fort Kochi)' },
+  { value: 'Goa', label: 'Goa (Fontainhas Heritage)' },
+  { value: 'Delhi', label: 'Delhi (Old Delhi & Mehrauli)' },
+  { value: 'Varanasi', label: 'Varanasi (Ghats & Weavers)' },
+  { value: 'Udaipur', label: 'Udaipur (City Palace & Lakes)' },
+  { value: 'Bengaluru', label: 'Bengaluru (Old Petes & Lalbagh)' },
+  { value: 'Kolkata', label: 'Kolkata (Heritage & Culture)' },
+  { value: 'Agra', label: 'Agra (Taj Heritage & Artisans)' },
+  { value: 'Amritsar', label: 'Amritsar (Golden Temple & Heritage)' },
+  { value: 'Rishikesh', label: 'Rishikesh (Ghats & Yoga)' },
+];
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -30,50 +45,38 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
 
+  // Fetch experiences when selectedCity changes (only for cities with images)
   useEffect(() => {
-    async function loadInitial() {
+    async function loadCityExperiences() {
+      setIsLoading(true);
       try {
-        const list = await api.getExperiences({ limit: 8 });
-        setExperiences(list);
+        const list = await api.getExperiences({
+          city: selectedCity,
+          limit: 16,
+        });
+        const withImages = (list || []).filter(
+          (e) => e.image_url && e.image_url.startsWith('http')
+        );
+        setExperiences(withImages.length > 0 ? withImages : list);
       } catch (err) {
-        console.error('Failed to load initial experiences:', err);
+        console.error('Failed to load experiences for city:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    loadInitial();
-  }, []);
+    loadCityExperiences();
+  }, [selectedCity]);
 
-  // GSAP ScrollTrigger setup for section reveals
+  // GSAP ScrollTrigger setup
   useEffect(() => {
     if (!containerRef.current) return;
-
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const ctx = gsap.context(() => {
-      if (prefersReducedMotion) {
-        gsap.set('.reveal-section, .reveal-word, .reveal-stagger-item', {
-          opacity: 1,
-          y: 0,
-        });
-        return;
-      }
-
+      if (prefersReducedMotion) return;
       const sections = gsap.utils.toArray<HTMLElement>('.reveal-section');
-
       sections.forEach((section) => {
-        const words = section.querySelectorAll('.reveal-word');
-        const staggerItems = section.querySelectorAll('.reveal-stagger-item');
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%',
-            once: true,
-          },
-        });
-
-        tl.fromTo(
+        gsap.fromTo(
           section,
           { opacity: 0, y: 24 },
           {
@@ -81,46 +84,14 @@ export function HomePage() {
             y: 0,
             duration: 0.6,
             ease: 'power2.out',
+            scrollTrigger: { trigger: section, start: 'top 85%', once: true },
           }
         );
-
-        if (words.length > 0) {
-          tl.fromTo(
-            words,
-            { opacity: 0, y: 10 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.5,
-              stagger: 0.04,
-              ease: 'power2.out',
-            },
-            '-=0.45'
-          );
-        }
-
-        if (staggerItems.length > 0) {
-          tl.fromTo(
-            staggerItems,
-            { opacity: 0, y: 16 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.5,
-              stagger: 0.08,
-              ease: 'power2.out',
-            },
-            '-=0.3'
-          );
-        }
       });
     }, containerRef);
 
     ScrollTrigger.refresh();
-
-    return () => {
-      ctx.revert();
-    };
+    return () => ctx.revert();
   }, [isLoading, experiences, activeCategory]);
 
   const handleLaunchSolver = (e: React.FormEvent) => {
@@ -146,7 +117,7 @@ export function HomePage() {
 
   return (
     <div ref={containerRef} className="min-h-screen bg-paper text-ink space-y-16 sm:space-y-20 pb-24 overflow-hidden">
-      {/* 1. HERO SECTION WITH PROOF 01: REKNIT THREAD REDRAW */}
+      {/* 1. HERO SECTION WITH ONE CONNECTED ECOSYSTEM */}
       <section className="reveal-section pt-8 sm:pt-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <h1 className="text-4xl sm:text-6xl font-display font-extrabold text-ink tracking-tight leading-[1.1]">
@@ -162,11 +133,11 @@ export function HomePage() {
           </p>
         </div>
 
-        {/* Live Proof: ReKnit Thread Redraw */}
-        <ReKnitThreadProof />
+        {/* LOKIVA Experience Exchange: Compact One Connected Ecosystem */}
+        <LokivaExperienceExchange />
       </section>
 
-      {/* 2. THE 3 INTERACTIVE ARCHITECTURE PROOFS */}
+      {/* 2. THE INTERACTIVE ARCHITECTURE PROOFS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
@@ -181,24 +152,17 @@ export function HomePage() {
         </div>
 
         <div className="space-y-8">
-          {/* Proof 02: Accessibility Hard Pre-Filter */}
           <div className="reveal-section">
             <AccessibilityConstraintProof />
           </div>
 
-          {/* Proof 03: Explainability Slid-Out Receipt */}
           <div className="reveal-section">
             <ExplainabilityReceiptCard />
-          </div>
-
-          {/* Proof 04: Provider AI Co-Pilot Listing Assembly */}
-          <div className="reveal-section">
-            <ProviderCopilotProof />
           </div>
         </div>
       </section>
 
-      {/* 3. TIME-BOXED MICRO-MOMENT SOLVER */}
+      {/* 3. TIME-BOXED MICRO-MOMENT SOLVER (COMPACT & SPACE-EFFICIENT AS PREVIOUS) */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-10 shadow-lg space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
@@ -225,12 +189,11 @@ export function HomePage() {
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="w-full bg-paper-100 border border-paper-300 rounded-xl px-3 py-2.5 text-xs text-ink font-semibold focus:outline-none focus:border-marigold"
               >
-                <option value="Mumbai">Mumbai (Bandra West)</option>
-                <option value="Jaipur">Jaipur (Pink City)</option>
-                <option value="Kochi">Kochi (Fort Kochi)</option>
-                <option value="Goa">Goa (Fontainhas Heritage)</option>
-                <option value="Delhi">Delhi (Old Delhi & Mehrauli)</option>
-                <option value="Varanasi">Varanasi (Ghats & Weavers)</option>
+                {VERIFIED_IMAGE_CITIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -297,19 +260,21 @@ export function HomePage() {
                 </label>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono text-xs font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2"
-              >
-                <span>Pack Feasible Plan</span>
-                <ArrowRight className="w-3.5 h-3.5 text-marigold" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono text-xs font-bold rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <span>Pack Plan</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-marigold" />
+                </button>
+              </div>
             </div>
           </form>
         </div>
       </section>
 
-      {/* 4. VERIFIED EXPERIENCES CATALOG (229 VERIFIED LISTINGS) */}
+      {/* 4. CURATED CULTURAL CATALOG (SYNCS WITH SELECTED CITY) */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -317,7 +282,7 @@ export function HomePage() {
               Curated Cultural Catalog
             </div>
             <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink">
-              <SplitWords text="Verified Indian Cultural Experiences" />
+              <SplitWords text={`Verified Indian Cultural Experiences · ${selectedCity}`} />
             </h2>
             <p className="text-xs text-dusk-600">
               Each experience vetted for direct community spend, opening schedules, and step-free access.
@@ -325,15 +290,14 @@ export function HomePage() {
           </div>
 
           <Link
-            to="/explore"
+            to={`/explore?city=${encodeURIComponent(selectedCity)}&budget=${budgetCeiling}&wheelchair=${wheelchairAccess}&walking=${lowWalking}`}
             className="text-xs font-mono font-bold text-ink hover:text-marigold flex items-center gap-1.5 underline"
           >
-            <span>View All 229 Experiences</span>
+            <span>View All in {selectedCity}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
           {categories.map((cat) => (
             <button
@@ -350,7 +314,6 @@ export function HomePage() {
           ))}
         </div>
 
-        {/* Cards Grid with Sibling Cascade Stagger */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
@@ -368,7 +331,7 @@ export function HomePage() {
         )}
       </section>
 
-      {/* 5. THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
+      {/* 5. ALGORITHMIC GUARANTEES */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-paper-400 p-8 sm:p-12 space-y-8">
           <div className="max-w-2xl space-y-2">
