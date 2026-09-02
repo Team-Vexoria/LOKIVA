@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { DestinationDetail, Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
+import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import { MapPin, ArrowLeft, Sparkles, Clock, Calendar, Compass, Sun, ShieldCheck } from 'lucide-react';
 
 export function DestinationDetailPage() {
@@ -21,7 +22,7 @@ export function DestinationDetailPage() {
           api.getExperiences({ city, limit: 20 }),
         ]);
         setCityData(c);
-        setExperiences(expList);
+        setExperiences(deduplicateExperienceList(expList));
       } catch (err) {
         console.error('Failed to load destination details:', err);
       } finally {

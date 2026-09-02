@@ -5,6 +5,7 @@ import { Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
 import { SurpriseMe } from '../components/surprise/SurpriseMe';
+import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import {
   Search,
   Filter,
@@ -74,7 +75,7 @@ export function ExplorePage() {
           is_indoor: rainSafeOnly || undefined,
           search: searchQuery || undefined,
         });
-        setExperiences(data);
+        setExperiences(deduplicateExperienceList(data));
       } catch (err) {
         console.error('Failed to load experiences:', err);
       } finally {
@@ -102,7 +103,7 @@ export function ExplorePage() {
 
     try {
       const res = await api.resolveLocation(locationInput.trim());
-      setExperiences(res.experiences);
+      setExperiences(deduplicateExperienceList(res.experiences));
       setResolvedLocationName(res.location.displayName);
 
       if (res.isLiveIngested) {

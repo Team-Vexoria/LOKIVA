@@ -62,6 +62,7 @@ destinationsRouter.get('/', async (req, res) => {
     const cities = await dbAll(sql, params);
 
     const results = [];
+    const usedDestinationImages = new Set();
     for (const c of cities) {
       const expCountRow = await dbGet(
         'SELECT COUNT(*) as count FROM experiences WHERE LOWER(city) = LOWER(?)',
@@ -80,7 +81,7 @@ destinationsRouter.get('/', async (req, res) => {
         ])
       ).slice(0, 5);
 
-      const enrichedCity = await enrichDestinationWithPexels(c);
+      const enrichedCity = await enrichDestinationWithPexels(c, usedDestinationImages);
 
       results.push({
         id: c.id,

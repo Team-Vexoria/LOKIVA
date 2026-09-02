@@ -11,6 +11,7 @@ import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
 import { SurpriseMe } from '../components/surprise/SurpriseMe';
+import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import { api } from '../lib/api';
 import { Experience } from '../types';
 import {
@@ -37,7 +38,7 @@ export function HomePage() {
     async function loadInitial() {
       try {
         const list = await api.getExperiences({ limit: 8 });
-        setExperiences(list);
+        setExperiences(deduplicateExperienceList(list));
       } catch (err) {
         console.error('Failed to load initial experiences:', err);
       } finally {

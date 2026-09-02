@@ -69,10 +69,15 @@ export function ExperienceCard({
     }
   };
 
-  const imageUrl =
+  let imageUrl =
     experience.image_url ||
     (experience.image_urls && experience.image_urls.length > 0 ? experience.image_urls[0] : null) ||
     (experience.images && experience.images.length > 0 ? experience.images[0] : null);
+
+  // Route any raw Wikimedia image through server proxy to ensure proper headers and CORS
+  if (imageUrl && imageUrl.includes('upload.wikimedia.org') && !imageUrl.includes('/proxy-image')) {
+    imageUrl = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+  }
 
   const hasRating =
     experience.rating !== null &&

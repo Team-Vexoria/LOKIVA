@@ -7,45 +7,12 @@ interface MomentCardProps {
   experience: Experience;
 }
 
-// Category fallback images (high-res Pexels CDN)
-const CATEGORY_FALLBACKS: Record<string, string[]> = {
-  food: [
-    'https://images.pexels.com/photos/4602266/pexels-photo-4602266.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/16308804/pexels-photo-16308804.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-  art: [
-    'https://images.pexels.com/photos/28389703/pexels-photo-28389703.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/2166559/pexels-photo-2166559.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/1047540/pexels-photo-1047540.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-  adventure: [
-    'https://images.pexels.com/photos/36870020/pexels-photo-36870020.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/1365425/pexels-photo-1365425.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-  nature: [
-    'https://images.pexels.com/photos/1483053/pexels-photo-1483053.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/931018/pexels-photo-931018.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-  nightlife: [
-    'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/789750/pexels-photo-789750.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-  culture: [
-    'https://images.pexels.com/photos/27833051/pexels-photo-27833051.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/3581368/pexels-photo-3581368.jpeg?auto=compress&cs=tinysrgb&w=800',
-  ],
-};
+import { CATEGORY_IMAGE_POOLS, getCategoryPoolKey } from '../../lib/imageDeduplicator';
 
 function getCardFallback(category: string = '', id: number = 1): string {
-  const cat = category.toLowerCase();
-  if (cat.includes('food') || cat.includes('culinary')) return CATEGORY_FALLBACKS.food[id % CATEGORY_FALLBACKS.food.length];
-  if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop')) return CATEGORY_FALLBACKS.art[id % CATEGORY_FALLBACKS.art.length];
-  if (cat.includes('adventure') || cat.includes('trek') || cat.includes('sport')) return CATEGORY_FALLBACKS.adventure[id % CATEGORY_FALLBACKS.adventure.length];
-  if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('beach')) return CATEGORY_FALLBACKS.nature[id % CATEGORY_FALLBACKS.nature.length];
-  if (cat.includes('night') || cat.includes('evening') || cat.includes('sunset')) return CATEGORY_FALLBACKS.nightlife[id % CATEGORY_FALLBACKS.nightlife.length];
-  return CATEGORY_FALLBACKS.culture[id % CATEGORY_FALLBACKS.culture.length];
+  const poolKey = getCategoryPoolKey(category);
+  const pool = CATEGORY_IMAGE_POOLS[poolKey] || CATEGORY_IMAGE_POOLS.culture;
+  return pool[Math.abs(id) % pool.length];
 }
 
 export function MomentCard({ experience }: MomentCardProps) {
@@ -65,12 +32,14 @@ export function MomentCard({ experience }: MomentCardProps) {
     return '💎';
   };
 
-  const rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
-  const isWikimedia = rawImage && rawImage.includes('upload.wikimedia.org');
+  let rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
+  if (rawImage && rawImage.includes('upload.wikimedia.org') && !rawImage.includes('/proxy-image')) {
+    rawImage = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(rawImage)}`;
+  }
 
-  // If wikimedia or failed, use distinct category-specific Pexels fallback
+  // If failed or missing, use distinct category-specific Pexels fallback
   const finalImageSrc =
-    !imageError && rawImage && !isWikimedia
+    !imageError && rawImage
       ? rawImage
       : getCardFallback(experience.category, experience.id);
 

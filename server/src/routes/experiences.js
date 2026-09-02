@@ -1,11 +1,19 @@
 import express from 'express';
 import { dbAll, dbGet, dbRun } from '../db/db.js';
-import { enrichExperienceWithPexels } from '../services/pexelsService.js';
+import { enrichExperienceWithPexels, getFallbackForCategory } from '../services/pexelsService.js';
 
 export const experiencesRouter = express.Router();
 
 function formatExperience(e) {
   if (!e) return null;
+  const parsedImageUrls = typeof e.image_urls === 'string' ? JSON.parse(e.image_urls || '[]') : e.image_urls || [];
+  let primaryImg = e.image_url || (parsedImageUrls.length > 0 ? parsedImageUrls[0] : null);
+
+  // If primary image is a Wikimedia URL, proxy it to guarantee successful browser delivery
+  if (primaryImg && primaryImg.includes('upload.wikimedia.org') && !primaryImg.includes('/api/v1/experiences/proxy-image')) {
+    primaryImg = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(primaryImg)}`;
+  }
+
   return {
     ...e,
     is_indoor: Boolean(e.is_indoor),
@@ -15,8 +23,13 @@ function formatExperience(e) {
     low_walking: Boolean(e.low_walking),
     wheelchair_accessible: Boolean(e.wheelchair_accessible),
     is_active: Boolean(e.is_active),
+    image_url: primaryImg,
     tags: typeof e.tags === 'string' ? JSON.parse(e.tags || '[]') : e.tags || [],
-    image_urls: typeof e.image_urls === 'string' ? JSON.parse(e.image_urls || '[]') : e.image_urls || [],
+    image_urls: parsedImageUrls.map((u) =>
+      u && u.includes('upload.wikimedia.org') && !u.includes('/api/v1/experiences/proxy-image')
+        ? `/api/v1/experiences/proxy-image?url=${encodeURIComponent(u)}`
+        : u
+    ),
   };
 }
 
@@ -28,7 +41,7 @@ experiencesRouter.get('/proxy-image', async (req, res) => {
       return res.status(400).send('Missing image url');
     }
 
-    const cleanUrl = decodeURIComponent(rawUrl);
+    let cleanUrl = decodeURIComponent(rawUrl);
 
     // If it's a Wikimedia 1280px URL, normalize to 800px or direct URL to avoid 404 scaler bugs
     let fetchUrl = cleanUrl;
@@ -36,38 +49,30 @@ experiencesRouter.get('/proxy-image', async (req, res) => {
       fetchUrl = fetchUrl.replace('/1280px-', '/800px-');
     }
 
-    const response = await fetch(fetchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-      },
-    });
+    const headers = {
+      'User-Agent': 'LokivaDiscovery/1.0 (https://lokiva.in; contact@lokiva.in)',
+      'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+    };
 
-    if (response.ok) {
+    let response = await fetch(fetchUrl, { headers }).catch(() => null);
+
+    // If thumbnail failed (e.g. 400 or 404 on Wikimedia thumb), try fetching the original file directly
+    if ((!response || !response.ok) && fetchUrl.includes('upload.wikimedia.org') && fetchUrl.includes('/thumb/')) {
+      const origUrl = fetchUrl.replace('/thumb/', '/').split('/').slice(0, 8).join('/');
+      response = await fetch(origUrl, { headers }).catch(() => null);
+    }
+
+    if (response && response.ok) {
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
       res.setHeader('Access-Control-Allow-Origin', '*');
       const arrayBuffer = await response.arrayBuffer();
       return res.send(Buffer.from(arrayBuffer));
     }
 
-    // Secondary attempt if 800px failed: try 640px or original image
-    if (fetchUrl.includes('/800px-')) {
-      const fallbackUrl = fetchUrl.replace('/800px-', '/640px-');
-      const fallbackRes = await fetch(fallbackUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-      });
-      if (fallbackRes.ok) {
-        res.setHeader('Content-Type', fallbackRes.headers.get('content-type') || 'image/jpeg');
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        const arrayBuffer = await fallbackRes.arrayBuffer();
-        return res.send(Buffer.from(arrayBuffer));
-      }
-    }
-
-    return res.status(404).send('Image not found');
+    const fallbackUrl = getFallbackForCategory('heritage', rawUrl);
+    return res.redirect(fallbackUrl);
   } catch (err) {
     return res.status(500).send('Proxy error');
   }
@@ -176,15 +181,13 @@ experiencesRouter.get('/', async (req, res) => {
     const rows = await dbAll(sql, params);
     const formattedRows = rows.map(formatExperience);
 
-    // Enrich missing/generic photos in parallel with cached Pexels resolution
-    const enrichedList = await Promise.all(
-      formattedRows.map(async (exp) => {
-        if (!exp.image_url || exp.image_url.includes('placeholder') || exp.image_url.includes('source.unsplash.com')) {
-          return enrichExperienceWithPexels(exp);
-        }
-        return exp;
-      })
-    );
+    // Enrich and strictly deduplicate images so no two cards or locations ever repeat an image
+    const usedImages = new Set();
+    const enrichedList = [];
+    for (const exp of formattedRows) {
+      const enriched = await enrichExperienceWithPexels(exp, usedImages);
+      enrichedList.push(enriched);
+    }
 
     res.json(enrichedList);
   } catch (err) {
