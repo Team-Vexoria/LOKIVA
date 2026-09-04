@@ -347,3 +347,21 @@ export interface AdminStats {
   pending_verifications?: number;
   recent_activity?: Array<{ id: string | number; type: string; title: string; timestamp: string }>;
 }
+
+export interface DayPlanStop {
+  order: number;
+  time: string;
+  name: string;
+  duration_mins: number;
+  cost_label: string;
+  fit_reason: string;
+  match_notes?: string | null;
+}
+
+export interface DayPlanResponse {
+  city: string;
+  feasibility_score: number;
+  feasibility_summary: string;
+  stops: DayPlanStop[];
+}
+

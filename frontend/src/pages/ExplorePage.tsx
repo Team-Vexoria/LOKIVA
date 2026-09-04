@@ -47,18 +47,18 @@ export function ExplorePage() {
   const [ingestionStats, setIngestionStats] = useState<any>(null);
   const [showCoverageDrawer, setShowCoverageDrawer] = useState(false);
 
-  // Load coverage status
-  useEffect(() => {
-    async function loadStatus() {
-      try {
-        const stats = await api.getIngestionStatus();
-        setIngestionStats(stats);
-      } catch (err) {
-        console.error('Failed to load ingestion stats:', err);
-      }
-    }
-    loadStatus();
-  }, []);
+  // Load coverage status - Disabled for now (endpoint not implemented)
+  // useEffect(() => {
+  //   async function loadStatus() {
+  //     try {
+  //       const stats = await api.getIngestionStatus();
+  //       setIngestionStats(stats);
+  //     } catch (err) {
+  //       console.error('Failed to load ingestion stats:', err);
+  //     }
+  //   }
+  //   loadStatus();
+  // }, []);
 
   // Main experience fetcher
   useEffect(() => {
@@ -146,7 +146,7 @@ export function ExplorePage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
           <div className="space-y-1">
             <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
-              Pan-India Dynamic Ingestion: {ingestionStats?.coverage?.total_experiences || 229}+ POIs Cached
+              Pan-India Dynamic Ingestion: Live Cultural POIs Cached
             </div>
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-ink">
               Cultural Experiences Engine
@@ -364,12 +364,12 @@ export function ExplorePage() {
 
         {/* Results Grid */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-mono text-dusk">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-dusk">
             <span>
               Showing <strong>{experiences.length}</strong> experiences
               {osmCount > 0 && <span className="text-teal ml-1">({osmCount} from OpenStreetMap live)</span>}
             </span>
-            <span>Constraint pre-filter applied</span>
+            <span className="text-dusk-600">Constraint pre-filter applied</span>
           </div>
 
           {isLoading ? (

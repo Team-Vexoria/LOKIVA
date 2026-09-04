@@ -68,7 +68,7 @@
       "name": "Meghalaya",
       "code": "ML",
       "region": "Northeast",
-      "image_url": "https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800"
+      "image_url": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800"
     },
     {
       "id": 11,
@@ -258,7 +258,7 @@
       "description": "Pristine canyon viewpoints, Khasi indigenous bamboo crafts, indie rock cafes, and waterfalls.",
       "latitude": 25.5788,
       "longitude": 91.8933,
-      "image_url": "https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800",
+      "image_url": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800",
       "is_popular": 1
     },
     {
@@ -1733,7 +1733,7 @@
       "review_count": 86,
       "popularity_score": 0.91,
       "tags": "[\"canyon\", \"trek\", \"clouds\", \"khasi hills\"]",
-      "images": "[\"https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800\"]",
+      "images": "[\"https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800\"]",
       "target_audience": "[\"family\", \"couples\", \"solo\"]",
       "is_verified": 1,
       "is_active": 1,

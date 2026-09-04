@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Experience } from '../../types';
-import { MapPin, Star, Clock, ArrowRight, Sparkles } from 'lucide-react';
+import {
+  MapPin,
+  Star,
+  Clock,
+  ArrowRight,
+  Sparkles,
+  Utensils,
+  Landmark,
+  Compass,
+  Trees,
+  Palette,
+  Moon,
+} from 'lucide-react';
 
 interface MomentCardProps {
   experience: Experience;
@@ -19,17 +31,16 @@ export function MomentCard({ experience }: MomentCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Category Emoji
-  const getCategoryEmoji = (category: string) => {
+  // Category Clean SVG Icon
+  const getCategoryIcon = (category: string = '') => {
     const cat = category.toLowerCase();
-    if (cat.includes('food') || cat.includes('culinary') || cat.includes('dining')) return '🍜';
-    if (cat.includes('culture') || cat.includes('heritage') || cat.includes('history')) return '🎭';
-    if (cat.includes('adventure') || cat.includes('trek') || cat.includes('sport')) return '🏔';
-    if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('beach')) return '🌿';
-    if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop') || cat.includes('pottery')) return '🎨';
-    if (cat.includes('night') || cat.includes('evening') || cat.includes('sunset')) return '🌙';
-    if (cat.includes('spiritual') || cat.includes('wellness')) return '✨';
-    return '💎';
+    if (cat.includes('food') || cat.includes('culinary') || cat.includes('dining')) return <Utensils className="w-3 h-3 text-marigold" />;
+    if (cat.includes('culture') || cat.includes('heritage') || cat.includes('history')) return <Landmark className="w-3 h-3 text-teal" />;
+    if (cat.includes('adventure') || cat.includes('trek') || cat.includes('sport')) return <Compass className="w-3 h-3 text-marigold" />;
+    if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('beach')) return <Trees className="w-3 h-3 text-teal" />;
+    if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop') || cat.includes('pottery')) return <Palette className="w-3 h-3 text-marigold" />;
+    if (cat.includes('night') || cat.includes('evening') || cat.includes('sunset')) return <Moon className="w-3 h-3 text-dusk-300" />;
+    return <Sparkles className="w-3 h-3 text-marigold" />;
   };
 
   let rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
@@ -37,11 +48,12 @@ export function MomentCard({ experience }: MomentCardProps) {
     rawImage = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(rawImage)}`;
   }
 
-  // If failed or missing, use distinct category-specific Pexels fallback
-  const finalImageSrc =
-    !imageError && rawImage
-      ? rawImage
-      : getCardFallback(experience.category, experience.id);
+  // If failed or missing, use distinct category-specific fallback
+  const [currentSrc, setCurrentSrc] = useState<string>(() =>
+    imageError || !rawImage
+      ? getCardFallback(experience.category, experience.id)
+      : rawImage
+  );
 
   const rating = experience.rating ? experience.rating.toFixed(1) : '4.8';
   const duration = experience.approx_duration_mins
@@ -70,12 +82,15 @@ export function MomentCard({ experience }: MomentCardProps) {
           <div className="absolute inset-0 bg-paper-300 animate-pulse" />
         )}
         <img
-          src={finalImageSrc}
+          src={currentSrc}
           alt={experience.title}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           onError={() => {
-            setImageError(true);
+            const fallback = getCardFallback(experience.category, experience.id);
+            if (currentSrc !== fallback) {
+              setCurrentSrc(fallback);
+            }
             setImageLoaded(true);
           }}
           className={`w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out filter brightness-[0.9] ${
@@ -88,10 +103,10 @@ export function MomentCard({ experience }: MomentCardProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/35 via-transparent to-transparent" />
       </div>
 
-      {/* Top Header Tags Overlay */}
+      {/* Top Header Tags Overlay (Clean Icons, Zero Emojis) */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between gap-2">
         <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[11px] font-mono font-bold text-ink border border-white/20 shadow-xs flex items-center gap-1.5">
-          <span>{getCategoryEmoji(experience.category)}</span>
+          <span>{getCategoryIcon(experience.category)}</span>
           <span className="uppercase tracking-wider text-[10px]">{experience.category}</span>
         </span>
 

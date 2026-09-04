@@ -1,7 +1,19 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Experience } from '../../types';
 import { MomentCard } from './MomentCard';
-import { ChevronLeft, ChevronRight, Sparkles, Compass } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Compass,
+  Utensils,
+  Landmark,
+  Trees,
+  Palette,
+  Moon,
+  ShieldCheck,
+  Layers,
+} from 'lucide-react';
 
 interface LokivaMomentsSectionProps {
   experiences: Experience[];
@@ -11,18 +23,18 @@ interface LokivaMomentsSectionProps {
 interface CategoryFilter {
   id: string;
   label: string;
-  emoji: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const MOMENT_CATEGORIES: CategoryFilter[] = [
-  { id: 'all', label: 'All Moments', emoji: '✨' },
-  { id: 'food', label: 'Food', emoji: '🍜' },
-  { id: 'culture', label: 'Culture', emoji: '🎭' },
-  { id: 'adventure', label: 'Adventure', emoji: '🏔' },
-  { id: 'nature', label: 'Nature', emoji: '🌿' },
-  { id: 'art', label: 'Art & Workshops', emoji: '🎨' },
-  { id: 'nightlife', label: 'Nightlife', emoji: '🌙' },
-  { id: 'hidden_gems', label: 'Hidden Gems', emoji: '💎' },
+  { id: 'all', label: 'All Moments', icon: Layers },
+  { id: 'food', label: 'Culinary & Food', icon: Utensils },
+  { id: 'culture', label: 'Culture & Heritage', icon: Landmark },
+  { id: 'adventure', label: 'Adventure & Trails', icon: Compass },
+  { id: 'nature', label: 'Nature & Valleys', icon: Trees },
+  { id: 'art', label: 'Art & Workshops', icon: Palette },
+  { id: 'nightlife', label: 'Nightlife & Sunset', icon: Moon },
+  { id: 'hidden_gems', label: 'Hidden Gems', icon: Sparkles },
 ];
 
 export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMomentsSectionProps) {
@@ -139,6 +151,7 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-t border-paper-200 pt-4">
           {MOMENT_CATEGORIES.map((cat) => {
             const isSelected = activeCategory === cat.id;
+            const IconComponent = cat.icon;
             return (
               <button
                 key={cat.id}
@@ -146,11 +159,11 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-marigold text-ink-950 shadow-sm scale-102 border border-marigold-600'
+                    ? 'bg-ink text-white shadow-sm scale-102 border border-ink'
                     : 'bg-paper-100 text-dusk-700 hover:text-ink hover:bg-paper-200 border border-paper-300'
                 }`}
               >
-                <span>{cat.emoji}</span>
+                <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-marigold' : 'text-dusk'}`} />
                 <span>{cat.label}</span>
               </button>
             );

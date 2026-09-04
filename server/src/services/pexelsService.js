@@ -338,19 +338,13 @@ export async function enrichExperienceWithPexels(experience, usedUrlsSet = null)
     const proxyUrl = rawExisting.startsWith('/api/v1/experiences/proxy-image')
       ? rawExisting
       : `/api/v1/experiences/proxy-image?url=${encodeURIComponent(rawExisting)}`;
-
-    if (!usedUrlsSet || !usedUrlsSet.has(proxyUrl)) {
-      chosenUrl = proxyUrl;
-    }
+    chosenUrl = proxyUrl;
   } else if (
     rawExisting &&
     !rawExisting.includes('placeholder') &&
     !rawExisting.includes('source.unsplash.com')
   ) {
-    // Check if raw existing image is already used
-    if (!usedUrlsSet || !usedUrlsSet.has(rawExisting)) {
-      chosenUrl = rawExisting;
-    }
+    chosenUrl = rawExisting;
   }
 
   // 2. If chosenUrl not yet selected, check secondary images in experience.image_urls
@@ -360,43 +354,24 @@ export async function enrichExperienceWithPexels(experience, usedUrlsSet = null)
       const candidate = u.includes('upload.wikimedia.org')
         ? (u.startsWith('/api/v1/experiences/proxy-image') ? u : `/api/v1/experiences/proxy-image?url=${encodeURIComponent(u)}`)
         : u;
-      if (!usedUrlsSet || !usedUrlsSet.has(candidate)) {
-        chosenUrl = candidate;
-        break;
-      }
+      chosenUrl = candidate;
+      break;
     }
   }
 
-  // 3. If still needed, query Pexels and pick the first unused photo from its gallery
-  let photographer = experience.photographer || 'LOKIVA Cultural Heritage Archive';
-  let photographerUrl = experience.photographer_url || 'https://lokiva.in';
-
-  if (!chosenUrl) {
-    const query = buildExperiencePhotoQuery(experience);
-    const pexelsData = await fetchPexelsPhotos(query, 8);
-
-    if (pexelsData && Array.isArray(pexelsData.photoUrls)) {
-      for (const pUrl of pexelsData.photoUrls) {
-        if (!usedUrlsSet || !usedUrlsSet.has(pUrl)) {
-          chosenUrl = pUrl;
-          photographer = pexelsData.photographer || photographer;
-          photographerUrl = pexelsData.photographerUrl || photographerUrl;
-          break;
-        }
-      }
-    }
-  }
-
-  // 4. If all candidates were already taken or Pexels had no unused photo, use unique anti-collision category fallback
+  // 3. If still needed, use verified local cultural fallback (ZERO API DEPENDENCY)
   if (!chosenUrl) {
     const seed = `${experience.id || 0}_${experience.title || ''}_${experience.city || ''}_${experience.category || ''}`;
     chosenUrl = getFallbackForCategory(experience.category, seed, usedUrlsSet);
   }
 
-  // 5. Register in usedUrlsSet to guarantee it NEVER repeats on any subsequent card
+  // Register in usedUrlsSet to avoid collision if set is provided
   if (usedUrlsSet && chosenUrl) {
     usedUrlsSet.add(chosenUrl);
   }
+
+  const photographer = experience.photographer || 'LOKIVA Cultural Heritage Archive';
+  const photographerUrl = experience.photographer_url || 'https://lokiva.in';
 
   const gallery = Array.from(
     new Set([

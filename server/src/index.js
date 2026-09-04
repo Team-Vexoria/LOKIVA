@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/v1/health'], (req, res) => {
   res.json({ status: 'ok', coverage: 'pan_india_dynamic' });
 });
 
@@ -60,6 +60,7 @@ import { seedPanIndiaCompleteNetwork } from './services/ingestion/panIndiaComple
 import { seedPanIndiaCulturalMesh } from './services/ingestion/panIndiaSeeder.js';
 import { seedMasterCityPlaces } from './services/ingestion/masterCityDataset.js';
 import { seedDefinitiveFamousPlaces } from './services/ingestion/definitiveMajorCitiesRegistry.js';
+import { seedDefinitiveMajorCitiesDataset } from './services/ingestion/definitiveMajorCitiesDataset.js';
 import { seedMumbaiMasterCatalog } from './services/ingestion/mumbaiMasterCatalog.js';
 import { seedArtisansAndGuides } from './services/ingestion/artisansAndGuidesCatalog.js';
 
@@ -71,6 +72,7 @@ async function startServer() {
   await seedPanIndiaCulturalMesh();
   await seedMasterCityPlaces();
   await seedDefinitiveFamousPlaces();
+  await seedDefinitiveMajorCitiesDataset();
   await seedMumbaiMasterCatalog();
   await seedArtisansAndGuides();
 

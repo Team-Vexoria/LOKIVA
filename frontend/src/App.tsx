@@ -14,6 +14,8 @@ import { AiGuidePage } from './pages/AiGuidePage';
 import { ItineraryPage } from './pages/ItineraryPage';
 import { SavedPage } from './pages/SavedPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { DiscoveryMapPage } from './pages/DiscoveryMapPage';
+import { LocationDecisionModal, useOnboardingGate } from './components/onboarding/LocationDecisionModal';
 import { LoginPage } from './pages/LoginPage';
 import { TravelerLoginPage } from './pages/TravelerLoginPage';
 import { ProviderLoginPage } from './pages/ProviderLoginPage';
@@ -25,6 +27,8 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export function App() {
+  const { showModal, closeModal } = useOnboardingGate();
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -41,6 +45,7 @@ export function App() {
               <Route path="/itinerary" element={<ItineraryPage />} />
               <Route path="/saved" element={<SavedPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/discovery-map" element={<DiscoveryMapPage />} />
 
               {/* Auth routes */}
               <Route path="/login" element={<LoginPage />} />
@@ -61,6 +66,9 @@ export function App() {
             </Routes>
           </main>
           <Footer />
+
+          {/* First-visit onboarding modal */}
+          <LocationDecisionModal isOpen={showModal} onClose={closeModal} />
         </div>
       </BrowserRouter>
     </AuthProvider>

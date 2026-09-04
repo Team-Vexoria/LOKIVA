@@ -2,64 +2,182 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --lokiva-ink: #12213B;
-  --lokiva-paper: #EEF1EE;
-  --lokiva-marigold: #F0A63B;
-  --lokiva-teal: #1F7A6C;
-  --lokiva-clay: #C1443B;
-  --lokiva-dusk: #5B6B8C;
+/* Leaflet CSS fixes */
+.leaflet-container {
+  font-family: inherit !important;
+  z-index: 1 !important;
 }
 
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #EEF1EE;
-  color: #12213B;
-  overflow-x: hidden;
+.leaflet-control-container {
+  z-index: 2 !important;
 }
 
-.font-display {
-  font-family: 'Fraunces', Georgia, serif;
+.leaflet-popup {
+  font-family: inherit !important;
+  z-index: 1000 !important;
 }
 
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
+.leaflet-popup-content {
+  margin: 12px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
 }
 
-/* Dotted ReKnit Thread Connector Animation */
-@keyframes dash {
-  to {
-    stroke-dashoffset: -20;
+/* Fix for z-index conflicts */
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 1000 !important;
+}
+
+/* Custom marker animation */
+@keyframes marker-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
   }
 }
 
-.animate-reknit {
-  stroke-dasharray: 6 6;
-  animation: dash 1.5s linear infinite;
+.custom-marker-icon {
+  animation: marker-pulse 2s infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-reknit {
-    animation: none;
-    stroke-dasharray: none;
-  }
+/* Ensure map container respects z-index */
+.leaflet-map-pane {
+  position: relative !important;
 }
 
-/* Custom Scrollbars */
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #EEF1EE;
+  background: #f1f1f1;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CED7E4;
-  border-radius: 9999px;
+  background: #888;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #5B6B8C;
+  background: #555;
 }
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .leaflet-popup-content {
+    margin: 8px !important;
+    font-size: 12px !important;
+  }
+
+  .leaflet-popup-content-wrapper {
+    max-width: 200px !important;
+  }
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Focus styles */
+:focus {
+  outline: 2px solid #1F7A6C;
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #1F7A6C;
+  outline-offset: 2px;
+}
+
+/* Custom Sliders for LOKIVA Trip Configurator */
+input[type=range].custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type=range].custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+  border: 2px solid #FFFFFF;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type=range].custom-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+  border: 2px solid #FFFFFF;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type=range].slider-marigold::-webkit-slider-thumb {
+  background: #F0A63B;
+}
+input[type=range].slider-marigold::-moz-range-thumb {
+  background: #F0A63B;
+}
+
+input[type=range].slider-teal::-webkit-slider-thumb {
+  background: #1F7A6C;
+}
+input[type=range].slider-teal::-moz-range-thumb {
+  background: #1F7A6C;
+}
+
+input[type=range].custom-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+input[type=range].custom-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+

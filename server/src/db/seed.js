@@ -96,7 +96,7 @@ export async function seedDatabase() {
         e.state, e.city, e.area_name, e.latitude, e.longitude, e.approx_duration_mins, e.price,
         e.currency, e.max_capacity, e.difficulty_level, e.is_indoor ? 1 : 0, e.is_rain_safe ? 1 : 0, e.is_hidden_gem ? 1 : 0,
         e.is_family_friendly ? 1 : 0, e.low_walking ? 1 : 0, e.wheelchair_accessible ? 1 : 0, e.best_time_of_day,
-        e.rating, e.review_count, e.image_urls, e.tags, e.is_active ? 1 : 0
+        e.rating, e.review_count, e.images || e.image_urls, e.tags, e.is_active ? 1 : 0
       ]
     );
   }

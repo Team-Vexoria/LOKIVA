@@ -16,9 +16,14 @@ import {
   ProviderAnalyticsSummary,
   AdminStats,
   Review,
+  DayPlanResponse,
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.port === '3000'
+    ? '/api/v1'
+    : 'http://localhost:8000/api/v1');
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('lokiva_token');
@@ -163,10 +168,54 @@ export const api = {
     });
   },
 
+  // AI Cultural Concierge - Real AI powered by OpenAI
+  async chatWithConcierge(data: {
+    message: string;
+    chat_history?: any[];
+    city?: string;
+    state?: string;
+  }): Promise<{
+    reply: string;
+    tokens_used: number;
+    model: string;
+    extracted_intent: StructuredIntent;
+    suggested_experiences: ScoredExperience[];
+    context_destination: string;
+    state: string;
+  }> {
+    return request('/ai/concierge', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async checkAIHealth(): Promise<{
+    status: string;
+    message: string;
+  }> {
+    return request('/ai/health');
+  },
+
   async extractIntent(prompt: string): Promise<StructuredIntent> {
     return request<StructuredIntent>('/ai/intent', {
       method: 'POST',
       body: JSON.stringify({ prompt }),
+    });
+  },
+
+  async generateDayPlan(data: {
+    destination: string;
+    time_available: string;
+    budget: string;
+    group_type: string;
+    interests: string[];
+    food_preferences: string;
+    mobility: string;
+    vibe: string;
+  }): Promise<DayPlanResponse> {
+    return request<DayPlanResponse>('/ai/day-plan', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 

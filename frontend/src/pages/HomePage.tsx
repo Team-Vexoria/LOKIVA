@@ -9,7 +9,6 @@ import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
-import { SurpriseMe } from '../components/surprise/SurpriseMe';
 import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import { api } from '../lib/api';
 import { Experience } from '../types';

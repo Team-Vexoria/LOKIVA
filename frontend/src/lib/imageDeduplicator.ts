@@ -120,18 +120,16 @@ export function getUniqueImageForExperience(
     (experience.image_urls && experience.image_urls.length > 0 ? experience.image_urls[0] : null) ||
     (experience.images && experience.images.length > 0 ? experience.images[0] : null);
 
-  // 1. If rawImage is valid, not a placeholder, and NOT in seenUrls, use it
+  // 1. If rawImage is valid and not a placeholder, always respect and use it
   if (rawImage && !rawImage.includes('placeholder') && !rawImage.includes('source.unsplash.com')) {
-    if (!seenUrls.has(rawImage)) {
-      seenUrls.add(rawImage);
-      return rawImage;
-    }
+    seenUrls.add(rawImage);
+    return rawImage;
   }
 
   // 2. Check secondary image URLs attached to the experience
   if (experience.image_urls && experience.image_urls.length > 1) {
     for (const u of experience.image_urls) {
-      if (u && !u.includes('placeholder') && !seenUrls.has(u)) {
+      if (u && !u.includes('placeholder')) {
         seenUrls.add(u);
         return u;
       }

@@ -79,7 +79,7 @@ export function DestinationsPage() {
         const [statesData, citiesData, expData] = await Promise.all([
           api.getStates(),
           api.getCities({ limit: 150 }),
-          api.getExperiences({ limit: 60 }),
+          api.getExperiences({ limit: 250 }),
         ]);
         setStates(statesData);
         setCities(citiesData);

@@ -20,8 +20,15 @@ export function Navbar() {
   const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 45);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -33,6 +40,7 @@ export function Navbar() {
   const navLinks = [
     { to: '/explore', label: 'Explore' },
     { to: '/destinations', label: 'Destinations' },
+    { to: '/discovery-map', label: 'Discovery Map' },
     { to: '/ai-guide', label: 'AI Concierge' },
     { to: '/itinerary', label: 'Itinerary' },
     { to: '/saved', label: 'Saved' },
@@ -41,59 +49,77 @@ export function Navbar() {
   const currentPersona = PERSONAS[(user?.role as keyof typeof PERSONAS) || 'traveler'];
 
   return (
-    <header className="fixed top-2 sm:top-3 left-0 right-0 z-50 px-3 sm:px-6 pointer-events-none">
-      <div
-        className={`mx-auto transition-all duration-300 ease-out ${
-          isScrolled ? 'max-w-4xl' : 'max-w-5xl'
-        }`}
+    <header className="fixed top-2 sm:top-3 inset-x-0 z-50 pointer-events-none px-3 sm:px-6">
+      {/* Floating capsule nav with silky smooth spring animation & ample space */}
+      <motion.nav
+        animate={{
+          maxWidth: isScrolled ? 940 : 1060,
+          paddingTop: isScrolled ? 7 : 10,
+          paddingBottom: isScrolled ? 7 : 10,
+          paddingLeft: isScrolled ? 20 : 26,
+          paddingRight: isScrolled ? 20 : 26,
+          backgroundColor: isScrolled
+            ? 'rgba(255, 255, 255, 0.96)'
+            : 'rgba(238, 241, 238, 0.95)',
+          borderColor: '#D0D7CF',
+          boxShadow: isScrolled
+            ? '0 10px 25px -5px rgba(18, 33, 59, 0.08), 0 8px 10px -6px rgba(18, 33, 59, 0.04)'
+            : '0 4px 6px -1px rgba(18, 33, 59, 0.04), 0 2px 4px -2px rgba(18, 33, 59, 0.02)',
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 85,
+          damping: 20,
+          mass: 0.8,
+        }}
+        className="w-full mx-auto pointer-events-auto rounded-full border backdrop-blur-md"
       >
-        {/* Floating capsule nav */}
-        <nav
-          className={`pointer-events-auto transition-all duration-300 ease-out rounded-full border shadow-sm ${
-            isScrolled
-              ? 'bg-white/95 backdrop-blur-lg border-paper-400 py-1 px-3.5 sm:px-4 shadow-ink/8'
-              : 'bg-[#EEF1EE]/95 backdrop-blur-md border-[#D0D7CF] py-1.5 sm:py-2 px-4 sm:px-5 shadow-ink/5'
-          }`}
-        >
-          <div className="flex items-center justify-between gap-3">
-            {/* Left: Brand Logo & Wordmark */}
-            <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-              <img
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          {/* Left: Brand Logo & Wordmark */}
+          <div className="flex items-center justify-start flex-shrink-0">
+            <Link to="/" className="flex items-center gap-2 group">
+              <motion.img
                 src="/logo.png"
                 alt="LOKIVA"
-                className={`w-auto object-contain transition-all duration-300 ${
-                  isScrolled ? 'h-6' : 'h-6 sm:h-7'
-                }`}
+                animate={{ height: isScrolled ? 22 : 25 }}
+                transition={{ type: 'spring', stiffness: 85, damping: 20 }}
+                className="w-auto object-contain"
               />
-              <span className="text-lg sm:text-xl font-bold font-display text-ink tracking-tight leading-none">
+              <motion.span
+                animate={{ fontSize: isScrolled ? '17px' : '19px' }}
+                transition={{ type: 'spring', stiffness: 85, damping: 20 }}
+                className="font-bold font-display text-ink tracking-tight leading-none"
+              >
                 LOKIVA
-              </span>
+              </motion.span>
             </Link>
+          </div>
 
-            {/* Center: Links (desktop) in one single line without wrapping */}
-            <div className="hidden md:flex items-center gap-1 lg:gap-2">
-              {navLinks.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className={`relative px-2.5 py-1 text-xs lg:text-[13px] font-medium whitespace-nowrap transition-colors ${
-                    isActive(to)
-                      ? 'text-ink font-bold'
-                      : 'text-dusk hover:text-ink'
-                  }`}
-                >
-                  {label}
-                  {isActive(to) && (
-                    <motion.span
-                      layoutId="activeNavIndicator"
-                      className="absolute -bottom-0.5 left-2.5 right-2.5 h-0.5 bg-marigold rounded-full"
-                    />
-                  )}
-                </Link>
-              ))}
-            </div>
+          {/* Center: Routes placed with balanced, even distance */}
+          <div className="hidden md:flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2.5 flex-shrink-0 mx-auto">
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`relative px-2.5 py-1 text-xs lg:text-[13px] font-medium whitespace-nowrap transition-colors rounded-full ${
+                  isActive(to)
+                    ? 'text-ink font-bold'
+                    : 'text-dusk hover:text-ink hover:bg-paper-200/40'
+                }`}
+              >
+                {label}
+                {isActive(to) && (
+                  <motion.span
+                    layoutId="activeNavIndicator"
+                    className="absolute -bottom-0.5 left-2 right-2 h-0.5 bg-marigold rounded-full"
+                  />
+                )}
+              </Link>
+            ))}
+          </div>
 
-            {/* Right: Actions */}
+          {/* Right: Actions (Persona Switcher + Sign In) */}
+          <div className="flex items-center justify-end gap-2 flex-shrink-0">
             <div className="hidden md:flex items-center gap-2">
               {/* Persona switcher */}
               <div className="relative">
@@ -180,14 +206,6 @@ export function Navbar() {
                   Sign In
                 </Link>
               )}
-
-              <Link
-                to="/itinerary"
-                className="px-3 py-1 bg-marigold hover:bg-marigold-600 text-ink rounded-full text-xs font-bold transition shadow-sm flex items-center gap-1 whitespace-nowrap"
-              >
-                <span>Start Planning</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
             </div>
 
             {/* Mobile hamburger */}
@@ -201,78 +219,78 @@ export function Navbar() {
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Mobile slide-down menu */}
-          <AnimatePresence>
-            {mobileMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="md:hidden pt-3 pb-2 border-t border-paper-300 mt-2 space-y-2 text-xs"
-              >
-                {navLinks.map(({ to, label }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-3 py-2 rounded-xl transition ${
-                      isActive(to)
-                        ? 'bg-paper-200 text-ink font-bold'
-                        : 'text-dusk hover:text-ink hover:bg-paper-100'
-                    }`}
+        {/* Mobile slide-down menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden pt-3 pb-2 border-t border-paper-300 mt-2 space-y-2 text-xs"
+            >
+              {navLinks.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-xl transition ${
+                    isActive(to)
+                      ? 'bg-paper-200 text-ink font-bold'
+                      : 'text-dusk hover:text-ink hover:bg-paper-100'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+
+              <div className="pt-2 border-t border-paper-300 flex items-center justify-between">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      demoLogin('traveler');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
                   >
-                    {label}
-                  </Link>
-                ))}
-
-                <div className="pt-2 border-t border-paper-300 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        demoLogin('traveler');
-                        setMobileMenuOpen(false);
-                      }}
-                      className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
-                    >
-                      Traveler
-                    </button>
-                    <button
-                      onClick={() => {
-                        demoLogin('provider');
-                        setMobileMenuOpen(false);
-                        navigate('/provider/dashboard');
-                      }}
-                      className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
-                    >
-                      Provider
-                    </button>
-                  </div>
-                  {user ? (
-                    <button
-                      onClick={() => {
-                        logout();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="text-xs text-clay font-medium"
-                    >
-                      Sign Out
-                    </button>
-                  ) : (
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-xs font-bold text-ink"
-                    >
-                      Sign In
-                    </Link>
-                  )}
+                    Traveler
+                  </button>
+                  <button
+                    onClick={() => {
+                      demoLogin('provider');
+                      setMobileMenuOpen(false);
+                      navigate('/provider/dashboard');
+                    }}
+                    className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
+                  >
+                    Provider
+                  </button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </nav>
-      </div>
+                {user ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs text-clay font-medium"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-bold text-ink"
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
     </header>
   );
 }

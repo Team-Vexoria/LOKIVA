@@ -39,7 +39,7 @@ def seed_database():
             {"name": "Uttar Pradesh", "code": "UP", "region": "North", "image_url": "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=800"},
             {"name": "Uttarakhand", "code": "UK", "region": "North", "image_url": "https://images.unsplash.com/photo-1605649487212-47bdab064df8?w=800"},
             {"name": "West Bengal", "code": "WB", "region": "East", "image_url": "https://images.unsplash.com/photo-1558431382-27e303142255?w=800"},
-            {"name": "Meghalaya", "code": "ML", "region": "Northeast", "image_url": "https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800"},
+            {"name": "Meghalaya", "code": "ML", "region": "Northeast", "image_url": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800"},
             {"name": "Tamil Nadu", "code": "TN", "region": "South", "image_url": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800"},
             {"name": "Telangana", "code": "TS", "region": "South", "image_url": "https://images.unsplash.com/photo-1605007493699-af65834f8a00?w=800"},
             {"name": "Punjab", "code": "PB", "region": "North", "image_url": "https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800"},
@@ -91,7 +91,7 @@ def seed_database():
             {"name": "Darjeeling", "state_id": state_objects["West Bengal"].id, "tagline": "Queen of the Hills & Champagne of Teas", "latitude": 27.0410, "longitude": 88.2663, "image_url": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800", "is_popular": True, "description": "Heritage steam toy train, morning views of Mt. Kanchenjunga, and organic tea estate plucking."},
 
             # Meghalaya
-            {"name": "Shillong", "state_id": state_objects["Meghalaya"].id, "tagline": "The Scotland of the East & Living Root Bridges", "latitude": 25.5788, "longitude": 91.8933, "image_url": "https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800", "is_popular": True, "description": "Pristine canyon viewpoints, Khasi indigenous bamboo crafts, indie rock cafes, and waterfalls."},
+            {"name": "Shillong", "state_id": state_objects["Meghalaya"].id, "tagline": "The Scotland of the East & Living Root Bridges", "latitude": 25.5788, "longitude": 91.8933, "image_url": "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800", "is_popular": True, "description": "Pristine canyon viewpoints, Khasi indigenous bamboo crafts, indie rock cafes, and waterfalls."},
 
             # Punjab
             {"name": "Amritsar", "state_id": state_objects["Punjab"].id, "tagline": "The Golden City of Devotion & Legendary Kulchas", "latitude": 31.6340, "longitude": 74.8723, "image_url": "https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800", "is_popular": True, "description": "Harmandir Sahib Golden Temple langar, crispy butter-soaked kulchas, and Phulkari embroidery."}
@@ -531,7 +531,7 @@ def seed_database():
                 "price": 400.0, "duration_mins": 120, "is_indoor": False, "is_hidden_gem": True,
                 "accessibility_low_walking": False, "accessibility_family_friendly": True, "dietary_vegetarian": True,
                 "rating": 4.9, "review_count": 86, "tags": ["canyon", "trek", "clouds", "khasi hills"],
-                "images": ["https://images.unsplash.com/photo-1626014303757-656c072c478a?w=800"]
+                "images": ["https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800"]
             },
             {
                 "city": "Shillong", "state": "Meghalaya", "neighborhood": "Police Bazar",

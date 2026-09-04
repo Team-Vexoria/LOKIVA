@@ -28,6 +28,12 @@ node_modules
 *.sqlite
 *.sqlite3
 *.sqlite-journal
+*.db
+*.db-journal
+__pycache__/
+*.pyc
+scratch/
+.claude/
 *.log
 
 # debug

@@ -49,24 +49,27 @@ export function ExperienceCard({
   };
 
   // Category Icon Component (Clean, No Emojis)
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Food & Culinary':
-        return <Utensils className="w-3.5 h-3.5" />;
-      case 'Art & Craft':
-        return <Palette className="w-3.5 h-3.5" />;
-      case 'Heritage & History':
-        return <Landmark className="w-3.5 h-3.5" />;
-      case 'Music & Dance':
-        return <Music className="w-3.5 h-3.5" />;
-      case 'Nature & Wildlife':
-        return <Trees className="w-3.5 h-3.5" />;
-      case 'Spiritual & Wellness':
-      case 'Wellness & Spiritual':
-        return <Compass className="w-3.5 h-3.5" />;
-      default:
-        return <Building2 className="w-3.5 h-3.5" />;
+  const getCategoryIcon = (category: string = '') => {
+    const cat = category.toLowerCase();
+    if (cat.includes('food') || cat.includes('culinary') || cat.includes('dining') || cat.includes('tea')) {
+      return <Utensils className="w-3.5 h-3.5" />;
     }
+    if (cat.includes('art') || cat.includes('craft') || cat.includes('workshop') || cat.includes('pottery') || cat.includes('weaving')) {
+      return <Palette className="w-3.5 h-3.5" />;
+    }
+    if (cat.includes('heritage') || cat.includes('history') || cat.includes('monument') || cat.includes('fort') || cat.includes('palace')) {
+      return <Landmark className="w-3.5 h-3.5" />;
+    }
+    if (cat.includes('music') || cat.includes('dance') || cat.includes('night')) {
+      return <Music className="w-3.5 h-3.5" />;
+    }
+    if (cat.includes('nature') || cat.includes('wildlife') || cat.includes('trek') || cat.includes('adventure') || cat.includes('canyon')) {
+      return <Trees className="w-3.5 h-3.5" />;
+    }
+    if (cat.includes('spiritual') || cat.includes('wellness') || cat.includes('yoga') || cat.includes('temple')) {
+      return <Compass className="w-3.5 h-3.5" />;
+    }
+    return <Compass className="w-3.5 h-3.5" />;
   };
 
   let imageUrl =
