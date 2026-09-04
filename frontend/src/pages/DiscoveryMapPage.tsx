@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { IndiaDiscoveryMap } from '../components/map/IndiaDiscoveryMap';
+import { IndiaInteractiveMap } from '../components/map/IndiaInteractiveMap';
 import { api } from '../lib/api';
-import { Experience } from '../types';
+import { Experience, State, City } from '../types';
 import {
   ArrowLeft,
   Map,
@@ -14,35 +14,46 @@ import {
 
 export function DiscoveryMapPage() {
   const [allPlaces, setAllPlaces] = useState<Experience[]>([]);
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     category: '',
     priceRange: [0, 5000],
     freeEntry: false,
     hiddenGems: false,
-    rating: 0
+    rating: 0,
   });
 
-  // Load all places from backend
+  // Load states, cities and experiences from backend
   useEffect(() => {
-    const loadPlaces = async () => {
+    const loadData = async () => {
       try {
-        const experiences = await api.getExperiences({ limit: 250 });
-        setAllPlaces(experiences);
+        const [statesData, citiesData, expData] = await Promise.all([
+          api.getStates(),
+          api.getCities({ limit: 200 }),
+          api.getExperiences({ limit: 300 }),
+        ]);
+        setStates(statesData || []);
+        setCities(citiesData || []);
+        setAllPlaces(expData || []);
       } catch (error) {
-        console.error('Failed to load experiences:', error);
+        console.error('Failed to load map discovery data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    loadPlaces();
+    loadData();
   }, []);
 
   return (
     <div className="min-h-screen bg-paper text-ink">
       {/* Main Content */}
-      <div className="pt-16 sm:pt-20">
+      <div className="w-full">
         {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="space-y-2">
+        <div className="max-w-7xl mx-auto px-4 pt-2 pb-3">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+            <div className="space-y-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <Link
                   to="/"
@@ -53,31 +64,19 @@ export function DiscoveryMapPage() {
                 </Link>
                 <span className="text-paper-400">/</span>
                 <span className="text-xs font-mono text-dusk">Discovery Map</span>
-                {allPlaces.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-teal/10 text-teal rounded-full text-[11px] font-mono font-bold border border-teal/20">
-                    <Globe className="w-3 h-3" />
-                    {allPlaces.length} cultural places
-                  </span>
-                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-marigold" />
-                <span className="text-xs font-mono uppercase tracking-wider text-teal font-bold">
-                  Interactive Discovery
-                </span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-display font-bold text-ink">
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-ink tracking-tight">
                 Explore India Through Our Interactive Map
               </h1>
-              <p className="text-sm text-dusk-600 max-w-2xl">
-                Click on states to drill down, discover hidden gems, and visually plan your journey across India's rich cultural landscape.
+              <p className="text-xs sm:text-sm text-dusk-600 max-w-2xl font-sans">
+                Explore through 6 regional clusters or tap any state to discover living heritage chapters and authentic destinations.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilters({ ...filters, freeEntry: !filters.freeEntry })}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-colors cursor-pointer ${
                   filters.freeEntry
                     ? 'bg-teal/10 text-teal border border-teal/30'
                     : 'bg-paper-100 text-dusk border border-paper-400 hover:text-teal'
@@ -87,7 +86,7 @@ export function DiscoveryMapPage() {
               </button>
               <button
                 onClick={() => setFilters({ ...filters, hiddenGems: !filters.hiddenGems })}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-colors cursor-pointer ${
                   filters.hiddenGems
                     ? 'bg-marigold/10 text-marigold border border-marigold/30'
                     : 'bg-paper-100 text-dusk border border-paper-400 hover:text-marigold'
@@ -95,49 +94,34 @@ export function DiscoveryMapPage() {
               >
                 Hidden Gems
               </button>
-              <div className="relative">
-                <button
-                  className="px-3 py-1.5 bg-paper-100 text-dusk border border-paper-400 rounded-xl text-xs font-mono font-bold hover:text-ink transition-colors flex items-center gap-1.5"
-                  onClick={() => {}}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                  <span>Filter by Category</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Interactive Map Container */}
         <div className="relative px-4 max-w-7xl mx-auto">
-          <div className="bg-white/50 backdrop-blur-sm rounded-3xl border border-paper-400 shadow-lg p-4 mb-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white/50 backdrop-blur-sm rounded-3xl border border-paper-400 shadow-lg p-3 sm:p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-marigold/10 rounded-xl">
                   <Map className="w-5 h-5 text-marigold" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-display font-bold text-ink">Interactive India Map</h2>
+                  <h2 className="text-lg font-display font-bold text-ink">Interactive Pan-India Map</h2>
                   <p className="text-xs text-dusk">
-                    Click & drag to navigate • Scroll to zoom • Click places for details
+                    6 Regional Clusters • Tap regions or states to explore authentic heritage chapters
                   </p>
                 </div>
-              </div>
-              <div className="hidden md:flex items-center gap-2 text-xs font-mono">
-                <span className="text-dusk">Zoom Level:</span>
-                <span className="font-bold text-ink">Normal</span>
-                <span className="text-dusk">|</span>
-                <span className="text-dusk">View:</span>
-                <span className="font-bold text-ink">States</span>
               </div>
             </div>
 
             {/* The Interactive Map */}
-            <div className="h-[600px] rounded-2xl overflow-hidden border border-paper-400">
-              <IndiaDiscoveryMap
-                initialView="all"
-                enableZoom={true}
-                showControls={true}
+            <div className="h-[620px] rounded-2xl overflow-hidden border border-paper-400">
+              <IndiaInteractiveMap
+                states={states}
+                cities={cities}
+                experiences={allPlaces}
+                className="h-full"
               />
             </div>
           </div>

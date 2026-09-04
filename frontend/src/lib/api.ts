@@ -14,6 +14,8 @@ import {
   Itinerary,
   Provider,
   ProviderAnalyticsSummary,
+  ProviderBooking,
+  ProviderEarningsSummary,
   AdminStats,
   Review,
   DayPlanResponse,
@@ -67,6 +69,10 @@ export const api = {
 
     const qs = params.toString();
     return request<Experience[]>(`/experiences${qs ? `?${qs}` : ''}`);
+  },
+
+  async getLandingExperiences(): Promise<Experience[]> {
+    return request<Experience[]>('/experiences/landing');
   },
 
   async getExperienceById(id: number): Promise<Experience> {
@@ -305,12 +311,49 @@ export const api = {
     return request<Provider>('/providers/me');
   },
 
+  async updateProviderProfile(data: Partial<Provider>): Promise<Provider> {
+    return request<Provider>('/providers/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
   async getProviderExperiences(): Promise<Experience[]> {
     return request<Experience[]>('/providers/experiences');
   },
 
+  async createProviderExperience(data: Partial<Experience>): Promise<Experience> {
+    return request<Experience>('/providers/experiences', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   async getProviderAnalytics(): Promise<ProviderAnalyticsSummary> {
     return request<ProviderAnalyticsSummary>('/providers/analytics');
+  },
+
+  async getProviderBookings(status?: string): Promise<ProviderBooking[]> {
+    const query = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '';
+    return request<ProviderBooking[]>(`/providers/bookings${query}`);
+  },
+
+  async updateBookingStatus(id: number, status: 'confirmed' | 'completed' | 'cancelled'): Promise<ProviderBooking> {
+    return request<ProviderBooking>(`/providers/bookings/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async getProviderEarnings(): Promise<ProviderEarningsSummary> {
+    return request<ProviderEarningsSummary>('/providers/earnings');
+  },
+
+  async extractListingWithCopilot(text: string): Promise<any> {
+    return request<any>('/providers/copilot/extract', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
   },
 
   // Admin

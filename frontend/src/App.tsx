@@ -39,6 +39,7 @@ export function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/destinations" element={<DestinationsPage />} />
+              <Route path="/destination/:state" element={<DestinationDetailPage />} />
               <Route path="/destination/:state/:city" element={<DestinationDetailPage />} />
               <Route path="/experience/:id" element={<ExperienceDetailPage />} />
               <Route path="/ai-guide" element={<AiGuidePage />} />

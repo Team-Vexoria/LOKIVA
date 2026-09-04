@@ -19,9 +19,7 @@ import {
   Filter,
   Layers,
   Heart,
-} from 'lucide-react';
 import { PanIndiaDestinationsMap } from '../components/map/PanIndiaDestinationsMap';
-import { SurpriseMe } from '../components/surprise/SurpriseMe';
 
 const REGIONS = [
   'All',
@@ -224,7 +222,6 @@ export function DestinationsPage() {
 
           {/* Quick Actions */}
           <div className="flex items-center gap-3">
-            <SurpriseMe experiences={experiences} />
             <button
               onClick={handleDetectLocation}
               disabled={isLocating}

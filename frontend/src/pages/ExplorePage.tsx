@@ -4,7 +4,6 @@ import { api } from '../lib/api';
 import { Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
-import { SurpriseMe } from '../components/surprise/SurpriseMe';
 import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import {
   Search,
@@ -25,7 +24,7 @@ import {
 const ENCLAVES = [
   { name: 'Jaipur', label: 'Jaipur' },
   { name: 'Varanasi', label: 'Varanasi' },
-  { name: 'Kochi', label: 'Fort Kochi' },
+  { name: 'Kochi', label: 'Kochi' },
   { name: 'Almora', label: 'Almora' },
   { name: 'Udaipur', label: 'Udaipur' },
   { name: 'Delhi', label: 'Old Delhi' },
@@ -232,7 +231,7 @@ export function ExplorePage() {
                 type="text"
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
-                placeholder="Region, town, or heritage enclave (e.g. Fort Kochi, Jaipur, Almora)..."
+                placeholder="Region, town, or heritage enclave (e.g. Kochi, Jaipur, Almora)..."
                 className="w-full pl-9 pr-4 py-2.5 bg-white border border-paper-300 focus:border-ink rounded-xl text-xs sm:text-sm text-ink placeholder-dusk-400 focus:outline-none transition font-sans shadow-2xs"
               />
             </div>
@@ -281,16 +280,6 @@ export function ExplorePage() {
                   <ChevronDown className="w-3.5 h-3.5" />
                 )}
               </button>
-
-              <SurpriseMe
-                experiences={experiences}
-                currentCity={locationInput}
-                maxBudget={maxPrice}
-                availableHours={3}
-                activeCategory={selectedCategory}
-                wheelchairOnly={wheelchairOnly}
-                lowWalkingOnly={lowWalkingOnly}
-              />
             </div>
           </form>
 
@@ -559,7 +548,7 @@ export function ExplorePage() {
                   No Field Entries Found
                 </h4>
                 <p className="text-xs text-dusk leading-relaxed">
-                  No experiences currently match your selected query or filters. Try clicking an enclave like Jaipur or Fort Kochi above, or reset filters.
+                  No experiences currently match your selected query or filters. Try clicking an enclave like Jaipur or Kochi above, or reset filters.
                 </p>
               </div>
               <button

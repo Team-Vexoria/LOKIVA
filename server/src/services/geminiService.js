@@ -478,3 +478,152 @@ Generate today's plan following the system rules exactly.`;
   throw new Error(`Failed to generate day plan after retries: ${lastError?.message || 'Unknown error'}`);
 }
 
+function fallbackExtractListing(rawText) {
+  const lower = rawText.toLowerCase();
+  
+  // Extract price if mentioned
+  const priceMatch = rawText.match(/(?:₹|rs\.?|inr)\s*(\d+)/i) || rawText.match(/(\d+)\s*(?:rupees|inr|\/\s*pax|per pax)/i);
+  const price = priceMatch ? parseInt(priceMatch[1], 10) : 500;
+
+  // Extract duration if mentioned
+  let duration_mins = 75;
+  const durMatch = rawText.match(/(\d+)\s*(?:mins?|minutes?)/i);
+  const hourMatch = rawText.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)/i);
+  if (durMatch) {
+    duration_mins = parseInt(durMatch[1], 10);
+  } else if (hourMatch) {
+    duration_mins = Math.round(parseFloat(hourMatch[1]) * 60);
+  }
+
+  // Detect category
+  let category = 'Art & Craft';
+  if (/curry|cook|food|tasting|thali|culinary|chef|baking|spices/i.test(rawText)) {
+    category = 'Culinary & Food';
+  } else if (/walk|heritage|trail|architecture|history|colonial|monument|ruins/i.test(rawText)) {
+    category = 'Heritage & Walking Tour';
+  } else if (/music|dance|theatre|pottery|craft|dyeing|printing|painting|weaving|sculpt/i.test(rawText)) {
+    category = 'Art & Craft';
+  } else if (/nature|bird|trek|hike|mangrove|garden|safari/i.test(rawText)) {
+    category = 'Nature & Outdoor';
+  }
+
+  const is_wheelchair = /wheelchair|step-free|step free|ramp|accessible/i.test(rawText);
+  const is_step_free = /step-free|step free|ramp|ground floor|no stairs/i.test(rawText) || is_wheelchair;
+  const is_indoor = /indoor|studio|atelier|workshop|kitchen|air condition|ac/i.test(rawText);
+
+  // Generate an attractive title
+  let title = rawText.split('.')[0].trim();
+  if (title.length > 60 || title.length < 10) {
+    if (category === 'Culinary & Food') {
+      title = 'Traditional Culinary & Heirloom Recipe Masterclass';
+    } else if (category === 'Heritage & Walking Tour') {
+      title = 'Historic Neighborhood Heritage & Architecture Trail';
+    } else {
+      title = 'Authentic Generational Artisan Craft Workshop';
+    }
+  }
+
+  const accessibility = [];
+  if (is_wheelchair) accessibility.push('Wheelchair Accessible');
+  if (is_step_free) accessibility.push('Step-Free Ramp Entry');
+  if (is_indoor) accessibility.push('Indoor Studio Setup');
+  if (accessibility.length === 0) accessibility.push('Ground Floor Access');
+
+  return {
+    title,
+    category,
+    price,
+    duration_mins,
+    location: 'Bandra West, Mumbai',
+    meeting_point: 'Artisan Atelier Main Gate, Bandra West',
+    max_group_size: 8,
+    description: rawText.length > 50
+      ? rawText
+      : `${rawText}. An authentic hands-on cultural experience curated by verified master artisans.`,
+    whats_included: [
+      'All workshop craft materials and tools',
+      'Artisan guidance and cultural storytelling',
+      'Handmade souvenir to take home',
+      'Traditional tea and refreshments',
+    ],
+    requirements: [
+      'Comfortable clothing suitable for hands-on activities',
+      'No prior craft or cooking experience required',
+    ],
+    availability: 'Tuesday to Sunday · 10:30 AM & 3:30 PM slots',
+    accessibility,
+    suggestedPriceBand: `₹${Math.max(200, price - 100)} - ₹${price + 150} based on verified local host benchmarks`,
+    is_wheelchair,
+    is_step_free,
+    is_indoor,
+  };
+}
+
+export async function extractListingWithGemini(rawText) {
+  if (!rawText || typeof rawText !== 'string' || !rawText.trim()) {
+    throw new Error('Listing description text is required');
+  }
+
+  const systemPrompt = `You are LOKIVA's AI Co-Pilot for local artisans, heritage guides, and cultural hosts in India.
+Convert the host's natural language description into a polished, structured experience listing.
+Return ONLY a valid JSON object with the following fields:
+{
+  "title": "string (concise, captivating experience title, max 60 chars)",
+  "category": "string (Must be one of: 'Art & Craft', 'Culinary & Food', 'Heritage & Walking Tour', 'Music & Performing Arts', 'Nature & Outdoor')",
+  "price": number (integer INR per guest, e.g. 450, 600, 800),
+  "duration_mins": number (integer duration in minutes, e.g. 60, 75, 90, 120),
+  "location": "string (locality and city, e.g. 'Pali Hill, Bandra West, Mumbai')",
+  "meeting_point": "string (specific easy-to-find landmark meeting point)",
+  "max_group_size": number (integer, e.g. 6, 8, 10),
+  "description": "string (2-3 engaging sentences describing the authentic hands-on experience, heritage technique, and cultural narrative)",
+  "whats_included": ["string", "string", "string"],
+  "requirements": ["string", "string"],
+  "availability": "string (e.g. 'Tuesday to Sunday · 10:30 AM & 3:30 PM daily slots')",
+  "accessibility": ["string accessibility features, e.g. 'Wheelchair Accessible', 'Step-Free Ramp'"],
+  "suggestedPriceBand": "string (e.g. '₹400 - ₹550 based on 12 nearby artisan studios')",
+  "is_wheelchair": boolean,
+  "is_step_free": boolean,
+  "is_indoor": boolean
+}`;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return fallbackExtractListing(rawText);
+  }
+
+  try {
+    const aiPromise = generateWithFallback(rawText, {
+      systemInstruction: systemPrompt,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.2,
+      },
+    });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Extraction timeout 3500ms exceeded')), 3500)
+    );
+
+    const { text } = await Promise.race([aiPromise, timeoutPromise]);
+
+    const parsed = JSON.parse(text);
+    if (parsed && parsed.title && parsed.price) {
+      return {
+        ...parsed,
+        price: Number(parsed.price) || 500,
+        duration_mins: Number(parsed.duration_mins) || 75,
+        max_group_size: Number(parsed.max_group_size) || 8,
+        is_wheelchair: Boolean(parsed.is_wheelchair),
+        is_step_free: Boolean(parsed.is_step_free),
+        is_indoor: Boolean(parsed.is_indoor),
+        whats_included: Array.isArray(parsed.whats_included) ? parsed.whats_included : [],
+        requirements: Array.isArray(parsed.requirements) ? parsed.requirements : [],
+        accessibility: Array.isArray(parsed.accessibility) ? parsed.accessibility : [],
+      };
+    }
+    return fallbackExtractListing(rawText);
+  } catch (err) {
+    console.warn('Gemini copilot extraction falling back to heuristics:', err.message);
+    return fallbackExtractListing(rawText);
+  }
+}
+

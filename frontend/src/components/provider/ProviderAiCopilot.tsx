@@ -19,9 +19,10 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Experience } from '../../types';
+import { api } from '../../lib/api';
 
 interface ProviderAiCopilotProps {
-  onPublishExperience: (experience: Partial<Experience>) => void;
+  onPublishExperience: (experience: Partial<Experience>) => Promise<void> | void;
   existingListingCount?: number;
 }
 
@@ -49,6 +50,7 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
     'I run a 5th-generation hand-block printing studio in Bandra. We teach natural indigo dyeing for ₹450 with a wheelchair ramp.'
   );
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
@@ -208,7 +210,7 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
     };
   };
 
-  const handleBuildListing = (e: React.FormEvent) => {
+  const handleBuildListing = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
@@ -216,11 +218,19 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
     setIsEditing(false);
     setDraftSaved(false);
 
-    setTimeout(() => {
-      const extracted = extractStructuredData(inputText);
-      setListing(extracted);
+    try {
+      const extracted = await api.extractListingWithCopilot(inputText);
+      if (extracted && extracted.title) {
+        setListing(extracted);
+      } else {
+        setListing(extractStructuredData(inputText));
+      }
+    } catch (err) {
+      console.warn('AI copilot extraction error, using local fallback:', err);
+      setListing(extractStructuredData(inputText));
+    } finally {
       setIsGenerating(false);
-    }, 700);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -229,32 +239,37 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
     setTimeout(() => setDraftSaved(false), 3500);
   };
 
-  const handlePublish = () => {
-    if (!listing) return;
+  const handlePublish = async () => {
+    if (!listing || isPublishing) return;
+    setIsPublishing(true);
 
-    const newExp: Partial<Experience> = {
-      id: Date.now(),
-      title: listing.title,
-      description: listing.description,
-      category: listing.category,
-      price: listing.price,
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      area_name: 'Bandra West',
-      duration_mins: listing.duration_mins,
-      wheelchair_accessible: listing.is_wheelchair,
-      accessibility_wheelchair: listing.is_wheelchair,
-      is_indoor: listing.is_indoor,
-      is_rain_safe: listing.is_indoor,
-      is_family_friendly: true,
-      rating: 5.0,
-      review_count: 1,
-      images: [],
-    };
+    try {
+      const newExp: Partial<Experience> = {
+        title: listing.title,
+        description: listing.description,
+        category: listing.category,
+        price: listing.price,
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        area_name: listing.location || 'Bandra West',
+        duration_mins: listing.duration_mins,
+        approx_duration_mins: listing.duration_mins,
+        wheelchair_accessible: listing.is_wheelchair,
+        accessibility_wheelchair: listing.is_wheelchair,
+        is_indoor: listing.is_indoor,
+        is_rain_safe: listing.is_indoor,
+        is_family_friendly: true,
+        tags: listing.accessibility,
+      };
 
-    onPublishExperience(newExp);
-    setPublishSuccess(true);
-    setTimeout(() => setPublishSuccess(false), 4500);
+      await onPublishExperience(newExp);
+      setPublishSuccess(true);
+      setTimeout(() => setPublishSuccess(false), 4500);
+    } catch (err) {
+      console.error('Failed to publish experience:', err);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -623,10 +638,20 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
                 <button
                   type="button"
                   onClick={handlePublish}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-teal hover:bg-teal-700 text-white rounded-xl font-mono text-xs font-bold transition shadow-md flex items-center justify-center gap-2"
+                  disabled={isPublishing}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-teal hover:bg-teal-700 disabled:opacity-60 text-white rounded-xl font-mono text-xs font-bold transition shadow-md flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4 text-marigold" />
-                  <span>Publish Experience</span>
+                  {isPublishing ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving to Catalogue...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-marigold" />
+                      <span>Publish Experience</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

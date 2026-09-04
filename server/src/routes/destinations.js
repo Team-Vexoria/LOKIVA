@@ -388,14 +388,113 @@ destinationsRouter.get('/surprise', async (req, res) => {
   }
 });
 
+// GET /destinations/state/:state - state-level overview with enclaves and experiences
+destinationsRouter.get('/state/:state', async (req, res) => {
+  try {
+    const { state } = req.params;
+    const cleanState = decodeURIComponent(state).trim();
+
+    let stateRow = await dbGet(
+      'SELECT * FROM states WHERE LOWER(name) = LOWER(?) OR LOWER(code) = LOWER(?) OR LOWER(name) LIKE ?',
+      [cleanState, cleanState, `%${cleanState.toLowerCase()}%`]
+    );
+
+    if (!stateRow) {
+      // Fallback: check if it's in cities state_name
+      const cityWithState = await dbGet(
+        'SELECT state_name FROM cities WHERE LOWER(state_name) LIKE ?',
+        [`%${cleanState.toLowerCase()}%`]
+      );
+      if (cityWithState) {
+        stateRow = {
+          name: cityWithState.state_name,
+          region: 'India',
+          description: `Discover authentic heritage, living culture, and artisanal traditions across ${cityWithState.state_name}.`,
+        };
+      } else {
+        return res.status(404).json({ detail: `State "${state}" not found.` });
+      }
+    }
+
+    // Get cities in this state
+    const cities = await dbAll(
+      'SELECT * FROM cities WHERE LOWER(state_name) = LOWER(?) OR LOWER(state_name) LIKE ? ORDER BY is_popular DESC, name ASC',
+      [stateRow.name, `%${stateRow.name.toLowerCase()}%`]
+    );
+
+    // Get experiences in this state (or across its cities)
+    let experiences = await dbAll(
+      'SELECT * FROM experiences WHERE LOWER(state) = LOWER(?) OR LOWER(state) LIKE ? ORDER BY rating DESC, review_count DESC LIMIT 20',
+      [stateRow.name, `%${stateRow.name.toLowerCase()}%`]
+    );
+
+    if (experiences.length === 0 && cities.length > 0) {
+      const cityNames = cities.map((c) => c.name.toLowerCase());
+      const placeholders = cityNames.map(() => '?').join(',');
+      experiences = await dbAll(
+        `SELECT * FROM experiences WHERE LOWER(city) IN (${placeholders}) ORDER BY rating DESC LIMIT 20`,
+        cityNames
+      );
+    }
+
+    const formattedExp = await Promise.all(
+      experiences.map(async (e) => {
+        const item = {
+          ...e,
+          tags: safeJsonParse(e.tags, []),
+          image_urls: safeJsonParse(e.image_urls, []),
+        };
+        return enrichExperienceWithPexels(item);
+      })
+    );
+
+    res.json({
+      name: stateRow.name,
+      code: stateRow.code || stateRow.name.slice(0, 2).toUpperCase(),
+      region: stateRow.region || 'India',
+      description: stateRow.description || `Explore living heritage and authentic micro-experiences across ${stateRow.name}.`,
+      cities: cities.map((c) => ({
+        ...c,
+        aliases: safeJsonParse(c.aliases, []),
+        categories: safeJsonParse(c.categories, []),
+      })),
+      top_experiences: formattedExp,
+      total_experiences: experiences.length,
+      heritage_count: stateRow.heritage_count || cities.reduce((acc, c) => acc + (c.heritage_count || 4), 0),
+    });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
 // GET /destinations/:state/:city - comprehensive hierarchical detail
 destinationsRouter.get('/:state/:city', async (req, res) => {
   try {
     const { state, city } = req.params;
-    const cityRow = await dbGet(
-      'SELECT * FROM cities WHERE LOWER(name) = LOWER(?) OR LOWER(aliases) LIKE LOWER(?)',
-      [city.toLowerCase(), `%${city.toLowerCase()}%`]
+    const cleanCity = decodeURIComponent(city).trim().toLowerCase();
+    const cleanState = decodeURIComponent(state).trim().toLowerCase();
+
+    // 1. Exact or alias match
+    let cityRow = await dbGet(
+      'SELECT * FROM cities WHERE LOWER(name) = ? OR LOWER(aliases) LIKE ?',
+      [cleanCity, `%${cleanCity}%`]
     );
+
+    // 2. Fuzzy substring match if not found
+    if (!cityRow) {
+      cityRow = await dbGet(
+        'SELECT * FROM cities WHERE LOWER(name) LIKE ? OR ? LIKE "%" || LOWER(name) || "%" OR (LOWER(state_name) LIKE ? AND (LOWER(name) LIKE ? OR ? LIKE "%" || LOWER(name) || "%"))',
+        [`%${cleanCity}%`, cleanCity, `%${cleanState}%`, `%${cleanCity}%`, cleanCity]
+      );
+    }
+
+    // 3. Fallback: match by state if only city in state
+    if (!cityRow) {
+      cityRow = await dbGet(
+        'SELECT * FROM cities WHERE LOWER(state_name) = ? OR LOWER(state_name) LIKE ? LIMIT 1',
+        [cleanState, `%${cleanState}%`]
+      );
+    }
 
     if (!cityRow) {
       return res.status(404).json({ detail: `Destination "${city}" not found.` });
@@ -403,10 +502,18 @@ destinationsRouter.get('/:state/:city', async (req, res) => {
 
     const enrichedCity = await enrichDestinationWithPexels(cityRow);
     const areas = await dbAll('SELECT * FROM areas WHERE city_id = ?', [cityRow.id]);
-    const topExp = await dbAll(
-      'SELECT * FROM experiences WHERE LOWER(city) = LOWER(?) ORDER BY rating DESC, review_count DESC LIMIT 12',
-      [cityRow.name]
+    let topExp = await dbAll(
+      'SELECT * FROM experiences WHERE LOWER(city) = LOWER(?) OR LOWER(city) LIKE ? ORDER BY rating DESC, review_count DESC LIMIT 20',
+      [cityRow.name, `%${cityRow.name.toLowerCase()}%`]
     );
+
+    // If experiences list is empty for city, search by state
+    if (topExp.length === 0) {
+      topExp = await dbAll(
+        'SELECT * FROM experiences WHERE LOWER(state) = LOWER(?) OR LOWER(state) LIKE ? ORDER BY rating DESC LIMIT 20',
+        [cityRow.state_name, `%${cityRow.state_name.toLowerCase()}%`]
+      );
+    }
 
     const formattedExp = await Promise.all(
       topExp.map(async (e) => {
@@ -446,6 +553,69 @@ destinationsRouter.get('/:state/:city', async (req, res) => {
       top_experiences: formattedExp,
       weather_summary: { temp_c: 28, condition: 'Clear Sky', is_raining: false },
     });
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
+// GET /destinations/:state - single parameter router (handles state or city directly)
+destinationsRouter.get('/:state', async (req, res, next) => {
+  try {
+    const { state } = req.params;
+    const clean = decodeURIComponent(state).trim().toLowerCase();
+
+    // Check if it's a state
+    const stateRow = await dbGet(
+      'SELECT * FROM states WHERE LOWER(name) = ? OR LOWER(code) = ? OR LOWER(name) LIKE ?',
+      [clean, clean, `%${clean}%`]
+    );
+
+    if (stateRow) {
+      // Find cities in this state
+      const cities = await dbAll('SELECT * FROM cities WHERE LOWER(state_name) = LOWER(?)', [stateRow.name]);
+      let experiences = await dbAll(
+        'SELECT * FROM experiences WHERE LOWER(state) = LOWER(?) ORDER BY rating DESC LIMIT 20',
+        [stateRow.name]
+      );
+
+      const formattedExp = await Promise.all(
+        experiences.map(async (e) => {
+          const item = {
+            ...e,
+            tags: safeJsonParse(e.tags, []),
+            image_urls: safeJsonParse(e.image_urls, []),
+          };
+          return enrichExperienceWithPexels(item);
+        })
+      );
+
+      return res.json({
+        name: stateRow.name,
+        code: stateRow.code,
+        region: stateRow.region,
+        description: stateRow.description,
+        cities: cities.map((c) => ({
+          ...c,
+          aliases: safeJsonParse(c.aliases, []),
+          categories: safeJsonParse(c.categories, []),
+        })),
+        top_experiences: formattedExp,
+        total_experiences: experiences.length,
+        heritage_count: stateRow.heritage_count || 8,
+      });
+    }
+
+    // Check if it's a city directly
+    const cityRow = await dbGet(
+      'SELECT * FROM cities WHERE LOWER(name) = ? OR LOWER(aliases) LIKE ?',
+      [clean, `%${clean}%`]
+    );
+
+    if (cityRow) {
+      return res.redirect(`/api/v1/destinations/${encodeURIComponent(cityRow.state_name)}/${encodeURIComponent(cityRow.name)}`);
+    }
+
+    return res.status(404).json({ detail: `Destination "${state}" not found.` });
   } catch (err) {
     res.status(500).json({ detail: err.message });
   }

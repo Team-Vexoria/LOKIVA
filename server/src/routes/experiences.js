@@ -196,11 +196,35 @@ experiencesRouter.get('/', async (req, res) => {
   }
 });
 
+// Specifically curated iconic landmark experiences for the landing page
+const LANDING_EXPERIENCE_IDS = [1087, 3752, 1491, 1495, 1497, 3934, 1094, 2468, 1098];
+
+// GET /experiences/landing
+experiencesRouter.get('/landing', async (req, res) => {
+  try {
+    const placeholders = LANDING_EXPERIENCE_IDS.map(() => '?').join(',');
+    const rows = await dbAll(
+      `SELECT * FROM experiences WHERE id IN (${placeholders})`,
+      LANDING_EXPERIENCE_IDS
+    );
+    const rowsById = new Map(rows.map((r) => [r.id, r]));
+    const ordered = LANDING_EXPERIENCE_IDS.map((id) => rowsById.get(id)).filter(Boolean);
+    const formattedRows = ordered.map(formatExperience);
+
+    res.json(formattedRows);
+  } catch (err) {
+    res.status(500).json({ detail: err.message });
+  }
+});
+
 // GET /experiences/:id
 experiencesRouter.get('/:id', async (req, res) => {
   try {
     const exp = await dbGet('SELECT * FROM experiences WHERE id = ?', [req.params.id]);
     if (!exp) return res.status(404).json({ detail: 'Experience not found' });
+
+    // Track real organic views in background
+    dbRun('UPDATE experiences SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?', [req.params.id]).catch(() => {});
 
     const provider = exp.provider_id ? await dbGet('SELECT * FROM providers WHERE id = ?', [exp.provider_id]) : null;
     const reviews = await dbAll('SELECT * FROM reviews WHERE experience_id = ? ORDER BY created_at DESC LIMIT 10', [exp.id]);

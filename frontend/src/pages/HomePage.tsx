@@ -17,28 +17,199 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
+// 9 Curated Landmark Experiences specifically requested for the landing page
+const CURATED_LANDING_EXPERIENCES: Experience[] = [
+  {
+    id: 1087,
+    title: 'Taj Mahal (UNESCO World Heritage Site)',
+    tagline: '17th-century ivory-white marble mausoleum on the southern bank of Yamuna river',
+    category: 'Heritage & History',
+    city: 'Agra',
+    state: 'Uttar Pradesh',
+    area_name: 'Tajganj, Agra',
+    price: 50,
+    rating: 4.95,
+    review_count: 540,
+    approx_duration_mins: 120,
+    image_url: '/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/800px-Taj_Mahal_%28Edited%29.jpeg'),
+    image_urls: ['/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/800px-Taj_Mahal_%28Edited%29.jpeg')],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['monument', 'unesco', 'mughal', 'heritage'],
+  } as Experience,
+  {
+    id: 3752,
+    title: 'India Gate & Kartavya Path',
+    tagline: 'Colossal 42m triumphal arch war memorial at the heart of the ceremonial boulevard',
+    category: 'Heritage & History',
+    city: 'Delhi',
+    state: 'Delhi',
+    area_name: 'Rajpath / Kartavya Path, Central Delhi',
+    price: 0,
+    rating: 4.88,
+    review_count: 420,
+    approx_duration_mins: 60,
+    image_url: '/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/India_Gate_in_New_Delhi_03-2016.jpg/800px-India_Gate_in_New_Delhi_03-2016.jpg'),
+    image_urls: ['/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/India_Gate_in_New_Delhi_03-2016.jpg/800px-India_Gate_in_New_Delhi_03-2016.jpg')],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['monument', 'memorial', 'history'],
+  } as Experience,
+  {
+    id: 1491,
+    title: "Marine Drive (Queen's Necklace Promenade)",
+    tagline: '3.6 km sweeping C-shaped seaside boulevard overlooking the Arabian Sea',
+    category: 'Nature & Wildlife',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    area_name: 'Marine Drive, Netaji Subhash Road',
+    price: 0,
+    rating: 4.92,
+    review_count: 385,
+    approx_duration_mins: 60,
+    image_url: 'https://images.pexels.com/photos/33948766/pexels-photo-33948766.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    image_urls: ['https://images.pexels.com/photos/33948766/pexels-photo-33948766.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['promenade', 'sea', 'sunset', 'mumbai'],
+  } as Experience,
+  {
+    id: 1495,
+    title: 'Shree Siddhivinayak Ganpati Temple',
+    tagline: "1801 CE gold-plated sanctum dedicated to Lord Ganesha, Mumbai's patron deity",
+    category: 'Spiritual & Wellness',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    area_name: 'Prabhadevi, Dadar',
+    price: 0,
+    rating: 4.94,
+    review_count: 490,
+    approx_duration_mins: 60,
+    image_url: 'https://images.pexels.com/photos/30722659/pexels-photo-30722659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    image_urls: ['https://images.pexels.com/photos/30722659/pexels-photo-30722659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['temple', 'spiritual', 'ganesha'],
+  } as Experience,
+  {
+    id: 1497,
+    title: 'Kanheri Caves & Sanjay Gandhi National Park',
+    tagline: '109 rock-cut Buddhist monastic caves carved into basalt hills from 1st century BCE',
+    category: 'Heritage & History',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    area_name: 'Borivali East, Mumbai',
+    price: 25,
+    rating: 4.86,
+    review_count: 310,
+    approx_duration_mins: 120,
+    image_url: 'https://images.pexels.com/photos/18209328/pexels-photo-18209328.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    image_urls: ['https://images.pexels.com/photos/18209328/pexels-photo-18209328.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: false,
+    tags: ['caves', 'buddhist', 'ancient', 'monastery'],
+  } as Experience,
+  {
+    id: 3934,
+    title: 'Haji Ali Dargah',
+    tagline: '15th-century Indo-Islamic marble shrine on an islet 500m into the Arabian Sea',
+    category: 'Spiritual & Wellness',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    area_name: 'Mahalaxmi, Mumbai',
+    price: 0,
+    rating: 4.89,
+    review_count: 360,
+    approx_duration_mins: 60,
+    image_url: 'https://images.pexels.com/photos/2643760/pexels-photo-2643760.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    image_urls: ['https://images.pexels.com/photos/2643760/pexels-photo-2643760.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: false,
+    tags: ['dargah', 'spiritual', 'shrine', 'sea'],
+  } as Experience,
+  {
+    id: 1094,
+    title: 'Hawa Mahal (Palace of Winds)',
+    tagline: 'Iconic 5-story pink honeycomb facade with 953 carved jharokhas (latticed windows)',
+    category: 'Heritage & History',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    area_name: 'Badi Choupad, Old City',
+    price: 50,
+    rating: 4.91,
+    review_count: 460,
+    approx_duration_mins: 60,
+    image_url: '/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Hawa_Mahal_2011.jpg/800px-Hawa_Mahal_2011.jpg'),
+    image_urls: ['/api/v1/experiences/proxy-image?url=' + encodeURIComponent('https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Hawa_Mahal_2011.jpg/800px-Hawa_Mahal_2011.jpg')],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: false,
+    tags: ['palace', 'jaipur', 'architecture', 'heritage'],
+  } as Experience,
+  {
+    id: 2468,
+    title: 'Albert Hall Museum & Victorian Royal Artifacts Gallery',
+    tagline: 'Indo-Saracenic royal museum housing miniature paintings, armoury, and ancient relics',
+    category: 'Heritage & History',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    area_name: 'Ram Niwas Garden, Jaipur',
+    price: 50,
+    rating: 4.87,
+    review_count: 275,
+    approx_duration_mins: 90,
+    image_url: 'https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80',
+    image_urls: ['https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=800&q=80'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['museum', 'architecture', 'artifacts', 'jaipur'],
+  } as Experience,
+  {
+    id: 1098,
+    title: 'Jaipur Traditional Blue Pottery Artisan Studio',
+    tagline: 'GI-tagged Turko-Persian glazed pottery made without clay using quartz stone and glass',
+    category: 'Art & Craft',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    area_name: 'Kot Jewar / Sanganer Road',
+    price: 350,
+    rating: 4.93,
+    review_count: 215,
+    approx_duration_mins: 60,
+    image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80',
+    image_urls: ['https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80'],
+    is_active: true,
+    is_family_friendly: true,
+    wheelchair_accessible: true,
+    tags: ['blue pottery', 'artisan', 'craft', 'jaipur'],
+  } as Experience,
+];
+
 export function HomePage() {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [selectedCity] = useState('Mumbai');
-  const [isLoading, setIsLoading] = useState(true);
+  const [experiences, setExperiences] = useState<Experience[]>(CURATED_LANDING_EXPERIENCES);
+  const [selectedCity] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     async function loadInitial() {
-      setIsLoading(true);
       try {
-        const list = await api.getExperiences({ limit: 16 });
-        const withImages = (list || []).filter(
-          (e) => e.image_url && e.image_url.startsWith('http')
-        );
-        setExperiences(deduplicateExperienceList(withImages.length > 0 ? withImages : list));
+        const list = await api.getLandingExperiences();
+        if (list && list.length > 0) {
+          setExperiences(list);
+        }
       } catch (err) {
-        console.error('Failed to load initial experiences:', err);
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load landing experiences, using curated default:', err);
       }
     }
     loadInitial();
@@ -125,11 +296,10 @@ export function HomePage() {
 
   const categories = [
     'All',
-    'Food & Culinary',
-    'Art & Craft',
     'Heritage & History',
-    'Music & Dance',
+    'Spiritual & Wellness',
     'Nature & Wildlife',
+    'Art & Craft',
   ];
 
   const filteredExperiences =
@@ -202,7 +372,9 @@ export function HomePage() {
       </section>
 
       {/* LOKIVA MOMENTS - IMMERSIVE VISUAL EXPERIENCE DISCOVERY */}
-      <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
+      <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
+      </section>
 
       {/* FREQUENTLY ASKED QUESTIONS */}
       <FaqSection />

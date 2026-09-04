@@ -18,6 +18,7 @@ import {
 interface LokivaMomentsSectionProps {
   experiences: Experience[];
   selectedCity?: string;
+  className?: string;
 }
 
 interface CategoryFilter {
@@ -35,7 +36,7 @@ const MOMENT_CATEGORIES: CategoryFilter[] = [
   { id: 'hidden_gems', label: 'Hidden Gems', icon: Sparkles },
 ];
 
-export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMomentsSectionProps) {
+export function LokivaMomentsSection({ experiences, selectedCity, className = '' }: LokivaMomentsSectionProps) {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -92,22 +93,55 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
     }
   }, [experiences, activeCategory, selectedCity]);
 
-  // Continuous Slow Auto-Scroll to the Right (User can pause on hover / touch)
+  // Auto-Scroll & Interactive Scroll Controls
   const isHoveredRef = useRef(false);
+  const isInteractingRef = useRef(false);
+  const interactionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const pauseAutoScroll = (ms: number = 2000) => {
+    isInteractingRef.current = true;
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+    interactionTimeoutRef.current = setTimeout(() => {
+      isInteractingRef.current = false;
+    }, ms);
+  };
+
+  // Hover + Mouse Wheel Scroll: translates wheel delta to horizontal carousel scrolling
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (delta !== 0) {
+        e.preventDefault();
+        pauseAutoScroll(2000);
+        el.scrollLeft += delta;
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  // Continuous Smooth Auto-Scroll to the Right (faster gliding pace)
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || filteredMoments.length === 0) return;
 
     let animId: number;
     let lastTime = performance.now();
-    const scrollSpeed = 0.75; // Smooth slow gliding speed (px per ~16.6ms)
+    const scrollSpeed = 1.8; // Smooth, noticeable gliding speed (px per ~16.6ms)
 
     const step = (now: number) => {
       const delta = now - lastTime;
       lastTime = now;
 
-      if (!isHoveredRef.current && el) {
+      if (!isHoveredRef.current && !isInteractingRef.current && el) {
         el.scrollLeft += scrollSpeed * Math.min(delta / 16.67, 3);
         // Seamless reset when reaching right boundary
         if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 4) {
@@ -119,19 +153,25 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
     };
 
     animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
+    return () => {
+      cancelAnimationFrame(animId);
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+    };
   }, [filteredMoments.length]);
 
-  // Carousel Manual Scroll Controls
+  // Carousel Manual Scroll Controls (Buttons)
   const handleScroll = (direction: 'left' | 'right') => {
     const el = scrollContainerRef.current;
     if (!el) return;
+    pauseAutoScroll(2500); // Pause RAF mutations so native smooth scrolling finishes cleanly
     const scrollAmount = direction === 'left' ? -380 : 380;
     el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
   return (
-    <section className="py-6 sm:py-8 border-t border-paper-300 space-y-6 text-ink">
+    <section className={`py-6 sm:py-8 border-t border-paper-300 space-y-6 text-ink ${className}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-2 max-w-2xl">
@@ -211,7 +251,11 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
           </button>
         </div>
       ) : (
-        <div className="relative group/carousel">
+        <div
+          className="relative group/carousel"
+          onMouseEnter={() => { isHoveredRef.current = true; }}
+          onMouseLeave={() => { isHoveredRef.current = false; }}
+        >
           {/* Side Floating Left Arrow */}
           <button
             type="button"
@@ -227,9 +271,9 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
             ref={scrollContainerRef}
             onMouseEnter={() => { isHoveredRef.current = true; }}
             onMouseLeave={() => { isHoveredRef.current = false; }}
-            onTouchStart={() => { isHoveredRef.current = true; }}
+            onTouchStart={() => { pauseAutoScroll(3000); }}
             onTouchEnd={() => { isHoveredRef.current = false; }}
-            className="flex items-center gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex items-center gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {filteredMoments.map((exp) => (
               <MomentCard key={exp.id} experience={exp} />

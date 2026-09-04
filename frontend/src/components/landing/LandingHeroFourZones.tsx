@@ -277,14 +277,6 @@ export function LandingHeroFourZones() {
     triggerConstraintCheckSequence();
   };
 
-  // Surprise Me action
-  const handleSurpriseMe = () => {
-    if (!userCity) return;
-    setSolveSeed((s) => s + Math.floor(Math.random() * 5 + 1));
-    setPathKey((k) => k + 1);
-    triggerConstraintCheckSequence();
-  };
-
   // Real Constraint Packing Solver
   const activeItinerary: SolvedItinerary | null = useMemo(() => {
     if (!cityExperiences || cityExperiences.length === 0 || !userCity) return null;
@@ -763,18 +755,6 @@ export function LandingHeroFourZones() {
               >
                 <span>Pack Plan</span>
                 <ArrowRight className="w-4 h-4 text-[#F0A63B]" />
-              </motion.button>
-
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                disabled={!userCity || isSolvingAnimation}
-                onClick={handleSurpriseMe}
-                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#F0A63B] hover:bg-[#d88f28] text-[#12213B] font-mono text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#12213B]" />
-                <span>Surprise Me</span>
               </motion.button>
             </div>
           </div>

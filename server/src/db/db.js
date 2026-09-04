@@ -14,35 +14,72 @@ export const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Failed to open SQLite database:', err.message);
   } else {
     console.log(`Connected to SQLite database at ${dbPath}`);
+    // Enable Write-Ahead Logging (WAL) for concurrency & set busy timeout
+    db.run('PRAGMA journal_mode = WAL');
+    db.run('PRAGMA busy_timeout = 30000');
   }
 });
+db.configure('busyTimeout', 30000);
 
-// Promise wrappers for async/await
-export const dbRun = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-  });
+// Promise wrappers for async/await with automatic retry on SQLITE_BUSY
+export const dbRun = async (sql, params = [], maxRetries = 5) => {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+          if (err) reject(err);
+          else resolve({ lastID: this.lastID, changes: this.changes });
+        });
+      });
+    } catch (err) {
+      if ((err.code === 'SQLITE_BUSY' || err.message?.includes('locked')) && attempt < maxRetries - 1) {
+        const delay = (attempt + 1) * 300 + Math.floor(Math.random() * 200);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
 };
 
-export const dbGet = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
+export const dbGet = async (sql, params = [], maxRetries = 5) => {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+    } catch (err) {
+      if ((err.code === 'SQLITE_BUSY' || err.message?.includes('locked')) && attempt < maxRetries - 1) {
+        const delay = (attempt + 1) * 300 + Math.floor(Math.random() * 200);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
 };
 
-export const dbAll = (sql, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows || []);
-    });
-  });
+export const dbAll = async (sql, params = [], maxRetries = 5) => {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        });
+      });
+    } catch (err) {
+      if ((err.code === 'SQLITE_BUSY' || err.message?.includes('locked')) && attempt < maxRetries - 1) {
+        const delay = (attempt + 1) * 300 + Math.floor(Math.random() * 200);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
 };
 
 export async function initDb() {

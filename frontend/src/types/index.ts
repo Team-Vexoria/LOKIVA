@@ -140,6 +140,10 @@ export interface Provider {
   rating: number;
   total_reviews: number;
   created_at: string;
+  settlement_account?: string;
+  craft_specialty?: string;
+  accessibility_compliance?: string;
+  cover_image_url?: string;
 }
 
 export interface ProviderAnalyticsSummary {
@@ -149,9 +153,50 @@ export interface ProviderAnalyticsSummary {
   revenue: number;
   conversion_rate: number;
   rating: number;
+  review_count?: number;
   views_trend: Array<{ day: string; views: number; bookings: number }>;
   audience_breakdown: Record<string, number>;
   top_experiences: Array<{ id: number; title: string; views: number; bookings: number; revenue: number }>;
+}
+
+export interface ProviderBooking {
+  id: number;
+  provider_id: number;
+  experience_id: number;
+  experience_title?: string;
+  experience_category?: string;
+  user_id?: number;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string;
+  party_size: number;
+  booking_date: string;
+  time_slot?: string;
+  total_price: number;
+  status: 'confirmed' | 'completed' | 'pending' | 'cancelled';
+  payout_status: 'settled' | 'pending' | 'processing' | 'cancelled';
+  special_requests?: string;
+  created_at: string;
+}
+
+export interface ProviderEarningsSummary {
+  lifetime_revenue: number;
+  available_balance: number;
+  pending_settlement: number;
+  completed_payouts: number;
+  settlement_account?: string;
+  transactions: Array<{
+    id: number;
+    booking_id: number;
+    experience_title: string;
+    guest_name: string;
+    date: string;
+    amount: number;
+    platform_fee: number;
+    net_payout: number;
+    status: 'settled' | 'pending' | 'processing' | 'cancelled';
+    booking_status?: string;
+  }>;
 }
 
 export interface Review {

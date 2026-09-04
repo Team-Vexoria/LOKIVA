@@ -1,574 +1,621 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../lib/api';
-import { Experience } from '../types';
-import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
+import React, { useState, useEffect } from 'react';
 import {
-  saveActiveItineraryOffline,
-  getOfflineItinerary,
-  useNetworkStatus,
-} from '../lib/offlineStorage';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Sparkles,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  ArrowRight,
-  ShieldCheck,
-  Navigation,
-  WifiOff,
-  Car,
-  Compass,
-  Check,
-  Banknote,
-  Route,
-  Building2,
-} from 'lucide-react';
+  ItineraryTripDetails,
+  ItineraryDay,
+  ItineraryActivity,
+  ItineraryPracticalInfo,
+  ItineraryViewMode,
+  BookingStatus,
+} from '../types/itinerary';
+import { TripHeaderOverview } from '../components/itinerary/TripHeaderOverview';
+import { ItineraryViewTabs } from '../components/itinerary/ItineraryViewTabs';
+import { DayCardTimeline } from '../components/itinerary/DayCardTimeline';
+import { TripSummarySidebar } from '../components/itinerary/TripSummarySidebar';
+import { ItineraryMapView } from '../components/itinerary/ItineraryMapView';
+import { ItineraryListView } from '../components/itinerary/ItineraryListView';
+import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView';
+import { ShareItineraryModal } from '../components/itinerary/ShareItineraryModal';
+import { EditTripModal } from '../components/itinerary/EditTripModal';
+import { AddActivityModal } from '../components/itinerary/AddActivityModal';
+import { Plus } from 'lucide-react';
+
+// Generate dynamic current dates for the multi-day journey
+const getDatesInfo = () => {
+  const now = new Date();
+  const d1 = new Date(now);
+  const d2 = new Date(now);
+  d2.setDate(d1.getDate() + 1);
+  const d3 = new Date(now);
+  d3.setDate(d1.getDate() + 2);
+
+  const formatDate = (d: Date) =>
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatDayOfWeek = (d: Date) =>
+    d.toLocaleDateString('en-US', { weekday: 'long' });
+
+  return {
+    d1Date: formatDate(d1),
+    d1Day: formatDayOfWeek(d1),
+    d2Date: formatDate(d2),
+    d2Day: formatDayOfWeek(d2),
+    d3Date: formatDate(d3),
+    d3Day: formatDayOfWeek(d3),
+    startDate: formatDate(d1),
+    endDate: `${formatDate(d3)}, ${d3.getFullYear()}`,
+  };
+};
+
+const datesInfo = getDatesInfo();
+
+// Default Curated Multi-Day Cultural Journey
+const DEFAULT_TRIP_DETAILS: ItineraryTripDetails = {
+  title: 'Your 3-Day Mumbai & Coastal Heritage Journey',
+  destination: 'Mumbai',
+  state: 'Maharashtra',
+  startDate: datesInfo.startDate,
+  endDate: datesInfo.endDate,
+  travelers: 2,
+  totalBudgetLimit: 25000,
+  hotel: 'Taj Heritage Quarter, Colaba',
+};
+
+const DEFAULT_PRACTICAL_INFO: ItineraryPracticalInfo = {
+  weatherSummary: 'Sunny & Coastal Breeze',
+  temperature: '28°C – 32°C',
+  packingList: [
+    'Breathable light cottons',
+    'Comfortable walking shoes',
+    'Modesty scarf for temples',
+    'Sunscreen & sunglasses',
+  ],
+  accessibilityNotes:
+    'Promenades and major shrines feature step-free ramps. Rock-cut cave sections have uneven stone steps.',
+  transitNotes:
+    'Metered black-and-yellow taxis are plentiful in South Mumbai; auto-rickshaws operate throughout the suburbs.',
+  languages: ['Hindi', 'Marathi', 'English'],
+};
+
+const DEFAULT_DAYS: ItineraryDay[] = [
+  {
+    dayNumber: 1,
+    date: datesInfo.d1Date,
+    dayOfWeek: datesInfo.d1Day,
+    title: 'South Mumbai Architectural Heritage & Arabian Coast',
+    heroImage:
+      'https://images.pexels.com/photos/33948766/pexels-photo-33948766.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    hotel: 'Colaba Heritage Quarter',
+    activities: [
+      {
+        id: 101,
+        timeSlot: 'Morning',
+        timeRange: '09:00 AM - 11:30 AM',
+        title: 'Gateway Waterfront & Indo-Saracenic Architecture Walk',
+        category: 'Heritage & History',
+        location: 'Apollo Bunder, Colaba',
+        description:
+          'Stroll past the iconic 1924 basalt ceremonial arch overlooking the naval harbour, discovering colonial history and maritime trade tales.',
+        duration: '2.5 hours',
+        durationMins: 150,
+        includes: ['Heritage walking guide', 'Historical booklet'],
+        costPerPerson: 450,
+        bookingStatus: 'confirmed',
+        gettingThere: '5-min walk from Colaba hotel base',
+        transitTimeMins: 5,
+        transitCost: 0,
+        whatToBring: ['Comfortable sneakers', 'Camera', 'Sun hat'],
+        notes: 'Meet guide Ramesh near the statue at 8:50 AM.',
+        photos: [
+          '/assets/monuments/gateway-of-india-cutout.png',
+        ],
+      },
+      {
+        id: 102,
+        timeSlot: 'Breakfast',
+        timeRange: '12:00 PM - 01:30 PM',
+        title: 'Authentic Parsi Cafe Berry Pulao & Bun Maska Tasting',
+        category: 'Food & Culinary',
+        location: 'Kala Ghoda Heritage Precinct',
+        description:
+          'Savor heritage Irani chai, bun maska, and fragrant berry pulao inside one of the city’s century-old atmospheric cafes.',
+        duration: '1.5 hours',
+        durationMins: 90,
+        includes: ['Curated 3-course tasting menu', 'Fresh Irani chai'],
+        costPerPerson: 650,
+        bookingStatus: 'confirmed',
+        gettingThere: '8-min heritage walk through Kala Ghoda art district',
+        transitTimeMins: 8,
+        transitCost: 0,
+        whatToBring: ['Appetite for rich regional spices'],
+        notes: 'Table reserved under Piyush.',
+        photos: [
+          'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&q=80',
+        ],
+      },
+      {
+        id: 103,
+        timeSlot: 'Afternoon',
+        timeRange: '02:30 PM - 04:30 PM',
+        title: 'Victorian Gothic Art District & Jehangir Gallery Tour',
+        category: 'Art & Craft',
+        location: 'Fort & Kala Ghoda, Mumbai',
+        description:
+          'Discover contemporary Indian paintings, pavement sketch artists, and Indo-Saracenic facades in Mumbai’s cultural art enclave.',
+        duration: '2 hours',
+        durationMins: 120,
+        includes: ['Gallery admission', 'Art curator introduction'],
+        costPerPerson: 250,
+        bookingStatus: 'available',
+        gettingThere: '5-min stroll across the tree-lined avenue',
+        transitTimeMins: 5,
+        transitCost: 0,
+        whatToBring: ['Notebook', 'Reading glasses'],
+        notes: '',
+        photos: [
+          'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80',
+        ],
+      },
+      {
+        id: 104,
+        timeSlot: 'Evening',
+        timeRange: '05:30 PM - 07:30 PM',
+        title: "Marine Drive Queen's Necklace Sunset Promenade",
+        category: 'Nature & Wildlife',
+        location: 'Marine Drive, Netaji Subhash Road',
+        description:
+          'Watch the golden hour turn into the illuminated Queen’s Necklace lights along the 3.6 km sweeping Arabian Sea boulevard.',
+        duration: '2 hours',
+        durationMins: 120,
+        includes: ['Public coastal promenade access', 'Roasted corn snack stop'],
+        costPerPerson: 0,
+        bookingStatus: 'confirmed',
+        gettingThere: '10-min scenic taxi along Netaji Subhash Road',
+        transitTimeMins: 10,
+        transitCost: 110,
+        whatToBring: ['Light evening jacket', 'Camera'],
+        notes: 'Best sunset viewpoint is opposite Churchgate promenade.',
+        photos: [
+          'https://images.pexels.com/photos/33948766/pexels-photo-33948766.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+        ],
+      },
+    ],
+  },
+  {
+    dayNumber: 2,
+    date: datesInfo.d2Date,
+    dayOfWeek: datesInfo.d2Day,
+    title: 'Sacred Sanctums & Ancient Basalt Monasteries',
+    heroImage:
+      'https://images.pexels.com/photos/30722659/pexels-photo-30722659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+    hotel: 'Colaba Heritage Quarter',
+    activities: [
+      {
+        id: 201,
+        timeSlot: 'Morning',
+        timeRange: '08:00 AM - 10:00 AM',
+        title: 'Shree Siddhivinayak Ganpati Temple Morning Aarti',
+        category: 'Spiritual & Wellness',
+        location: 'Prabhadevi, Dadar',
+        description:
+          'Experience the morning bells, devotional floral garlands, and gold-plated sanctum of Lord Ganesha, patron deity of Mumbai.',
+        duration: '2 hours',
+        durationMins: 120,
+        includes: ['Priority darshan pass', 'Traditional modak prasad'],
+        costPerPerson: 250,
+        bookingStatus: 'confirmed',
+        gettingThere: '25-min taxi through the coastal Sea Link route',
+        transitTimeMins: 25,
+        transitCost: 280,
+        whatToBring: ['Modest shoulder-covering clothing', 'Slip-on footwear'],
+        notes: 'Deposit shoes at counter #3 near the north entrance.',
+        photos: [
+          'https://images.pexels.com/photos/30722659/pexels-photo-30722659.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+        ],
+      },
+      {
+        id: 202,
+        timeSlot: 'Breakfast',
+        timeRange: '10:30 AM - 11:30 AM',
+        title: 'Authentic Maharashtrian Kothimbir Vadi & Thalipeeth',
+        category: 'Food & Culinary',
+        location: 'Dadar West',
+        description:
+          'Taste crispy cilantro cakes, spiced thalipeeth, and fresh filter coffee at iconic regional eatery Prakash.',
+        duration: '1 hour',
+        durationMins: 60,
+        includes: ['Regional breakfast platter', 'Masala chai'],
+        costPerPerson: 300,
+        bookingStatus: 'available',
+        gettingThere: '6-min auto-rickshaw from temple gate',
+        transitTimeMins: 6,
+        transitCost: 40,
+        whatToBring: ['Cash for tip'],
+        notes: '',
+        photos: [
+          'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&q=80',
+        ],
+      },
+      {
+        id: 203,
+        timeSlot: 'Afternoon',
+        timeRange: '01:00 PM - 04:30 PM',
+        title: 'Kanheri Caves & Sanjay Gandhi National Park Forest Trail',
+        category: 'Heritage & History',
+        location: 'Borivali East, Mumbai',
+        description:
+          'Climb basalt hills to explore 109 rock-cut Buddhist prayer halls and monastic viharas dating back to 1st century BCE amidst dense teak forests.',
+        duration: '3.5 hours',
+        durationMins: 210,
+        includes: ['National park entry', 'ASI monuments pass', 'Park eco-bus'],
+        costPerPerson: 180,
+        bookingStatus: 'pending',
+        gettingThere: 'Metro or direct cab to park gate, then internal shuttle',
+        transitTimeMins: 45,
+        transitCost: 350,
+        whatToBring: ['Walking shoes with grip', 'Mosquito repellent', 'Water bottle'],
+        notes: 'Cave 3 has the massive 7-meter Buddha relief.',
+        photos: [
+          'https://images.pexels.com/photos/18209328/pexels-photo-18209328.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+        ],
+      },
+      {
+        id: 204,
+        timeSlot: 'Evening',
+        timeRange: '06:00 PM - 07:30 PM',
+        title: 'Haji Ali Dargah Tidal Causeway & Sunset Sufi Qawwali',
+        category: 'Spiritual & Wellness',
+        location: 'Mahalaxmi, Mumbai',
+        description:
+          'Walk the 500-meter paved causeway projecting into the Arabian Sea to the 15th-century marble Indo-Islamic sanctuary, listening to sea breeze devotional songs.',
+        duration: '1.5 hours',
+        durationMins: 90,
+        includes: ['Open tidal causeway entry', 'Fresh sugarcane juice stop'],
+        costPerPerson: 0,
+        bookingStatus: 'confirmed',
+        gettingThere: '25-min coastal return taxi toward Mahalaxmi',
+        transitTimeMins: 25,
+        transitCost: 200,
+        whatToBring: ['Head covering scarf', 'Small change for flower offerings'],
+        notes: 'Check high tide chart; best visited between 5:30 and 7:00 PM.',
+        photos: [
+          'https://images.pexels.com/photos/2643760/pexels-photo-2643760.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+        ],
+      },
+    ],
+  },
+  {
+    dayNumber: 3,
+    date: datesInfo.d3Date,
+    dayOfWeek: datesInfo.d3Day,
+    title: 'Textile Guilds, Fragrance Bazaars & Coastal Farewell',
+    heroImage:
+      'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&q=80',
+    hotel: 'Colaba Heritage Quarter',
+    activities: [
+      {
+        id: 301,
+        timeSlot: 'Morning',
+        timeRange: '09:30 AM - 11:30 AM',
+        title: 'Traditional Textile Block-Printing & Indigo Dyeing Atelier',
+        category: 'Art & Craft',
+        location: 'Heritage Guild Studio',
+        description:
+          'Learn traditional handblock wooden stamping techniques with natural madder and indigo plant dyes, crafting your own silk pocket square.',
+        duration: '2 hours',
+        durationMins: 120,
+        includes: ['Hands-on dye vat materials', 'Pure silk fabric to take home', 'Master artisan guidance'],
+        costPerPerson: 850,
+        bookingStatus: 'available',
+        gettingThere: '12-min cab from hotel',
+        transitTimeMins: 12,
+        transitCost: 90,
+        whatToBring: ['Apron provided, avoid delicate white clothes'],
+        notes: 'Artisan workshop starts promptly at 9:30 AM.',
+        photos: [
+          'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80',
+        ],
+      },
+      {
+        id: 302,
+        timeSlot: 'Afternoon',
+        timeRange: '12:30 PM - 03:00 PM',
+        title: 'Historic Spice Bazaar Sensory Walk & Cardamom Tea',
+        category: 'Food & Culinary',
+        location: 'Crawford Market & Mirchi Galli',
+        description:
+          'Weave through narrow trading alleys filled with sacks of Malabar pepper, golden turmeric, dried ginger, and roasted cashews.',
+        duration: '2.5 hours',
+        durationMins: 150,
+        includes: ['Culinary guild host', 'Spices tasting samples', 'Fresh chai'],
+        costPerPerson: 550,
+        bookingStatus: 'confirmed',
+        gettingThere: '15-min taxi through Victorian Fort district',
+        transitTimeMins: 15,
+        transitCost: 120,
+        whatToBring: ['Tote bag for spices', 'Cash for merchant stalls'],
+        notes: 'Ask merchant for vacuum-sealed spice packets for flight travel.',
+        photos: [
+          'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&q=80',
+        ],
+      },
+      {
+        id: 303,
+        timeSlot: 'Evening',
+        timeRange: '05:30 PM - 07:30 PM',
+        title: 'Arabian Sea Sailboat Sunset Cruise',
+        category: 'Nature & Wildlife',
+        location: 'Mumbai Harbour Jetty',
+        description:
+          'Board a wooden seabird sailboat at the Apollo Bunder jetty, catching twilight breezes with views of the illuminated city skyline.',
+        duration: '2 hours',
+        durationMins: 120,
+        includes: ['Private sailboat charter', 'Life jackets & skipper', 'Sunset refreshments'],
+        costPerPerson: 1200,
+        bookingStatus: 'pending',
+        gettingThere: '10-min walk back to Apollo Bunder jetty',
+        transitTimeMins: 10,
+        transitCost: 0,
+        whatToBring: ['Windbreaker', 'Motion sickness tablets if sensitive to waves'],
+        notes: 'Arrive at jetty #5 by 5:15 PM for safety briefing.',
+        photos: [
+          'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80',
+        ],
+      },
+    ],
+  },
+];
 
 export function ItineraryPage() {
-  const isOnline = useNetworkStatus();
-  const [availableExperiences, setAvailableExperiences] = useState<Experience[]>([]);
-  const [selectedIds, setSelectedIds] = useState<number[]>([1, 2, 3]);
-  const [feasibility, setFeasibility] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isReplanning, setIsReplanning] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [generation, setGeneration] = useState(1);
-  const [isOfflineCached, setIsOfflineCached] = useState(false);
+  const [viewMode, setViewMode] = useState<ItineraryViewMode>('timeline');
+  const [tripDetails, setTripDetails] = useState<ItineraryTripDetails>(() => {
+    try {
+      const saved = localStorage.getItem('lokiva_saved_trip_details');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.startDate || parsed.startDate.includes('Nov 14')) {
+          return DEFAULT_TRIP_DETAILS;
+        }
+        return parsed;
+      }
+      return DEFAULT_TRIP_DETAILS;
+    } catch {
+      return DEFAULT_TRIP_DETAILS;
+    }
+  });
+
+  const [days, setDays] = useState<ItineraryDay[]>(() => {
+    try {
+      const saved = localStorage.getItem('lokiva_saved_itinerary_days');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed[0]?.date?.includes('Nov 14')) {
+          return DEFAULT_DAYS;
+        }
+        return parsed;
+      }
+      return DEFAULT_DAYS;
+    } catch {
+      return DEFAULT_DAYS;
+    }
+  });
+
+  const [practicalInfo, setPracticalInfo] = useState<ItineraryPracticalInfo>(DEFAULT_PRACTICAL_INFO);
+
+  // Modals state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isEditTripModalOpen, setIsEditTripModalOpen] = useState(false);
+  const [addActivityDayNumber, setAddActivityDayNumber] = useState<number | null>(null);
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('lokiva_saved_trip_details', JSON.stringify(tripDetails));
+    } catch (e) {
+      console.warn('Failed to persist trip details:', e);
+    }
+  }, [tripDetails]);
 
   useEffect(() => {
-    async function loadInitial() {
-      try {
-        const exps = await api.getExperiences({ city: 'Mumbai', limit: 12 });
-        setAvailableExperiences(exps);
-        if (exps.length >= 3) {
-          const ids = [exps[0].id, exps[1].id, exps[2].id];
-          setSelectedIds(ids);
-          const fRes = await api.checkFeasibility(ids);
-          setFeasibility(fRes);
-
-          // Automatically cache active itinerary offline
-          const activeExps = [exps[0], exps[1], exps[2]];
-          saveActiveItineraryOffline({ title: 'Bandra West Circuit' }, activeExps);
-          setIsOfflineCached(true);
-        }
-      } catch (err) {
-        console.warn('Network fetch failed, attempting offline cache:', err);
-        const cached = getOfflineItinerary();
-        if (cached && cached.experiences.length > 0) {
-          setAvailableExperiences(cached.experiences);
-          setSelectedIds(cached.experiences.map((e) => e.id));
-          setIsOfflineCached(true);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadInitial();
-  }, []);
-
-  const updateFeasibilityForIds = async (ids: number[]) => {
-    setSelectedIds(ids);
     try {
-      const fRes = await api.checkFeasibility(ids);
-      setFeasibility(fRes);
-
-      const activeExps = ids
-        .map((id) => availableExperiences.find((e) => e.id === id))
-        .filter(Boolean) as Experience[];
-      saveActiveItineraryOffline({ title: 'Bandra West Circuit' }, activeExps);
-      setIsOfflineCached(true);
-    } catch (err) {
-      console.error(err);
+      localStorage.setItem('lokiva_saved_itinerary_days', JSON.stringify(days));
+    } catch (e) {
+      console.warn('Failed to persist itinerary days:', e);
     }
-  };
+  }, [days]);
 
-  const handleAddExperience = (id: number) => {
-    if (!selectedIds.includes(id)) {
-      updateFeasibilityForIds([...selectedIds, id]);
-    }
-  };
+  // Aggregate grand total
+  const allActivities = days.flatMap((d) => d.activities);
+  const totalExperiencesCost = allActivities.reduce((sum, act) => sum + act.costPerPerson, 0);
+  const totalTransitCost = allActivities.reduce((sum, act) => sum + act.transitCost, 0);
+  const totalMealsCost = days.length * 850 * tripDetails.travelers;
+  const grandTotalCost = totalExperiencesCost + totalTransitCost + totalMealsCost;
 
-  const handleRemoveExperience = (id: number) => {
-    updateFeasibilityForIds(selectedIds.filter((item) => item !== id));
-  };
-
-  const handleReplan = async (reason: string) => {
-    setIsReplanning(true);
-    try {
-      const res = await api.replanItinerary(selectedIds, reason, 'Mumbai');
-      if (res.new_experience_ids && res.new_experience_ids.length > 0) {
-        setSelectedIds(res.new_experience_ids);
-        setFeasibility(res.feasibility);
-        setGeneration((g) => g + 1);
-
-        const activeExps = res.new_experience_ids
-          .map((id) => availableExperiences.find((e) => e.id === id))
-          .filter(Boolean) as Experience[];
-        saveActiveItineraryOffline({ title: 'Bandra West Circuit (ReKnitted)' }, activeExps);
-        setIsOfflineCached(true);
-      }
-    } catch (err) {
-      console.error('Replanning error:', err);
-    } finally {
-      setIsReplanning(false);
-    }
-  };
-
-  const handleSaveItinerary = async () => {
-    try {
-      await api.createItinerary({
-        title: 'Bandra Cultural & Artisan Feasible Day Journey',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        experience_ids: selectedIds,
-      });
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 4000);
-    } catch (err) {
-      console.error('Failed to save itinerary:', err);
-    }
-  };
-
-  const selectedList = selectedIds
-    .map((id) => availableExperiences.find((e) => e.id === id))
-    .filter(Boolean) as Experience[];
-
-  // Deterministic schedule timing and day sequence computation
-  const itineraryStats = useMemo(() => {
-    const totalCost = selectedList.reduce((sum, exp) => sum + (exp.price || 0), 0);
-    const totalActivityMins = selectedList.reduce((sum, exp) => sum + (exp.duration_mins || 45), 0);
-    const transitLegsCount = selectedList.length > 0 ? selectedList.length + 1 : 0;
-    const totalTransitMins = transitLegsCount * 15;
-    const totalMins = totalActivityMins + totalTransitMins;
-
-    // Start at 9:30 AM (570 minutes from 00:00)
-    let currentMinute = 9 * 60 + 30;
-    const formatTime = (mins: number) => {
-      const h = Math.floor(mins / 60) % 24;
-      const m = mins % 60;
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const displayH = h % 12 || 12;
-      return `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
-    };
-
-    const startTimeFormatted = formatTime(currentMinute);
-
-    const timedStops = selectedList.map((exp, idx) => {
-      const transitStart = currentMinute;
-      const arrivalTime = currentMinute + 15;
-      const duration = exp.duration_mins || 45;
-      const departureTime = arrivalTime + duration;
-      currentMinute = departureTime;
-
-      return {
-        exp,
-        index: idx + 1,
-        transitBefore: {
-          startFormatted: formatTime(transitStart),
-          arrivalFormatted: formatTime(arrivalTime),
-          durationMins: 15,
-        },
-        activity: {
-          startFormatted: formatTime(arrivalTime),
-          endFormatted: formatTime(departureTime),
-          durationMins: duration,
-        },
-      };
-    });
-
-    const returnStart = currentMinute;
-    const returnEnd = currentMinute + 15;
-
-    return {
-      totalCost,
-      totalActivityMins,
-      totalTransitMins,
-      totalDurationHours: (totalMins / 60).toFixed(1),
-      startTimeFormatted,
-      endTimeFormatted: formatTime(returnEnd),
-      timedStops,
-      returnTransit: {
-        startFormatted: formatTime(returnStart),
-        endFormatted: formatTime(returnEnd),
-      },
-    };
-  }, [selectedList]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-paper flex items-center justify-center font-mono text-xs text-dusk">
-        <div className="w-8 h-8 border-3 border-marigold border-t-transparent rounded-full animate-spin" />
-      </div>
+  // Handlers for activity management
+  const handleUpdateActivityStatus = (dayNumber: number, activityId: number, newStatus: BookingStatus) => {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.dayNumber !== dayNumber) return d;
+        return {
+          ...d,
+          activities: d.activities.map((a) => (a.id === activityId ? { ...a, bookingStatus: newStatus } : a)),
+        };
+      })
     );
-  }
+  };
+
+  const handleUpdateActivityNotes = (dayNumber: number, activityId: number, notes: string) => {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.dayNumber !== dayNumber) return d;
+        return {
+          ...d,
+          activities: d.activities.map((a) => (a.id === activityId ? { ...a, notes } : a)),
+        };
+      })
+    );
+  };
+
+  const handleMoveActivity = (dayNumber: number, fromIndex: number, toIndex: number) => {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.dayNumber !== dayNumber) return d;
+        if (toIndex < 0 || toIndex >= d.activities.length) return d;
+        const acts = [...d.activities];
+        const [moved] = acts.splice(fromIndex, 1);
+        acts.splice(toIndex, 0, moved);
+        return { ...d, activities: acts };
+      })
+    );
+  };
+
+  const handleRemoveActivity = (dayNumber: number, activityId: number) => {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.dayNumber !== dayNumber) return d;
+        return {
+          ...d,
+          activities: d.activities.filter((a) => a.id !== activityId),
+        };
+      })
+    );
+  };
+
+  const handleAddActivity = (dayNumber: number, newActivity: ItineraryActivity) => {
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.dayNumber !== dayNumber) return d;
+        return {
+          ...d,
+          activities: [...d.activities, newActivity],
+        };
+      })
+    );
+  };
+
+  const handleAddNewDay = () => {
+    const nextDayNum = days.length + 1;
+    const newDay: ItineraryDay = {
+      dayNumber: nextDayNum,
+      date: `Day ${nextDayNum}`,
+      dayOfWeek: 'Cultural Day',
+      title: `Day ${nextDayNum}: Local Guilds & Exploration`,
+      heroImage:
+        'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1000&q=80',
+      hotel: tripDetails.hotel,
+      activities: [],
+    };
+    setDays([...days, newDay]);
+  };
+
+  const handleRemoveDay = (dayNumber: number) => {
+    if (days.length <= 1) return;
+    const filtered = days.filter((d) => d.dayNumber !== dayNumber);
+    // Re-index remaining days
+    const reindexed = filtered.map((d, idx) => ({ ...d, dayNumber: idx + 1 }));
+    setDays(reindexed);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <div className="min-h-screen bg-paper text-ink py-6 sm:py-10">
+    <main className="min-h-screen bg-paper text-ink py-6 sm:py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Network & Offline Status Banner */}
-        {!isOnline && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-mono text-amber-900 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2">
-              <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>Offline Mode Active: Viewing locally cached itinerary for Bandra West</span>
-            </div>
-            <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px] inline-flex items-center gap-1">
-              <Check className="w-3 h-3 text-amber-900" />
-              <span>Offline Ready</span>
-            </span>
-          </div>
-        )}
+        {/* Top Header Card */}
+        <TripHeaderOverview
+          tripDetails={tripDetails}
+          totalCost={grandTotalCost}
+          onEditTrip={() => setIsEditTripModalOpen(true)}
+          onShare={() => setIsShareModalOpen(true)}
+          onPrint={handlePrint}
+        />
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-marigold" />
-                <span>Dynamic ReKnit Feasibility Solver · Gen #{generation}</span>
-              </div>
-
-              {isOfflineCached && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 border border-teal-200 text-teal-800 rounded-full text-[11px] font-mono font-bold shadow-sm">
-                  <ShieldCheck className="w-3.5 h-3.5 text-teal" />
-                  <span>Offline Ready</span>
-                </div>
-              )}
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl font-display font-bold text-ink mt-2">
-              Sequenced Day Itinerary
-            </h1>
-            <p className="text-xs text-dusk-600 font-mono mt-1">
-              Start: Bandra West Base · 9:30 AM · Optimized sequence with deterministic transit buffers
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSaveItinerary}
-              className="px-5 py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-md flex items-center gap-2"
-            >
-              {isSaved ? <Check className="w-4 h-4 text-marigold" /> : <Calendar className="w-4 h-4 text-marigold" />}
-              <span>{isSaved ? 'Saved to Profile' : 'Save Itinerary'}</span>
-            </button>
-          </div>
+        {/* View Switcher Tabs (no-print) */}
+        <div className="no-print">
+          <ItineraryViewTabs currentView={viewMode} onViewChange={setViewMode} />
         </div>
 
-        {/* Two Column Layout: Sequenced Timeline vs Feasibility Engine */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left 2 Cols: Main Itinerary Sequence Section */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 space-y-6 shadow-md">
-              {/* Header & Quick Summary Ribbon */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-paper-200">
-                <div>
-                  <h2 className="text-2xl font-display font-bold text-ink">
-                    Chronological ReKnit Timeline
-                  </h2>
-                  <p className="text-xs text-dusk-600 font-mono mt-0.5">
-                    Deterministic packing order with real-time transit and buffer pacing
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1.5 bg-teal-50 text-teal-800 rounded-xl text-xs font-mono font-bold border border-teal-200 shadow-sm flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-marigold" />
-                    <span>{selectedList.length} Experiences Packed</span>
-                  </span>
-                </div>
-              </div>
+        {/* Main Workspace Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Left 2 Columns: Active View Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {viewMode === 'timeline' && (
+              <div className="space-y-8">
+                {days.map((day) => (
+                  <DayCardTimeline
+                    key={day.dayNumber}
+                    day={day}
+                    totalDays={days.length}
+                    onUpdateActivityStatus={handleUpdateActivityStatus}
+                    onUpdateActivityNotes={handleUpdateActivityNotes}
+                    onMoveActivity={handleMoveActivity}
+                    onRemoveActivity={handleRemoveActivity}
+                    onAddActivityClick={(dNum) => setAddActivityDayNumber(dNum)}
+                    onRemoveDay={handleRemoveDay}
+                  />
+                ))}
 
-              {/* High-Level Day Sequence Metrics Ribbon */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-paper-50 rounded-2xl border border-paper-300">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-dusk font-mono">
-                    <Clock className="w-3.5 h-3.5 text-teal" />
-                    <span>Window</span>
-                  </div>
-                  <div className="text-sm font-mono font-bold text-ink">
-                    {itineraryStats.startTimeFormatted} – {itineraryStats.endTimeFormatted}
-                  </div>
-                  <div className="text-[10px] text-dusk-500 font-mono">
-                    ~{itineraryStats.totalDurationHours} hrs span
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-dusk font-mono">
-                    <Route className="w-3.5 h-3.5 text-marigold" />
-                    <span>Stops</span>
-                  </div>
-                  <div className="text-sm font-mono font-bold text-ink">
-                    {selectedList.length} Curated Stops
-                  </div>
-                  <div className="text-[10px] text-dusk-500 font-mono">
-                    {itineraryStats.totalActivityMins} min activity time
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-dusk font-mono">
-                    <Navigation className="w-3.5 h-3.5 text-teal" />
-                    <span>Transit</span>
-                  </div>
-                  <div className="text-sm font-mono font-bold text-ink">
-                    ~{itineraryStats.totalTransitMins} mins
-                  </div>
-                  <div className="text-[10px] text-dusk-500 font-mono">
-                    Auto-rickshaw buffers
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-dusk font-mono">
-                    <Banknote className="w-3.5 h-3.5 text-marigold" />
-                    <span>Est. Cost</span>
-                  </div>
-                  <div className="text-sm font-mono font-bold text-teal">
-                    ₹{itineraryStats.totalCost.toLocaleString('en-IN')}
-                  </div>
-                  <div className="text-[10px] text-dusk-500 font-mono">
-                    per person
-                  </div>
+                {/* Add Next Day Action Button */}
+                <div className="text-center pt-2 no-print">
+                  <button
+                    type="button"
+                    onClick={handleAddNewDay}
+                    className="px-6 py-3.5 bg-white hover:bg-paper-100 text-ink rounded-2xl font-mono text-xs font-bold border border-paper-400 shadow-sm transition inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-marigold" />
+                    <span>Add Day {days.length + 1} to Itinerary</span>
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* Connected Step Sequence Timeline */}
-              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-marigold before:border-l before:border-dashed before:border-marigold">
-                {/* Hotel Base Origin Anchor */}
-                <div className="relative">
-                  <div className="absolute -left-6 sm:-left-8 top-1.5 w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center text-xs shadow-md border-2 border-white ring-2 ring-paper-300">
-                    <Building2 className="w-3.5 h-3.5 text-paper" />
-                  </div>
-                  <div className="p-4 bg-paper-100 rounded-2xl border border-paper-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <strong className="text-ink text-sm">Hotel Base (Bandra West)</strong>
-                        <span className="px-2 py-0.5 bg-white rounded text-[10px] text-teal font-bold border border-paper-300">
-                          Origin Anchor
-                        </span>
-                      </div>
-                      <span className="text-dusk block text-[11px] mt-0.5">
-                        Departure at 9:30 AM · Day circuit starting point
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-ink bg-white px-3 py-1.5 rounded-xl border border-paper-200">
-                      <Clock className="w-3.5 h-3.5 text-teal" />
-                      <span>09:30 AM Departure</span>
-                    </div>
-                  </div>
-                </div>
+            {viewMode === 'map' && <ItineraryMapView days={days} />}
 
-                {/* Sequential Itinerary Stops */}
-                <AnimatePresence>
-                  {itineraryStats.timedStops.map((stopItem) => {
-                    const { exp, index, transitBefore, activity } = stopItem;
-                    return (
-                      <motion.div
-                        key={exp.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-4"
-                      >
-                        {/* Transit Transfer Indicator */}
-                        <div className="p-2.5 bg-paper-50 rounded-xl border border-paper-200 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-dusk-600">
-                          <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center text-[10px]">
-                              <Navigation className="w-3 h-3 text-amber-900" />
-                            </div>
-                            <span className="font-semibold text-ink">
-                              ~{transitBefore.durationMins} min Auto-rickshaw transfer
-                            </span>
-                            <span className="hidden sm:inline text-dusk">·</span>
-                            <span className="hidden sm:inline text-dusk-500">
-                              Built-in traffic & ramp buffer
-                            </span>
-                          </div>
-                          <span className="font-mono text-teal font-bold text-[10px] bg-white px-2 py-0.5 rounded border border-paper-200">
-                            {transitBefore.startFormatted} → {transitBefore.arrivalFormatted}
-                          </span>
-                        </div>
+            {viewMode === 'list' && <ItineraryListView days={days} />}
 
-                        {/* Stop Card */}
-                        <div className="relative">
-                          <div className="absolute -left-6 sm:-left-8 top-4 w-6 h-6 rounded-full bg-marigold text-ink font-mono font-extrabold flex items-center justify-center text-xs shadow-md border-2 border-white ring-2 ring-paper-300">
-                            {index}
-                          </div>
-
-                          <div className="p-6 bg-white hover:border-paper-400 rounded-2xl border border-paper-300 shadow-sm transition space-y-4">
-                            {/* Card Top Row */}
-                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                              <div className="space-y-1.5">
-                                <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-                                  <span className="px-2.5 py-0.5 rounded-full bg-paper-100 text-ink font-bold uppercase text-[10px] border border-paper-300">
-                                    {exp.category}
-                                  </span>
-                                  <span className="text-dusk flex items-center gap-1 text-[11px]">
-                                    <MapPin className="w-3 h-3 text-dusk-500" />
-                                    {exp.area_name || exp.city || 'Bandra West'}
-                                  </span>
-                                  {exp.is_indoor && (
-                                    <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
-                                      Indoor / Rain-Safe
-                                    </span>
-                                  )}
-                                  {(exp.accessibility_wheelchair || exp.wheelchair_accessible) && (
-                                    <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200">
-                                      Wheelchair Accessible
-                                    </span>
-                                  )}
-                                </div>
-                                <h3 className="text-lg font-display font-bold text-ink leading-snug">
-                                  {exp.title}
-                                </h3>
-                              </div>
-
-                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 flex-shrink-0">
-                                <div className="text-right">
-                                  <span className="text-base font-mono font-extrabold text-teal block">
-                                    ₹{exp.price}
-                                  </span>
-                                  <span className="text-[10px] font-mono text-dusk block">
-                                    per person
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() => handleRemoveExperience(exp.id)}
-                                  className="p-1.5 text-dusk hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-200"
-                                  title="Remove from plan"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Scheduled Time Bar */}
-                            <div className="flex items-center gap-3 py-2 px-3 bg-paper-50 rounded-xl border border-paper-200 text-xs font-mono text-ink">
-                              <div className="flex items-center gap-1.5 font-bold text-teal">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{activity.startFormatted} – {activity.endFormatted}</span>
-                              </div>
-                              <span className="text-paper-400">|</span>
-                              <span className="text-dusk">
-                                Duration: <strong className="text-ink">{activity.durationMins} mins</strong>
-                              </span>
-                            </div>
-
-                            {/* Description */}
-                            <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                              {exp.description}
-                            </p>
-
-                            {/* "Why This Fits You" Deterministic Explainability Line */}
-                            <div className="p-3 bg-teal-50/70 rounded-xl border border-teal-200 text-xs font-sans text-teal-900 flex items-start gap-2.5">
-                              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0 mt-0.5" />
-                              <div className="space-y-0.5">
-                                <strong className="font-semibold block text-teal-950 font-mono text-[11px] uppercase tracking-wide">
-                                  Why This Fits Your Constraints
-                                </strong>
-                                <p className="text-teal-900 text-xs">
-                                  {exp.why_it_fits || 'Vetted for feasible travel time, neighborhood proximity, and step-free accessibility.'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-
-                {/* Return to Base Anchor */}
-                {selectedList.length > 0 && (
-                  <div className="space-y-4 pt-2">
-                    {/* Final Transit Leg */}
-                    <div className="p-2.5 bg-paper-50 rounded-xl border border-paper-200 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-dusk-600">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center text-[10px]">
-                          <Navigation className="w-3 h-3 text-teal-800" />
-                        </div>
-                        <span className="font-semibold text-ink">
-                          ~15 min Return transfer to Base
-                        </span>
-                      </div>
-                      <span className="font-mono text-teal font-bold text-[10px] bg-white px-2 py-0.5 rounded border border-paper-200">
-                        {itineraryStats.returnTransit.startFormatted} → {itineraryStats.returnTransit.endFormatted}
-                      </span>
-                    </div>
-
-                    {/* Circuit Complete Card */}
-                    <div className="relative">
-                      <div className="absolute -left-6 sm:-left-8 top-2 w-6 h-6 rounded-full bg-teal text-white flex items-center justify-center text-xs shadow-md border-2 border-white ring-2 ring-paper-300">
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      </div>
-                      <div className="p-4 bg-white rounded-2xl border border-paper-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono shadow-sm">
-                        <div>
-                          <strong className="text-ink text-sm">Return to Hotel Base (Bandra West)</strong>
-                          <span className="text-dusk block text-[11px] mt-0.5">
-                            Circuit Complete · Safe return with full day buffered schedule
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-teal bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200">
-                          <Check className="w-3.5 h-3.5 text-teal" />
-                          <span>Complete at ~{itineraryStats.endTimeFormatted}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            {viewMode === 'budget' && (
+              <ItineraryBudgetView days={days} tripDetails={tripDetails} />
+            )}
           </div>
 
-          {/* Right Col: Feasibility Panel with 4 Disruption Triggers */}
-          <div className="space-y-6">
-            <FeasibilityPanel
-              feasibility={feasibility}
-              onReplan={handleReplan}
-              isReplanning={isReplanning}
-              selectedCount={selectedList.length}
+          {/* Right 1 Column: Sticky Summary & Practical Sidebar */}
+          <div className="no-print">
+            <TripSummarySidebar
+              tripDetails={tripDetails}
+              days={days}
+              practicalInfo={practicalInfo}
+              onShare={() => setIsShareModalOpen(true)}
+              onPrint={handlePrint}
             />
-
-            {/* Quick Add Available Gems */}
-            <div className="bg-white rounded-3xl border border-paper-400 p-6 space-y-4 shadow-md">
-              <h4 className="text-sm font-display font-bold text-ink">
-                Add Nearby Cultural Gems
-              </h4>
-              <div className="space-y-2.5">
-                {availableExperiences
-                  .filter((e) => !selectedIds.includes(e.id))
-                  .slice(0, 4)
-                  .map((gem) => (
-                    <div
-                      key={gem.id}
-                      className="p-3 bg-paper-50 rounded-xl border border-paper-300 flex items-center justify-between text-xs"
-                    >
-                      <div className="space-y-0.5 truncate pr-2">
-                        <strong className="block text-ink truncate">{gem.title}</strong>
-                        <span className="text-[10px] font-mono text-dusk">
-                          {gem.duration_mins || 45} mins · ₹{gem.price}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleAddExperience(gem.id)}
-                        className="p-1.5 bg-ink text-paper hover:bg-marigold hover:text-ink rounded-lg transition flex-shrink-0 shadow-sm"
-                        title="Add to Itinerary"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Interactive Modals */}
+      <ShareItineraryModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        tripDetails={tripDetails}
+        onPrint={handlePrint}
+      />
+
+      <EditTripModal
+        isOpen={isEditTripModalOpen}
+        onClose={() => setIsEditTripModalOpen(false)}
+        tripDetails={tripDetails}
+        onSave={(updated) => setTripDetails(updated)}
+      />
+
+      {addActivityDayNumber !== null && (
+        <AddActivityModal
+          isOpen={true}
+          dayNumber={addActivityDayNumber}
+          onClose={() => setAddActivityDayNumber(null)}
+          onAddActivity={handleAddActivity}
+        />
+      )}
+    </main>
   );
 }
+
+export default ItineraryPage;
