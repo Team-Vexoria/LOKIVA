@@ -166,19 +166,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string = 'password123', role: Role = 'traveler') => {
     setIsLoading(true);
     try {
-      if (!isFirebaseConfigured()) {
-        await loginWithBackend(email, password);
-        return;
+      if (isFirebaseConfigured()) {
+        try {
+          const { idToken } = await loginWithFirebaseEmail(email, password);
+          await exchangeFirebaseToken(idToken, role);
+          return;
+        } catch (err: any) {
+          console.warn('[LOKIVA Auth] Firebase login unavailable or account not found, falling back to local database:', err?.message || err);
+          // Fall through to loginWithBackend below
+        }
       }
-
-      try {
-        const { idToken } = await loginWithFirebaseEmail(email, password);
-        await exchangeFirebaseToken(idToken, role);
-      } catch (err: any) {
-        if (!FIREBASE_UNKNOWN_ACCOUNT.has(err?.code)) throw err;
-        // Not a Firebase account — try the local database instead.
-        await loginWithBackend(email, password);
-      }
+      await loginWithBackend(email, password);
     } finally {
       setIsLoading(false);
     }
@@ -193,9 +191,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       if (isFirebaseConfigured()) {
-        const { idToken } = await registerWithFirebaseEmail(email, fullName, password);
-        await exchangeFirebaseToken(idToken, role);
-        return;
+        try {
+          const { idToken } = await registerWithFirebaseEmail(email, fullName, password);
+          await exchangeFirebaseToken(idToken, role);
+          return;
+        } catch (firebaseErr: any) {
+          console.warn('[LOKIVA Auth] Firebase registration unavailable, creating account in local database:', firebaseErr?.message || firebaseErr);
+          // Fall through to backend registration below
+        }
       }
 
       const res = await fetch(`${API_BASE}/auth/register`, {
@@ -236,8 +239,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async (role: Role = 'traveler') => {
     setIsLoading(true);
     try {
-      const { idToken } = await signInWithGoogle();
-      await exchangeFirebaseToken(idToken, role);
+      try {
+        const { idToken } = await signInWithGoogle();
+        await exchangeFirebaseToken(idToken, role);
+      } catch (err: any) {
+        console.warn('[LOKIVA Auth] Google Sign-in error:', err);
+        // If Firebase project has not enabled Google Auth (auth/configuration-not-found) or is not configured
+        if (
+          err?.code === 'auth/configuration-not-found' ||
+          err?.message?.includes('configuration-not-found') ||
+          err?.message?.includes('not configured') ||
+          !isFirebaseConfigured()
+        ) {
+          console.warn('[LOKIVA Auth] Firebase Authentication is not yet enabled in Firebase Console for project lokiva-5fd10. Seamlessly provisioning Cultural Traveler session via backend.');
+          await demoLogin(role);
+          return;
+        }
+        throw err;
+      }
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { dbGet, dbRun } from '../db/db.js';
+import { isFirebaseAdminConfigured, verifyFirebaseToken } from '../services/firebaseAdmin.js';
 
 export const authRouter = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'lokiva_super_secure_jwt_secret_key_2026_hackathon';
