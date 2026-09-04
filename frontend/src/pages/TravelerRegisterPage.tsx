@@ -42,7 +42,7 @@ export function TravelerRegisterPage() {
           <p className="text-xs text-dusk-600 font-sans">Save cultural trails, custom itineraries, and AI recommendations</p>
         </div>
 
-        <GoogleSignInButton role="traveler" text="Sign up with Google" />
+        <GoogleSignInButton role="traveler" text="Sign up with Google" defaultName={fullName} />
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-paper-300" />

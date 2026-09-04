@@ -5,23 +5,34 @@ import { User, Sparkles, MapPin, CheckCircle2, Shield, Briefcase, Heart } from '
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();
 
+  const [fullName, setFullName] = useState(user?.full_name || '');
   const [travelerType, setTravelerType] = useState(user?.profile?.traveler_type || 'Family with Kids');
   const [groupSize, setGroupSize] = useState(user?.profile?.group_size || 4);
   const [budget, setBudget] = useState(user?.profile?.budget || 1500);
   const [lowWalking, setLowWalking] = useState(user?.profile?.accessibility_prefs?.low_walking ?? true);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Sync state if user loads later
+  React.useEffect(() => {
+    if (user?.full_name) {
+      setFullName(user.full_name);
+    }
+  }, [user?.full_name]);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({
-      traveler_type: travelerType,
-      group_size: groupSize,
-      budget,
-      accessibility_prefs: {
-        low_walking: lowWalking,
-        family_friendly: travelerType.includes('Family'),
+    updateProfile(
+      {
+        traveler_type: travelerType,
+        group_size: groupSize,
+        budget,
+        accessibility_prefs: {
+          low_walking: lowWalking,
+          family_friendly: travelerType.includes('Family'),
+        },
       },
-    });
+      fullName.trim() || undefined
+    );
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -32,21 +43,21 @@ export function ProfilePage() {
         {/* Profile Card Header */}
         <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-sm">
           <div className="w-20 h-20 rounded-2xl bg-ink flex items-center justify-center text-marigold text-2xl font-bold font-display shadow-md">
-            {user?.full_name ? user.full_name[0] : 'S'}
+            {fullName ? fullName[0] : (user?.full_name ? user.full_name[0] : 'T')}
           </div>
 
           <div className="space-y-1 text-center sm:text-left flex-1">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl font-bold font-display text-ink">{user?.full_name || 'The Sharma Family'}</h1>
+              <h1 className="text-2xl font-bold font-display text-ink">{fullName || user?.full_name || 'Cultural Traveler'}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
                 {user?.role || 'Traveler'}
               </span>
             </div>
-            <p className="text-xs font-mono text-dusk">{user?.email || 'aarav.sharma@lokiva.com'}</p>
+            <p className="text-xs font-mono text-dusk">{user?.email || 'traveler@lokiva.com'}</p>
             <div className="pt-2 flex items-center justify-center sm:justify-start gap-3 text-xs font-mono text-dusk-700">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-marigold" />
-                Bandra West, Mumbai
+                Cultural Explorer
               </span>
             </div>
           </div>
@@ -60,6 +71,17 @@ export function ProfilePage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 font-mono text-xs">
+            {/* Full Name */}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-dusk uppercase block font-bold">Display Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g. Piyush"
+                className="w-full bg-paper-100 border border-paper-300 rounded-xl px-4 py-2.5 text-xs text-ink font-semibold focus:outline-none focus:border-marigold"
+              />
+            </div>
             {/* Traveler Style */}
             <div className="space-y-1.5">
               <label className="text-dusk uppercase block font-bold">Traveler Persona</label>

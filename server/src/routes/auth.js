@@ -85,7 +85,7 @@ authRouter.post('/register', async (req, res) => {
 // 3. Firebase Login / Sync — identity comes only from a verified ID token.
 authRouter.post('/firebase-login', async (req, res) => {
   try {
-    const { id_token, role: requestedRole = 'traveler' } = req.body;
+    const { id_token, role: requestedRole = 'traveler', full_name } = req.body;
 
     if (!id_token) {
       return res.status(400).json({ detail: 'A Firebase ID token is required' });
@@ -120,11 +120,15 @@ authRouter.post('/firebase-login', async (req, res) => {
       }
     }
 
+    if (user && full_name && full_name.trim()) {
+      await dbRun('UPDATE users SET full_name = ? WHERE id = ?', [full_name.trim(), user.id]);
+    }
+
     if (!user) {
       // New account. Only travelers may self-provision; elevated roles are
       // granted server-side, never from the request body.
       const role = requestedRole === 'provider' ? 'provider' : 'traveler';
-      const displayName = verified.name || email.split('@')[0];
+      const displayName = (full_name && full_name.trim()) || verified.name || email.split('@')[0];
       const salt = bcrypt.genSaltSync(10);
       const hashed = bcrypt.hashSync(`firebase:${verified.uid}`, salt);
       const result = await dbRun(
@@ -154,10 +158,49 @@ authRouter.post('/firebase-login', async (req, res) => {
   }
 });
 
-// 4. 1-Click Demo Login
+// 4. Demo Login / Fallback Login with custom full_name support
 authRouter.post('/demo-login/:role', async (req, res) => {
   try {
     const { role } = req.params;
+    const { full_name, email: customEmail } = req.body || {};
+
+    // If a custom full_name is provided (e.g. from the Google sign-in name prompt):
+    if (full_name && full_name.trim()) {
+      const cleanName = full_name.trim();
+      const safeSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') || 'traveler';
+      const email = customEmail ? customEmail.toLowerCase().trim() : `${safeSlug}@lokiva.com`;
+
+      let user = await dbGet('SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(full_name) = ?', [email, cleanName.toLowerCase()]);
+      if (user) {
+        await dbRun('UPDATE users SET full_name = ? WHERE id = ?', [cleanName, user.id]);
+      } else {
+        const salt = bcrypt.genSaltSync(10);
+        const hashed = bcrypt.hashSync(`${role}123`, salt);
+        const result = await dbRun(
+          'INSERT INTO users (email, full_name, hashed_password, role, is_active) VALUES (?, ?, ?, ?, 1)',
+          [email, cleanName, hashed, role]
+        );
+        user = { id: result.lastID, role };
+
+        if (role === 'traveler') {
+          await dbRun(
+            'INSERT INTO traveler_profiles (user_id, traveler_type, group_size, budget, interests) VALUES (?, ?, ?, ?, ?)',
+            [user.id, 'Solo Explorer', 2, 2500, JSON.stringify(['culture', 'food'])]
+          );
+        } else if (role === 'provider') {
+          await dbRun(
+            'INSERT INTO providers (user_id, business_name, city, is_verified) VALUES (?, ?, ?, 0)',
+            [user.id, `${cleanName}'s Collective`, 'Jaipur']
+          );
+        }
+      }
+
+      const fullUser = await getUserWithProfile(user.id);
+      const token = createToken(user.id, fullUser.role);
+      return res.json({ access_token: token, token_type: 'bearer', user: fullUser });
+    }
+
+    // Default seeded demo accounts if no custom name specified
     let user = await dbGet('SELECT * FROM users WHERE role = ? LIMIT 1', [role]);
     if (!user) {
       const demoEmail = `${role}@lokiva.com`;
@@ -207,5 +250,52 @@ authRouter.get('/me', async (req, res) => {
     res.json(fullUser);
   } catch (err) {
     res.status(401).json({ detail: 'Invalid or expired token' });
+  }
+});
+
+// 6. Update Current User Profile /me
+authRouter.put('/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ detail: 'Not authenticated' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.sub;
+
+    const { full_name, profile } = req.body || {};
+    if (full_name && full_name.trim()) {
+      await dbRun('UPDATE users SET full_name = ? WHERE id = ?', [full_name.trim(), userId]);
+    }
+
+    if (profile && typeof profile === 'object') {
+      const existingProfile = await dbGet('SELECT * FROM traveler_profiles WHERE user_id = ?', [userId]);
+      if (existingProfile) {
+        const traveler_type = profile.traveler_type !== undefined ? profile.traveler_type : existingProfile.traveler_type;
+        const group_size = profile.group_size !== undefined ? profile.group_size : existingProfile.group_size;
+        const budget = profile.budget !== undefined ? profile.budget : existingProfile.budget;
+        const available_hours = profile.available_hours !== undefined ? profile.available_hours : existingProfile.available_hours;
+        const interests = profile.interests !== undefined ? JSON.stringify(profile.interests) : existingProfile.interests;
+        const accessibility_prefs = profile.accessibility_prefs !== undefined ? JSON.stringify(profile.accessibility_prefs) : existingProfile.accessibility_prefs;
+        const location_name = profile.location_name !== undefined ? profile.location_name : existingProfile.location_name;
+        const hotel_lat = profile.hotel_lat !== undefined ? profile.hotel_lat : existingProfile.hotel_lat;
+        const hotel_lng = profile.hotel_lng !== undefined ? profile.hotel_lng : existingProfile.hotel_lng;
+
+        await dbRun(
+          `UPDATE traveler_profiles SET 
+            traveler_type = ?, group_size = ?, budget = ?, available_hours = ?,
+            interests = ?, accessibility_prefs = ?, location_name = ?, hotel_lat = ?, hotel_lng = ?
+           WHERE user_id = ?`,
+          [traveler_type, group_size, budget, available_hours, interests, accessibility_prefs, location_name, hotel_lat, hotel_lng, userId]
+        );
+      }
+    }
+
+    const fullUser = await getUserWithProfile(userId);
+    res.json(fullUser);
+  } catch (err) {
+    res.status(400).json({ detail: err.message });
   }
 });

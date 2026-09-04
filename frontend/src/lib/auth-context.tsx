@@ -20,10 +20,10 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, role?: Role) => Promise<void>;
   register: (email: string, name: string, password?: string, role?: Role) => Promise<void>;
-  demoLogin: (role: Role) => Promise<void>;
-  loginWithGoogle: (role?: Role) => Promise<void>;
+  demoLogin: (role: Role, customName?: string) => Promise<void>;
+  loginWithGoogle: (role?: Role, customName?: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<TravelerProfile>) => Promise<void>;
+  updateProfile: (data: Partial<TravelerProfile>, newFullName?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,11 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Trade a verified Firebase ID token for a backend session JWT. The server
    *  derives identity from the token itself — we never send an email. */
-  const exchangeFirebaseToken = async (idToken: string, role: Role = 'traveler') => {
+  const exchangeFirebaseToken = async (idToken: string, role: Role = 'traveler', customName?: string) => {
     const res = await fetch(`${API_BASE}/auth/firebase-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_token: idToken, role }),
+      body: JSON.stringify({ id_token: idToken, role, full_name: customName }),
     });
 
     if (!res.ok) {
@@ -65,6 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await res.json();
+    if (customName && data.user) {
+      data.user.full_name = customName;
+    }
     applySession(data);
     return data;
   };
@@ -218,11 +221,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const demoLogin = async (role: Role = 'traveler') => {
+  const demoLogin = async (role: Role = 'traveler', customName?: string) => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/demo-login/${role}`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: customName }),
       });
 
       if (!res.ok) {
@@ -230,18 +235,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(err.detail || 'Demo login failed');
       }
 
-      applySession(await res.json());
+      const data = await res.json();
+      if (customName && data.user) {
+        data.user.full_name = customName;
+      }
+      applySession(data);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loginWithGoogle = async (role: Role = 'traveler') => {
+  const loginWithGoogle = async (role: Role = 'traveler', customName?: string) => {
     setIsLoading(true);
     try {
       try {
         const { idToken } = await signInWithGoogle();
-        await exchangeFirebaseToken(idToken, role);
+        await exchangeFirebaseToken(idToken, role, customName);
       } catch (err: any) {
         console.warn('[LOKIVA Auth] Google Sign-in error:', err);
         // If Firebase project has not enabled Google Auth (auth/configuration-not-found) or is not configured
@@ -252,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           !isFirebaseConfigured()
         ) {
           console.warn('[LOKIVA Auth] Firebase Authentication is not yet enabled in Firebase Console for project lokiva-5fd10. Seamlessly provisioning Cultural Traveler session via backend.');
-          await demoLogin(role);
+          await demoLogin(role, customName);
           return;
         }
         throw err;
@@ -273,10 +282,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (data: Partial<TravelerProfile>) => {
+  const updateProfile = async (data: Partial<TravelerProfile>, newFullName?: string) => {
     if (!user) return;
-    const updatedUser = {
+    const updatedUser: User = {
       ...user,
+      full_name: newFullName || user.full_name,
       profile: {
         ...(user.profile || {
           traveler_type: 'Family with Kids',
@@ -293,6 +303,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     };
     setUser(updatedUser);
+
+    const activeToken = token || localStorage.getItem('lokiva_token');
+    if (activeToken) {
+      try {
+        await fetch(`${API_BASE}/auth/me`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${activeToken}`,
+          },
+          body: JSON.stringify({
+            full_name: newFullName || user.full_name,
+            profile: data,
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to sync profile update to backend:', err);
+      }
+    }
   };
 
   return (
