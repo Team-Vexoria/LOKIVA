@@ -19,7 +19,7 @@ import {
   DayPlanResponse,
 } from '../types';
 
-const API_BASE =
+export const API_BASE =
   import.meta.env.VITE_API_URL ||
   (typeof window !== 'undefined' && window.location.port === '3000'
     ? '/api/v1'

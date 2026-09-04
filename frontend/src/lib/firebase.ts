@@ -9,16 +9,14 @@ import {
   signOut,
 } from 'firebase/auth';
 
-const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : (process.env as any) || {};
-
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: env.VITE_FIREBASE_PROJECT_ID || env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.VITE_FIREBASE_APP_ID || env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 export const isFirebaseConfigured = (): boolean => {
@@ -29,14 +27,22 @@ let app: any = null;
 let auth: any = null;
 let googleProvider: any = null;
 
-if (typeof window !== 'undefined' && isFirebaseConfigured()) {
-  try {
-    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
-    googleProvider.setCustomParameters({ prompt: 'select_account' });
-  } catch (error) {
-    console.warn('Firebase initialization error:', error);
+if (typeof window !== 'undefined') {
+  if (isFirebaseConfigured()) {
+    try {
+      app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+    } catch (error) {
+      console.warn('Firebase initialization error:', error);
+    }
+  } else {
+    // Vite only exposes VITE_-prefixed vars. A NEXT_PUBLIC_-prefixed .env.local
+    // leaves this silently empty, so say so loudly instead.
+    console.warn(
+      '[LOKIVA] Firebase is not configured. Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in frontend/.env.local (VITE_ prefix is required — NEXT_PUBLIC_ is ignored by Vite), then restart the dev server.'
+    );
   }
 }
 

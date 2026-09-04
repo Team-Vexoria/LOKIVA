@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { LokivaExperienceExchange } from '../components/exchange/LokivaExperienceExchange';
-import { AccessibilityConstraintProof } from '../components/proofs/AccessibilityConstraintProof';
-import { ExplainabilityReceiptCard } from '../components/proofs/ExplainabilityReceiptCard';
+import { LokivaLandingHero } from '../components/landing/LokivaLandingHero';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
@@ -19,56 +17,32 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Only include cities that have verified experiences and real images available in the catalogue
-const VERIFIED_IMAGE_CITIES = [
-  { value: 'Mumbai', label: 'Mumbai (Bandra West)' },
-  { value: 'Jaipur', label: 'Jaipur (Pink City)' },
-  { value: 'Kochi', label: 'Kochi (Fort Kochi)' },
-  { value: 'Goa', label: 'Goa (Fontainhas Heritage)' },
-  { value: 'Delhi', label: 'Delhi (Old Delhi & Mehrauli)' },
-  { value: 'Varanasi', label: 'Varanasi (Ghats & Weavers)' },
-  { value: 'Udaipur', label: 'Udaipur (City Palace & Lakes)' },
-  { value: 'Bengaluru', label: 'Bengaluru (Old Petes & Lalbagh)' },
-  { value: 'Kolkata', label: 'Kolkata (Heritage & Culture)' },
-  { value: 'Agra', label: 'Agra (Taj Heritage & Artisans)' },
-  { value: 'Amritsar', label: 'Amritsar (Golden Temple & Heritage)' },
-  { value: 'Rishikesh', label: 'Rishikesh (Ghats & Yoga)' },
-];
-
 export function HomePage() {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [selectedCity, setSelectedCity] = useState('Mumbai');
-  const [availableHours, setAvailableHours] = useState(2);
-  const [budgetCeiling, setBudgetCeiling] = useState(1500);
-  const [wheelchairAccess, setWheelchairAccess] = useState(true);
-  const [lowWalking, setLowWalking] = useState(true);
+  const [selectedCity] = useState('Mumbai');
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
 
-  // Fetch experiences when selectedCity changes (only for cities with images)
   useEffect(() => {
-    async function loadCityExperiences() {
+    async function loadInitial() {
       setIsLoading(true);
       try {
-        const list = await api.getExperiences({
-          city: selectedCity,
-          limit: 16,
-        });
+        const list = await api.getExperiences({ limit: 16 });
         const withImages = (list || []).filter(
           (e) => e.image_url && e.image_url.startsWith('http')
         );
         setExperiences(deduplicateExperienceList(withImages.length > 0 ? withImages : list));
       } catch (err) {
-        console.error('Failed to load experiences for city:', err);
+        console.error('Failed to load initial experiences:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    loadCityExperiences();
-  }, [selectedCity]);
+    loadInitial();
+  }, []);
 
   // GSAP ScrollTrigger setup for section reveals
   useEffect(() => {
@@ -149,13 +123,6 @@ export function HomePage() {
     };
   }, [isLoading, experiences, activeCategory]);
 
-  const handleLaunchSolver = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(
-      `/explore?city=${encodeURIComponent(selectedCity)}&hours=${availableHours}&budget=${budgetCeiling}&wheelchair=${wheelchairAccess}&walking=${lowWalking}`
-    );
-  };
-
   const categories = [
     'All',
     'Food & Culinary',
@@ -171,176 +138,11 @@ export function HomePage() {
       : experiences.filter((e) => e.category === activeCategory);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-paper text-ink space-y-16 sm:space-y-20 pb-24 overflow-hidden">
-      {/* 1. HERO SECTION WITH ONE CONNECTED ECOSYSTEM */}
-      <section className="reveal-section pt-8 sm:pt-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl sm:text-6xl font-display font-extrabold text-ink tracking-tight leading-[1.1]">
-            <SplitWords text="We don't rank places." />
-            <br />
-            <span className="text-marigold-600 italic">
-              <SplitWords text="We pack feasible plans." />
-            </span>
-          </h1>
+    <div ref={containerRef} className="min-h-screen bg-[#EEF1EE] text-[#12213B] space-y-16 sm:space-y-24 pb-24 overflow-hidden">
+      {/* LOKIVA HERO & 8-QUESTION CONTEXT FLOW */}
+      <LokivaLandingHero />
 
-          <p className="text-sm sm:text-base text-dusk-600 leading-relaxed font-sans max-w-2xl mx-auto">
-            Traditional travel apps give endless lists of uncoordinated spots. LOKIVA calculates your exact time, travel buffer, budget, and accessibility, and rebuilds your day instantly when reality changes.
-          </p>
-        </div>
-
-        {/* LOKIVA Experience Exchange: Compact One Connected Ecosystem */}
-        <LokivaExperienceExchange />
-      </section>
-
-      {/* 2. THE INTERACTIVE ARCHITECTURE PROOFS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
-            Interactive Verification
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-bold text-ink">
-            Don't trust our words. Test our logic live.
-          </h2>
-          <p className="text-xs text-dusk-600 font-sans">
-            Interact with the algorithmic rules that govern LOKIVA before running your own journey.
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {/* Proof 02: Accessibility Hard Pre-Filter */}
-          <div className="reveal-section">
-            <AccessibilityConstraintProof />
-          </div>
-
-          {/* Proof 03: Explainability Slide-Out Receipt */}
-          <div className="reveal-section">
-            <ExplainabilityReceiptCard />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. TIME-BOXED MICRO-MOMENT SOLVER (COMPACT & SPACE-EFFICIENT AS PREVIOUS) */}
-      <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-10 shadow-lg space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-teal font-bold block">
-                Micro-Moment Discovery
-              </span>
-              <h2 className="text-2xl font-display font-bold text-ink mt-0.5">
-                <SplitWords text='"I have exactly ___ hours" Solver' />
-              </h2>
-            </div>
-            <span className="text-xs font-mono text-dusk">
-              Calculates real travel buffer + opening hours + budget ceiling
-            </span>
-          </div>
-
-          <form onSubmit={handleLaunchSolver} className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono font-bold text-dusk uppercase block">
-                1. Context City
-              </label>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-paper-100 border border-paper-300 rounded-xl px-3 py-2.5 text-xs text-ink font-semibold focus:outline-none focus:border-marigold"
-              >
-                {VERIFIED_IMAGE_CITIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="font-bold text-dusk uppercase">2. Available Window</span>
-                <span className="font-extrabold text-marigold-700">{availableHours} Hours</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="8"
-                step="0.5"
-                value={availableHours}
-                onChange={(e) => setAvailableHours(parseFloat(e.target.value))}
-                className="w-full h-2 bg-paper-300 rounded-lg appearance-none cursor-pointer accent-marigold"
-              />
-              <span className="text-[10px] text-dusk font-mono block">
-                Includes transit and buffer
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="font-bold text-dusk uppercase">3. Hard Budget</span>
-                <span className="font-extrabold text-teal">₹{budgetCeiling}</span>
-              </div>
-              <input
-                type="range"
-                min="300"
-                max="5000"
-                step="200"
-                value={budgetCeiling}
-                onChange={(e) => setBudgetCeiling(parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-paper-300 rounded-lg appearance-none cursor-pointer accent-teal"
-              />
-              <span className="text-[10px] text-dusk font-mono block">
-                Hard constraint ceiling
-              </span>
-            </div>
-
-            <div className="flex flex-col justify-between space-y-2">
-              <label className="text-xs font-mono font-bold text-dusk uppercase block">
-                4. Hard Pre-Filters
-              </label>
-              <div className="flex items-center gap-3 text-xs font-mono">
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-ink">
-                  <input
-                    type="checkbox"
-                    checked={wheelchairAccess}
-                    onChange={(e) => setWheelchairAccess(e.target.checked)}
-                    className="rounded text-marigold focus:ring-marigold"
-                  />
-                  <span>Wheelchair</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-ink">
-                  <input
-                    type="checkbox"
-                    checked={lowWalking}
-                    onChange={(e) => setLowWalking(e.target.checked)}
-                    className="rounded text-marigold focus:ring-marigold"
-                  />
-                  <span>Low Walking</span>
-                </label>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono text-xs font-bold rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <span>Pack Plan</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-marigold" />
-                </button>
-
-                <SurpriseMe
-                  experiences={experiences}
-                  currentCity={selectedCity}
-                  maxBudget={budgetCeiling}
-                  availableHours={availableHours}
-                  wheelchairOnly={wheelchairAccess}
-                  lowWalkingOnly={lowWalking}
-                />
-              </div>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* 4. CURATED CULTURAL CATALOG (SYNCS WITH SELECTED CITY) */}
+      {/* CURATED EXPERIENCES CATALOG */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -348,7 +150,7 @@ export function HomePage() {
               Curated Cultural Catalog
             </div>
             <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink">
-              <SplitWords text={`Verified Indian Cultural Experiences · ${selectedCity}`} />
+              <SplitWords text="Verified Indian Cultural Experiences" />
             </h2>
             <p className="text-xs text-dusk-600">
               Each experience vetted for direct community spend, opening schedules, and step-free access.
@@ -356,10 +158,10 @@ export function HomePage() {
           </div>
 
           <Link
-            to={`/explore?city=${encodeURIComponent(selectedCity)}&budget=${budgetCeiling}&wheelchair=${wheelchairAccess}&walking=${lowWalking}`}
+            to="/explore"
             className="text-xs font-mono font-bold text-ink hover:text-marigold flex items-center gap-1.5 underline"
           >
-            <span>View All in {selectedCity}</span>
+            <span>View All Experiences</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -399,13 +201,13 @@ export function HomePage() {
         )}
       </section>
 
-      {/* 5. LOKIVA MOMENTS */}
+      {/* LOKIVA MOMENTS - IMMERSIVE VISUAL EXPERIENCE DISCOVERY */}
       <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
 
-      {/* 6. FREQUENTLY ASKED QUESTIONS */}
+      {/* FREQUENTLY ASKED QUESTIONS */}
       <FaqSection />
 
-      {/* 7. THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
+      {/* THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-paper-400 p-8 sm:p-12 space-y-8">
           <div className="max-w-2xl space-y-2">
@@ -448,3 +250,5 @@ export function HomePage() {
     </div>
   );
 }
+
+export default HomePage;
