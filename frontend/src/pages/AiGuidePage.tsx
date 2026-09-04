@@ -38,6 +38,47 @@ export function AiGuidePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const latestReplyRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+
+  // Automatically scroll down a little when AI answers so the user can comfortably read the reply
+  useEffect(() => {
+    if (messages.length <= 1) return;
+
+    const lastMessage = messages[messages.length - 1];
+
+    if (lastMessage.role === 'assistant' && latestReplyRef.current) {
+      const timeoutId = setTimeout(() => {
+        if (!latestReplyRef.current) return;
+        const rect = latestReplyRef.current.getBoundingClientRect();
+        // Align top of the newly arrived reply ~88px from top of viewport (cleanly beneath floating navbar)
+        const targetY = window.scrollY + rect.top - 88;
+        window.scrollTo({
+          top: Math.max(0, targetY),
+          behavior: 'smooth',
+        });
+      }, 70);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages]);
+
+  // When user sends a message and loading starts, smoothly scroll down so the prompt and thinking state are in view
+  useEffect(() => {
+    if (isLoading && loadingRef.current) {
+      const timeoutId = setTimeout(() => {
+        if (!loadingRef.current) return;
+        const rect = loadingRef.current.getBoundingClientRect();
+        const bottomThreshold = window.innerHeight - 130;
+        if (rect.bottom > bottomThreshold) {
+          const scrollAmount = rect.bottom - bottomThreshold + 24;
+          window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+        }
+      }, 60);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading]);
 
   const handleSend = async (customText?: string) => {
     const textToSend = customText || inputMessage;
@@ -138,13 +179,15 @@ export function AiGuidePage() {
 
         {/* Conversation Stream */}
         <div className="space-y-6">
-          {messages.map((msg) => {
+          {messages.map((msg, index) => {
             const isUser = msg.role === 'user';
+            const isLatestReply = !isUser && index === messages.length - 1 && messages.length > 1;
 
             return (
               <div
                 key={msg.id}
-                className={`flex gap-3.5 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
+                ref={isLatestReply ? latestReplyRef : undefined}
+                className={`flex gap-3.5 sm:gap-4 scroll-mt-24 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {/* Assistant Avatar */}
                 {!isUser && (
@@ -206,7 +249,7 @@ export function AiGuidePage() {
 
           {/* Loading Animation */}
           {isLoading && (
-            <div className="flex gap-4 max-w-xl">
+            <div ref={loadingRef} className="flex gap-4 max-w-xl scroll-mt-24">
               <div className="w-10 h-10 rounded-2xl bg-white border border-paper-400 text-marigold flex items-center justify-center shadow-sm">
                 <Sparkles className="w-5 h-5 animate-spin text-marigold" />
               </div>
