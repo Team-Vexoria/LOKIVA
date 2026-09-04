@@ -43,7 +43,7 @@ export function LokivaLandingHero() {
   };
 
   return (
-    <section className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-12 sm:pb-16 text-[#12213B]">
+    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-12 sm:pb-16 text-[#12213B] overflow-hidden">
       {/* Onboarding Full-Screen Takeover Modal */}
       <TripOnboardingTakeover
         isOpen={isOnboardingOpen}
@@ -51,8 +51,51 @@ export function LokivaLandingHero() {
         onPlanGenerated={handlePlanGenerated}
       />
 
+      {/* Decorative Indian Monument Cutouts (Asymmetrically Flanking Negative Space) */}
+      <div className="pointer-events-none select-none z-0 absolute inset-0 overflow-hidden hidden lg:block" aria-hidden="true">
+        {/* 1. Hawa Mahal (Jaipur) - Primary Left Anchor (Upper-Mid) */}
+        <div className="absolute left-0 xl:left-4 top-6 xl:top-8 w-36 lg:w-44 xl:w-56 -rotate-3 transition-transform duration-700 ease-out hover:rotate-0">
+          <img
+            src="/assets/monuments/hawa-mahal-cutout.png"
+            alt="Hawa Mahal Jaipur architectural silhouette cutout"
+            loading="lazy"
+            className="w-full h-auto object-contain opacity-70 xl:opacity-85 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
+          />
+        </div>
+
+        {/* 2. Taj Mahal (Agra) - Secondary Right Anchor (Upper-Right) */}
+        <div className="absolute right-0 xl:right-4 top-4 xl:top-6 w-36 lg:w-40 xl:w-52 -rotate-2 transition-transform duration-700 ease-out hover:rotate-0">
+          <img
+            src="/assets/monuments/taj-mahal-cutout.png"
+            alt="Taj Mahal Agra dome and minarets cutout"
+            loading="lazy"
+            className="w-full h-auto object-contain opacity-70 xl:opacity-85 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
+          />
+        </div>
+
+        {/* 3. Temple Gopuram (Madurai) - Lower Left Accent (Flanking CTA) */}
+        <div className="hidden xl:block absolute left-2 xl:left-8 top-[52%] w-32 xl:w-40 rotate-[2.5deg] transition-transform duration-700 ease-out hover:rotate-0">
+          <img
+            src="/assets/monuments/temple-gopuram-cutout.png"
+            alt="South Indian Temple Gopuram tower cutout"
+            loading="lazy"
+            className="w-full h-auto object-contain opacity-65 xl:opacity-80 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
+          />
+        </div>
+
+        {/* 4. Gateway of India (Mumbai) - Lower Right Accent (Flanking CTA) */}
+        <div className="hidden xl:block absolute right-2 xl:right-8 top-[50%] w-36 xl:w-48 rotate-3 transition-transform duration-700 ease-out hover:rotate-0">
+          <img
+            src="/assets/monuments/gateway-of-india-cutout.png"
+            alt="Gateway of India Mumbai arch cutout"
+            loading="lazy"
+            className="w-full h-auto object-contain opacity-65 xl:opacity-80 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
+          />
+        </div>
+      </div>
+
       {/* Main Hero Display (Clean, Confident, Not AI-Boxy) */}
-      <div className="text-center max-w-3xl mx-auto space-y-6">
+      <div className="relative z-10 text-center max-w-3xl mx-auto space-y-6">
         {/* Subtle Stamp Badge */}
         <div className="flex items-center justify-center gap-2">
           <StampBadge text="ALGORITHMIC CULTURAL CONCIERGE" />
