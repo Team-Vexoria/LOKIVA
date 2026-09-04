@@ -74,7 +74,7 @@ export function MomentCard({ experience }: MomentCardProps) {
   return (
     <Link
       to={`/experience/${experience.id}`}
-      className="group relative flex-shrink-0 w-[280px] sm:w-[320px] md:w-[340px] h-[460px] sm:h-[500px] rounded-3xl overflow-hidden border border-paper-400 hover:border-marigold/70 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col justify-end select-none snap-start bg-ink-900"
+      className="group relative flex-shrink-0 w-[280px] sm:w-[320px] md:w-[340px] h-[460px] sm:h-[500px] rounded-3xl overflow-hidden border border-paper-400 hover:border-marigold/70 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col justify-end select-none bg-ink-900"
     >
       {/* Background Image with Zoom on Hover */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-ink-950">

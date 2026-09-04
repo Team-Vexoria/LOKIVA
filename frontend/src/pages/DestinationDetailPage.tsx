@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { DestinationDetail, Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { deduplicateExperienceList } from '../lib/imageDeduplicator';
-import { MapPin, ArrowLeft, Sparkles, Clock, Calendar, Compass, Sun, ShieldCheck } from 'lucide-react';
+import { MapPin, ArrowLeft, Sparkles, Clock, Calendar, Compass, Sun, ShieldCheck, Landmark } from 'lucide-react';
 
 export function DestinationDetailPage() {
   const { state, city } = useParams<{ state: string; city: string }>();
@@ -135,8 +135,8 @@ export function DestinationDetailPage() {
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="bg-white rounded-3xl border border-paper-400 p-12 text-center space-y-3">
-              <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-2xl">
-                🏛️
+              <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-ink">
+                <Landmark className="w-6 h-6 text-dusk" />
               </div>
               <h3 className="text-lg font-display font-bold text-ink">
                 No experiences found in this category

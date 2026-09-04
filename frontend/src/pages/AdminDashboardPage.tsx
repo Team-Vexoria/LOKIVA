@@ -24,6 +24,7 @@ import {
   Building2,
   Landmark,
   Layers,
+  Star,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -519,12 +520,16 @@ export function AdminDashboardPage() {
                           <div className="text-[10px] text-dusk-500">{p.phone}</div>
                         </td>
                         <td className="p-3.5 font-bold text-ink">
-                          ⭐ {p.rating || 4.9}
+                          <span className="flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 text-marigold fill-marigold" />
+                            <span>{p.rating || 4.9}</span>
+                          </span>
                         </td>
                         <td className="p-3.5">
                           {p.is_verified ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-                              ✓ Verified
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 text-teal" />
+                              <span>Verified</span>
                             </span>
                           ) : (
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-marigold-50 text-marigold-700 border border-marigold-200">

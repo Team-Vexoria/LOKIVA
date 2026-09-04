@@ -23,6 +23,39 @@ const CACHE_FRESHNESS_DAYS = 30;
  */
 export async function resolveExperiencesForLocation(locationInput, options = {}) {
   const startTime = Date.now();
+
+  // Step 0: Instant check against local experiences database (0ms latency)
+  if (typeof locationInput === 'string' && locationInput.trim() && !options.forceRefresh) {
+    const term = locationInput.trim().toLowerCase();
+    try {
+      const localMatches = await dbAll(
+        `SELECT * FROM experiences 
+         WHERE is_active = 1 
+           AND (LOWER(city) = ? OR LOWER(city) LIKE ? OR LOWER(area_name) LIKE ? OR ? LIKE "%" || LOWER(city) || "%")
+         ORDER BY rating DESC LIMIT ?`,
+        [term, `%${term}%`, `%${term}%`, term, options.limit || 50]
+      );
+
+      if (localMatches && localMatches.length > 0) {
+        const first = localMatches[0];
+        return {
+          location: {
+            displayName: `${first.city || locationInput}, ${first.state || 'India'}`,
+            lat: first.latitude || 20.5937,
+            lng: first.longitude || 78.9629,
+            state: first.state || '',
+            city: first.city || locationInput,
+          },
+          experiences: localMatches.map(formatExperience),
+          source: 'local_database',
+          isLiveIngested: false,
+        };
+      }
+    } catch (e) {
+      console.warn('Local experiences quick-check skipped:', e.message);
+    }
+  }
+
   let geocoded;
 
   // Step 1: Geocode input (text or coordinates)
@@ -134,7 +167,7 @@ export async function resolveExperiencesForLocation(locationInput, options = {})
       wikipediaUrl: null,
     };
 
-    if (raw.wikidataId && !raw.imageUrl) {
+    if (raw.wikidataId && !raw.imageUrl && placesEnriched < 5) {
       try {
         enriched = await enrichPlace(raw);
         if (enriched.notabilityScore) placesEnriched++;
@@ -144,7 +177,7 @@ export async function resolveExperiencesForLocation(locationInput, options = {})
     }
 
     // If still no image, query Wikipedia / Wikimedia REST summary
-    if (!enriched.imageUrl && !raw.imageUrl) {
+    if (!enriched.imageUrl && !raw.imageUrl && placesEnriched < 5) {
       try {
         const wikiInfo = await fetchWikiPlaceDetails(raw.title, cityOrDistrict);
         if (wikiInfo.imageUrl) {
@@ -160,7 +193,7 @@ export async function resolveExperiencesForLocation(locationInput, options = {})
     }
 
     // If still no image, query high-resolution Pexels API dynamically
-    if (!enriched.imageUrl && !raw.imageUrl) {
+    if (!enriched.imageUrl && !raw.imageUrl && placesEnriched < 5) {
       try {
         const pexelsRes = await fetchPexelsPhotos(`${cityOrDistrict || state} ${raw.category} ${raw.title} India`, 1);
         if (pexelsRes && pexelsRes.photoUrl) {

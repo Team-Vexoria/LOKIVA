@@ -187,12 +187,21 @@ export function Navbar() {
               {/* User profile or login */}
               {user ? (
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-ink font-semibold max-w-[90px] truncate text-[11px]">
-                    {user.full_name?.split(' ')[0]}
-                  </span>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-marigold/50 text-ink font-semibold text-xs transition group"
+                    title="View Profile & Settings"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-[#D85A38] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
+                      {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span className="max-w-[90px] truncate text-[11px] group-hover:text-[#D85A38] transition-colors">
+                      {user.full_name?.split(' ')[0]}
+                    </span>
+                  </Link>
                   <button
                     onClick={() => logout()}
-                    className="p-1 text-dusk hover:text-ink transition"
+                    className="p-1 text-dusk hover:text-clay hover:bg-paper-100 rounded-full transition"
                     title="Sign out"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -268,15 +277,25 @@ export function Navbar() {
                   </button>
                 </div>
                 {user ? (
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="text-xs text-clay font-medium"
-                  >
-                    Sign Out
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-xs font-semibold text-ink flex items-center gap-1.5 hover:text-[#D85A38] transition-colors"
+                    >
+                      <User className="w-3.5 h-3.5 text-[#D85A38]" />
+                      <span>{user.full_name?.split(' ')[0] || 'Profile'}</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-xs text-clay font-medium"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 ) : (
                   <Link
                     to="/login"

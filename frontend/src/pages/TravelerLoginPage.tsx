@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { Compass, User, Sparkles } from 'lucide-react';
 
 export function TravelerLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/explore';
   const { login } = useAuth();
   const [email, setEmail] = useState('aarav.sharma@lokiva.com');
   const [password, setPassword] = useState('traveler123');
@@ -18,7 +20,7 @@ export function TravelerLoginPage() {
     setError(null);
     try {
       await login(email, password, 'traveler');
-      navigate('/explore');
+      navigate(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -40,7 +42,7 @@ export function TravelerLoginPage() {
           <p className="text-xs text-dusk-600 font-sans">Access personalized cultural routes and saved itineraries</p>
         </div>
 
-        <GoogleSignInButton role="traveler" />
+        <GoogleSignInButton role="traveler" redirectTo={redirectTo} />
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-paper-300" />

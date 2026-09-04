@@ -376,7 +376,7 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
               className="w-full py-3.5 px-6 bg-ink hover:bg-ink-800 text-paper rounded-2xl font-mono text-xs sm:text-sm font-bold transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 text-marigold" />
-              <span>{isGenerating ? 'Analyzing & Structuring...' : '✨ Build My Listing'}</span>
+              <span>{isGenerating ? 'Analyzing & Structuring...' : 'Build My Listing'}</span>
             </button>
           </form>
         </div>
@@ -506,8 +506,9 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
                       <span className="text-[10px] text-teal-800 uppercase block font-bold">Local Benchmark</span>
                       <span className="text-teal-900 font-semibold text-[11px]">{listing.suggestedPriceBand}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-teal bg-white px-2 py-0.5 rounded border border-teal-200">
-                      Fair Band Verified ✓
+                    <span className="text-[10px] font-bold text-teal bg-white px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1">
+                      <Check className="w-3 h-3 text-teal" />
+                      <span>Fair Band Verified</span>
                     </span>
                   </div>
 
@@ -564,19 +565,19 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
                     <div className="flex flex-wrap gap-2">
                       <span className="px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
                         <CheckCircle2 className="w-3.5 h-3.5 text-teal" />
-                        <span>✓ Wheelchair Accessible</span>
+                        <span>Wheelchair Accessible</span>
                       </span>
                       <span className="px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
                         <CheckCircle2 className="w-3.5 h-3.5 text-teal" />
-                        <span>✓ Step-Free Entry</span>
+                        <span>Step-Free Entry</span>
                       </span>
                       <span className="px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
                         <Clock className="w-3.5 h-3.5 text-teal" />
-                        <span>✓ Duration Verified ({listing.duration_mins}m)</span>
+                        <span>Duration Verified ({listing.duration_mins}m)</span>
                       </span>
                       <span className="px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
                         <Banknote className="w-3.5 h-3.5 text-teal" />
-                        <span>✓ Price Added (₹{listing.price})</span>
+                        <span>Price Added (₹{listing.price})</span>
                       </span>
                     </div>
                   </div>
@@ -631,7 +632,7 @@ export function ProviderAiCopilot({ onPublishExperience, existingListingCount = 
             </div>
           ) : (
             <div className="p-10 text-center text-xs font-mono text-dusk bg-paper-50 rounded-2xl border border-paper-200">
-              Awaiting your natural language input. Click "✨ Build My Listing" to generate preview.
+              Awaiting your natural language input. Click "Build My Listing" to generate preview.
             </div>
           )}
         </div>

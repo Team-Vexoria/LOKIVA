@@ -1,8 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShieldCheck, MapPin } from 'lucide-react';
 
 export function Footer() {
+  const location = useLocation();
+
+  // Hide footer on AI Concierge page where the dedicated chat interface and fixed bottom bar are active
+  if (location.pathname.startsWith('/ai-guide')) {
+    return null;
+  }
+
   return (
     <footer className="bg-ink text-paper-100 border-t border-ink-700/80 pt-14 pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">

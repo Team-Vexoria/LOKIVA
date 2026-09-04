@@ -15,6 +15,8 @@ import {
   Coins,
   Sparkles,
   Award,
+  Leaf,
+  Check,
 } from 'lucide-react';
 
 export function ExperienceDetailPage() {
@@ -94,8 +96,9 @@ export function ExperienceDetailPage() {
                 <span className="px-2.5 py-1 rounded-lg bg-ink text-white font-mono text-xs font-bold">
                   {experience.category}
                 </span>
-                <span className="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 font-mono text-xs font-bold">
-                  🌿 {localImpact}% Local Spend Score
+                <span className="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 font-mono text-xs font-bold inline-flex items-center gap-1.5">
+                  <Leaf className="w-3.5 h-3.5 text-teal" />
+                  <span>{localImpact}% Local Spend Score</span>
                 </span>
                 <span className="px-2.5 py-1 rounded-lg bg-paper-200 text-ink font-mono text-xs font-semibold">
                   <MapPin className="w-3.5 h-3.5 inline mr-1 text-marigold" />
@@ -246,8 +249,9 @@ export function ExperienceDetailPage() {
                   <span className="text-3xl font-extrabold text-ink">₹{experience.price}</span>
                   <span className="text-xs text-dusk">/ person</span>
                 </div>
-                <span className="text-[11px] text-teal block font-semibold">
-                  ✓ 100% goes directly to the local artisan
+                <span className="text-[11px] text-teal font-semibold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5 text-teal" />
+                  <span>100% goes directly to the local artisan</span>
                 </span>
               </div>
 
@@ -292,8 +296,8 @@ export function ExperienceDetailPage() {
                   type="submit"
                   className="w-full py-3.5 bg-marigold hover:bg-marigold-600 text-ink font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span>{isBooked ? 'Slot Reserved ✓' : 'Reserve Experience Slot'}</span>
+                  {isBooked ? <Check className="w-4 h-4 text-teal" /> : <Calendar className="w-4 h-4" />}
+                  <span>{isBooked ? 'Slot Reserved' : 'Reserve Experience Slot'}</span>
                 </button>
 
                 <Link

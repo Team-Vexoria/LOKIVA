@@ -142,8 +142,9 @@ experiencesRouter.get('/', async (req, res) => {
       params.push(category.toLowerCase());
     }
     if (city) {
-      sql += ' AND LOWER(city) = ?';
-      params.push(city.toLowerCase());
+      const cLow = city.toLowerCase().trim();
+      sql += ' AND (LOWER(city) = ? OR LOWER(city) LIKE ? OR LOWER(area_name) LIKE ? OR LOWER(state) LIKE ? OR ? LIKE "%" || LOWER(city) || "%")';
+      params.push(cLow, `%${cLow}%`, `%${cLow}%`, `%${cLow}%`, cLow);
     }
     if (state) {
       sql += ' AND LOWER(state) = ?';

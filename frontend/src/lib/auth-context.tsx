@@ -40,12 +40,20 @@ const FIREBASE_UNKNOWN_ACCOUNT = new Set([
 ]);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem('lokiva_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setToken] = useState<string | null>(localStorage.getItem('lokiva_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const applySession = (data: { access_token: string; user: User }) => {
     localStorage.setItem('lokiva_token', data.access_token);
+    localStorage.setItem('lokiva_user', JSON.stringify(data.user));
     setToken(data.access_token);
     setUser(data.user);
   };
@@ -94,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (res.ok) {
             const userData = await res.json();
             if (cancelled) return;
+            localStorage.setItem('lokiva_user', JSON.stringify(userData));
             setUser(userData);
             setToken(storedToken);
             finish();
@@ -102,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // Rejected or expired — discard and try Firebase below.
           localStorage.removeItem('lokiva_token');
+          localStorage.removeItem('lokiva_user');
           if (!cancelled) {
             setToken(null);
             setUser(null);
@@ -273,6 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     localStorage.removeItem('lokiva_token');
+    localStorage.removeItem('lokiva_user');
     setToken(null);
     setUser(null);
     try {
@@ -303,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     };
     setUser(updatedUser);
+    localStorage.setItem('lokiva_user', JSON.stringify(updatedUser));
 
     const activeToken = token || localStorage.getItem('lokiva_token');
     if (activeToken) {

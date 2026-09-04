@@ -25,6 +25,7 @@ import {
   Check,
   Banknote,
   Route,
+  Building2,
 } from 'lucide-react';
 
 export function ItineraryPage() {
@@ -215,8 +216,9 @@ export function ItineraryPage() {
               <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
               <span>Offline Mode Active: Viewing locally cached itinerary for Bandra West</span>
             </div>
-            <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px]">
-              Offline Ready ✓
+            <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px] inline-flex items-center gap-1">
+              <Check className="w-3 h-3 text-amber-900" />
+              <span>Offline Ready</span>
             </span>
           </div>
         )}
@@ -233,7 +235,7 @@ export function ItineraryPage() {
               {isOfflineCached && (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 border border-teal-200 text-teal-800 rounded-full text-[11px] font-mono font-bold shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-teal" />
-                  <span>Offline Ready ✓</span>
+                  <span>Offline Ready</span>
                 </div>
               )}
             </div>
@@ -251,8 +253,8 @@ export function ItineraryPage() {
               onClick={handleSaveItinerary}
               className="px-5 py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-md flex items-center gap-2"
             >
-              <Calendar className="w-4 h-4 text-marigold" />
-              <span>{isSaved ? 'Saved to Profile ✓' : 'Save Itinerary'}</span>
+              {isSaved ? <Check className="w-4 h-4 text-marigold" /> : <Calendar className="w-4 h-4 text-marigold" />}
+              <span>{isSaved ? 'Saved to Profile' : 'Save Itinerary'}</span>
             </button>
           </div>
         </div>
@@ -340,7 +342,7 @@ export function ItineraryPage() {
                 {/* Hotel Base Origin Anchor */}
                 <div className="relative">
                   <div className="absolute -left-6 sm:-left-8 top-1.5 w-6 h-6 rounded-full bg-ink text-paper flex items-center justify-center text-xs shadow-md border-2 border-white ring-2 ring-paper-300">
-                    🏨
+                    <Building2 className="w-3.5 h-3.5 text-paper" />
                   </div>
                   <div className="p-4 bg-paper-100 rounded-2xl border border-paper-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
                     <div>
@@ -378,7 +380,7 @@ export function ItineraryPage() {
                         <div className="p-2.5 bg-paper-50 rounded-xl border border-paper-200 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-dusk-600">
                           <div className="flex items-center gap-2">
                             <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center text-[10px]">
-                              🛺
+                              <Navigation className="w-3 h-3 text-amber-900" />
                             </div>
                             <span className="font-semibold text-ink">
                               ~{transitBefore.durationMins} min Auto-rickshaw transfer
@@ -489,7 +491,7 @@ export function ItineraryPage() {
                     <div className="p-2.5 bg-paper-50 rounded-xl border border-paper-200 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-dusk-600">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center text-[10px]">
-                          🛺
+                          <Navigation className="w-3 h-3 text-teal-800" />
                         </div>
                         <span className="font-semibold text-ink">
                           ~15 min Return transfer to Base
@@ -503,7 +505,7 @@ export function ItineraryPage() {
                     {/* Circuit Complete Card */}
                     <div className="relative">
                       <div className="absolute -left-6 sm:-left-8 top-2 w-6 h-6 rounded-full bg-teal text-white flex items-center justify-center text-xs shadow-md border-2 border-white ring-2 ring-paper-300">
-                        ✓
+                        <Check className="w-3.5 h-3.5 text-white" />
                       </div>
                       <div className="p-4 bg-white rounded-2xl border border-paper-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono shadow-sm">
                         <div>

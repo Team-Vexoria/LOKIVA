@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
-import { User, Sparkles, MapPin, CheckCircle2, Shield, Briefcase, Heart } from 'lucide-react';
+import { User, Sparkles, MapPin, CheckCircle2, Shield, Briefcase, Heart, Lock } from 'lucide-react';
 
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -18,6 +19,30 @@ export function ProfilePage() {
       setFullName(user.full_name);
     }
   }, [user?.full_name]);
+
+  if (!user) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl border border-paper-400 p-8 max-w-md w-full text-center space-y-5 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-paper-100 border border-paper-300 flex items-center justify-center mx-auto text-[#D85A38] shadow-sm">
+            <User className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold font-display text-ink">User Profile & Settings</h2>
+            <p className="text-xs text-dusk font-sans leading-relaxed">
+              Sign in to manage your cultural trip solver constraints, dietary preferences, and account profile.
+            </p>
+          </div>
+          <Link
+            to="/login?redirect=/profile"
+            className="block w-full py-3.5 bg-[#D85A38] hover:bg-[#C24927] text-white rounded-xl font-mono text-xs font-bold transition shadow-md hover:shadow-lg"
+          >
+            Sign In to View Profile
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +67,7 @@ export function ProfilePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Profile Card Header */}
         <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-sm">
-          <div className="w-20 h-20 rounded-2xl bg-ink flex items-center justify-center text-marigold text-2xl font-bold font-display shadow-md">
+          <div className="w-20 h-20 rounded-2xl bg-[#D85A38] flex items-center justify-center text-white text-3xl font-bold font-display shadow-md">
             {fullName ? fullName[0] : (user?.full_name ? user.full_name[0] : 'T')}
           </div>
 
@@ -151,7 +176,7 @@ export function ProfilePage() {
             )}
             <button
               type="submit"
-              className="px-6 py-2.5 bg-ink hover:bg-ink-800 text-paper font-mono rounded-xl text-xs font-bold transition shadow-md"
+              className="px-6 py-2.5 bg-[#D85A38] hover:bg-[#C24927] text-white font-mono rounded-xl text-xs font-bold transition shadow-md hover:shadow-lg"
             >
               Save Constraints
             </button>

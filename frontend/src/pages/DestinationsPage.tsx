@@ -19,6 +19,15 @@ import {
   Filter,
   Layers,
   Heart,
+  Palette,
+  Utensils,
+  PartyPopper,
+  Hammer,
+  Leaf,
+  Footprints,
+  Flame,
+  Gem,
+  AlertTriangle,
 } from 'lucide-react';
 import { PanIndiaDestinationsMap } from '../components/map/PanIndiaDestinationsMap';
 import { SurpriseMe } from '../components/surprise/SurpriseMe';
@@ -35,16 +44,16 @@ const REGIONS = [
 ];
 
 const CATEGORIES = [
-  { label: 'All', icon: '✨' },
-  { label: 'Heritage', icon: '🏛️' },
-  { label: 'Art & Culture', icon: '🎨' },
-  { label: 'Local Food', icon: '🍛' },
-  { label: 'Festivals', icon: '🎭' },
-  { label: 'Workshops', icon: '🧑‍🍳' },
-  { label: 'Nature', icon: '🌿' },
-  { label: 'Adventure', icon: '🥾' },
-  { label: 'Spiritual', icon: '🛕' },
-  { label: 'Hidden Gems', icon: '💎' },
+  { label: 'All', icon: <Sparkles className="w-3.5 h-3.5" /> },
+  { label: 'Heritage', icon: <Landmark className="w-3.5 h-3.5 text-marigold" /> },
+  { label: 'Art & Culture', icon: <Palette className="w-3.5 h-3.5 text-teal" /> },
+  { label: 'Local Food', icon: <Utensils className="w-3.5 h-3.5 text-clay" /> },
+  { label: 'Festivals', icon: <PartyPopper className="w-3.5 h-3.5 text-marigold" /> },
+  { label: 'Workshops', icon: <Hammer className="w-3.5 h-3.5 text-dusk" /> },
+  { label: 'Nature', icon: <Leaf className="w-3.5 h-3.5 text-teal" /> },
+  { label: 'Adventure', icon: <Footprints className="w-3.5 h-3.5 text-dusk" /> },
+  { label: 'Spiritual', icon: <Flame className="w-3.5 h-3.5 text-marigold" /> },
+  { label: 'Hidden Gems', icon: <Gem className="w-3.5 h-3.5 text-teal" /> },
 ];
 
 export function DestinationsPage() {
@@ -242,7 +251,7 @@ export function DestinationsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-teal text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                  📍
+                  <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <div className="text-xs font-mono font-bold text-teal-800 uppercase tracking-wider">
@@ -292,7 +301,7 @@ export function DestinationsPage() {
 
         {locationError && (
           <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl px-4 py-3 text-xs font-mono flex items-center justify-between">
-            <span>⚠️ {locationError}</span>
+            <span className="flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" /> {locationError}</span>
             <button onClick={() => setLocationError(null)} className="text-amber-700 hover:text-amber-900">
               <X className="w-4 h-4" />
             </button>
@@ -489,8 +498,8 @@ export function DestinationsPage() {
                   </div>
                 ) : filteredCities.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-paper-400 p-12 text-center space-y-4">
-                    <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-2xl">
-                      🔍
+                    <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-ink">
+                      <Search className="w-5 h-5 text-dusk" />
                     </div>
                     <h3 className="text-lg font-display font-bold text-ink">
                       No destinations found
@@ -588,8 +597,8 @@ export function DestinationsPage() {
                   </div>
                 ) : filteredStates.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-paper-400 p-12 text-center space-y-4">
-                    <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-2xl">
-                      🔍
+                    <div className="w-12 h-12 bg-paper-200 rounded-full flex items-center justify-center mx-auto text-ink">
+                      <Search className="w-5 h-5 text-dusk" />
                     </div>
                     <h3 className="text-lg font-display font-bold text-ink">
                       No states or UTs found
@@ -621,8 +630,9 @@ export function DestinationsPage() {
                         >
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-paper-200 text-teal-700">
-                                📍 {state.region}
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-paper-200 text-teal-700 inline-flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-teal-700" />
+                                <span>{state.region}</span>
                               </span>
                               <span className="text-[11px] font-mono text-dusk font-bold">
                                 {state.is_union_territory ? 'Union Territory' : 'State'}
@@ -695,7 +705,10 @@ export function DestinationsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-0.5 bg-paper-200 text-teal-800 rounded-full text-xs font-mono font-bold">
-                    <span>📍 {selectedStateDetail.region}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-teal-800" />
+                      <span>{selectedStateDetail.region}</span>
+                    </span>
                     <span>•</span>
                     <span>{selectedStateDetail.is_union_territory ? 'Union Territory' : 'Indian State'}</span>
                   </div>

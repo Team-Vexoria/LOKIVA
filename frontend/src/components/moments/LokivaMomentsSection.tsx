@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Experience } from '../../types';
 import { MomentCard } from './MomentCard';
 import {
@@ -27,13 +27,11 @@ interface CategoryFilter {
 }
 
 const MOMENT_CATEGORIES: CategoryFilter[] = [
-  { id: 'all', label: 'All Moments', icon: Layers },
-  { id: 'food', label: 'Culinary & Food', icon: Utensils },
-  { id: 'culture', label: 'Culture & Heritage', icon: Landmark },
-  { id: 'adventure', label: 'Adventure & Trails', icon: Compass },
-  { id: 'nature', label: 'Nature & Valleys', icon: Trees },
-  { id: 'art', label: 'Art & Workshops', icon: Palette },
-  { id: 'nightlife', label: 'Nightlife & Sunset', icon: Moon },
+  { id: 'all', label: 'All', icon: Layers },
+  { id: 'food', label: 'Culinary', icon: Utensils },
+  { id: 'culture', label: 'Heritage', icon: Landmark },
+  { id: 'art', label: 'Crafts', icon: Palette },
+  { id: 'nature', label: 'Nature', icon: Trees },
   { id: 'hidden_gems', label: 'Hidden Gems', icon: Sparkles },
 ];
 
@@ -94,110 +92,161 @@ export function LokivaMomentsSection({ experiences, selectedCity }: LokivaMoment
     }
   }, [experiences, activeCategory, selectedCity]);
 
-  // Carousel Scroll Controls
+  // Continuous Slow Auto-Scroll to the Right (User can pause on hover / touch)
+  const isHoveredRef = useRef(false);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || filteredMoments.length === 0) return;
+
+    let animId: number;
+    let lastTime = performance.now();
+    const scrollSpeed = 0.75; // Smooth slow gliding speed (px per ~16.6ms)
+
+    const step = (now: number) => {
+      const delta = now - lastTime;
+      lastTime = now;
+
+      if (!isHoveredRef.current && el) {
+        el.scrollLeft += scrollSpeed * Math.min(delta / 16.67, 3);
+        // Seamless reset when reaching right boundary
+        if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 4) {
+          el.scrollLeft = 0;
+        }
+      }
+
+      animId = requestAnimationFrame(step);
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [filteredMoments.length]);
+
+  // Carousel Manual Scroll Controls
   const handleScroll = (direction: 'left' | 'right') => {
-    if (!scrollContainerRef.current) return;
-    const scrollAmount = direction === 'left' ? -360 : 360;
-    scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const scrollAmount = direction === 'left' ? -380 : 380;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
   return (
-    <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-      {/* Clean White Dashboard Card Container (Matching LOKIVA Aesthetic) */}
-      <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 shadow-sm space-y-6 text-ink">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-paper-100 border border-paper-300 text-teal rounded-full text-xs font-mono font-bold">
-              <Sparkles className="w-3.5 h-3.5 text-marigold" />
-              <span>Visual Cultural Discovery</span>
-            </div>
-
-            <h2 className="text-2xl sm:text-4xl font-display font-bold text-ink tracking-tight leading-tight">
-              LOKIVA Moments
-            </h2>
-
-            <p className="text-sm sm:text-base font-display italic text-marigold-700 font-medium">
-              See India through local eyes.
-            </p>
-
-            <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-              Discover food, culture, adventure, art and hidden gems through experiences worth remembering.
-            </p>
+    <section className="py-6 sm:py-8 border-t border-paper-300 space-y-6 text-ink">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-2 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-0.5 bg-paper-200 text-teal-800 rounded-full text-xs font-mono font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-marigold" />
+            <span>Visual Cultural Discovery</span>
           </div>
 
-          {/* Carousel Navigation Arrow Controls (Desktop) */}
-          <div className="hidden sm:flex items-center gap-2.5 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => handleScroll('left')}
-              aria-label="Previous moments"
-              className="w-10 h-10 rounded-2xl bg-paper-100 hover:bg-ink hover:text-white text-ink border border-paper-300 flex items-center justify-center transition shadow-xs"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleScroll('right')}
-              aria-label="Next moments"
-              className="w-10 h-10 rounded-2xl bg-paper-100 hover:bg-ink hover:text-white text-ink border border-paper-300 flex items-center justify-center transition shadow-xs"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink tracking-tight">
+            LOKIVA Moments
+          </h2>
+
+          <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
+            See India through local eyes — street encounters, living craft workshops, and generational traditions.
+          </p>
         </div>
 
-        {/* Category Pills Strip */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-t border-paper-200 pt-4">
-          {MOMENT_CATEGORIES.map((cat) => {
-            const isSelected = activeCategory === cat.id;
-            const IconComponent = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-ink text-white shadow-sm scale-102 border border-ink'
-                    : 'bg-paper-100 text-dusk-700 hover:text-ink hover:bg-paper-200 border border-paper-300'
-                }`}
-              >
-                <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-marigold' : 'text-dusk'}`} />
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+        {/* Carousel Navigation Arrow Controls (Desktop) */}
+        <div className="hidden sm:flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => handleScroll('left')}
+            aria-label="Previous moments"
+            className="w-10 h-10 rounded-xl bg-white hover:bg-paper-200 active:scale-95 text-ink border border-paper-300 flex items-center justify-center transition shadow-2xs cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleScroll('right')}
+            aria-label="Next moments"
+            className="w-10 h-10 rounded-xl bg-white hover:bg-paper-200 active:scale-95 text-ink border border-paper-300 flex items-center justify-center transition shadow-2xs cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
+      </div>
 
-        {/* Horizontal Immersive Carousel */}
-        {filteredMoments.length === 0 ? (
-          <div className="text-center py-16 bg-paper-50 rounded-2xl border border-dashed border-paper-400 space-y-2">
-            <Compass className="w-8 h-8 text-dusk mx-auto" />
-            <p className="text-sm font-display font-bold text-ink">
-              No moments found for this category
-            </p>
-            <p className="text-xs font-mono text-dusk">
-              Try switching categories or exploring all moments across India.
-            </p>
+      {/* Category Pills Strip (No scrollbar, concise labels) */}
+      <div className="flex items-center gap-2 overflow-x-hidden flex-wrap border-t border-paper-200 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {MOMENT_CATEGORIES.map((cat) => {
+          const isSelected = activeCategory === cat.id;
+          const IconComponent = cat.icon;
+          return (
             <button
-              onClick={() => setActiveCategory('all')}
-              className="mt-2 text-xs font-mono font-bold text-marigold hover:underline"
+              key={cat.id}
+              type="button"
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                isSelected
+                  ? 'bg-ink text-white shadow-sm scale-102 border border-ink'
+                  : 'bg-paper-100 text-dusk-700 hover:text-ink hover:bg-paper-200 border border-paper-300'
+              }`}
             >
-              View All Moments
+              <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-marigold' : 'text-dusk'}`} />
+              <span>{cat.label}</span>
             </button>
-          </div>
-        ) : (
+          );
+        })}
+      </div>
+
+      {/* Horizontal Immersive Carousel (Auto-scrolls slowly to right, no visible scrollbar) */}
+      {filteredMoments.length === 0 ? (
+        <div className="text-center py-16 bg-paper-50 rounded-2xl border border-dashed border-paper-400 space-y-2">
+          <Compass className="w-8 h-8 text-dusk mx-auto" />
+          <p className="text-sm font-display font-bold text-ink">
+            No moments found for this category
+          </p>
+          <p className="text-xs font-mono text-dusk">
+            Try switching categories or exploring all moments across India.
+          </p>
+          <button
+            onClick={() => setActiveCategory('all')}
+            className="mt-2 text-xs font-mono font-bold text-marigold hover:underline cursor-pointer"
+          >
+            View All Moments
+          </button>
+        </div>
+      ) : (
+        <div className="relative group/carousel">
+          {/* Side Floating Left Arrow */}
+          <button
+            type="button"
+            onClick={() => handleScroll('left')}
+            aria-label="Scroll left"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-ink/85 hover:bg-ink text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition shadow-lg opacity-0 group-hover/carousel:opacity-100 cursor-pointer active:scale-95"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Carousel Cards Container */}
           <div
             ref={scrollContainerRef}
-            className="flex items-center gap-5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-paper-400"
+            onMouseEnter={() => { isHoveredRef.current = true; }}
+            onMouseLeave={() => { isHoveredRef.current = false; }}
+            onTouchStart={() => { isHoveredRef.current = true; }}
+            onTouchEnd={() => { isHoveredRef.current = false; }}
+            className="flex items-center gap-5 overflow-x-auto pb-4 pt-1 scroll-smooth scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {filteredMoments.map((exp) => (
               <MomentCard key={exp.id} experience={exp} />
             ))}
           </div>
-        )}
-      </div>
+
+          {/* Side Floating Right Arrow */}
+          <button
+            type="button"
+            onClick={() => handleScroll('right')}
+            aria-label="Scroll right"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-ink/85 hover:bg-ink text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition shadow-lg opacity-0 group-hover/carousel:opacity-100 cursor-pointer active:scale-95"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

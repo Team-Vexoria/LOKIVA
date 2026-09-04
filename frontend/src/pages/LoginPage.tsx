@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { Compass, User, Briefcase, Shield, ArrowRight } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/explore';
   const { login, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +21,7 @@ export function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      navigate('/explore');
+      navigate(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Login failed.');
     } finally {
@@ -42,7 +44,7 @@ export function LoginPage() {
         </div>
 
         {/* Google Sign In Button */}
-        <GoogleSignInButton role="traveler" />
+        <GoogleSignInButton role="traveler" redirectTo={redirectTo} />
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-paper-300" />
@@ -100,7 +102,7 @@ export function LoginPage() {
             <button
               onClick={() => {
                 demoLogin('traveler');
-                navigate('/explore');
+                navigate(redirectTo);
               }}
               className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition"
             >

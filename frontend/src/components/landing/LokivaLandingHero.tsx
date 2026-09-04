@@ -13,6 +13,7 @@ import {
   Footprints,
   Car,
   ChevronRight,
+  Zap,
 } from 'lucide-react';
 import {
   SquiggleUnderline,
@@ -146,16 +147,16 @@ export function LokivaLandingHero() {
             <button
               type="button"
               onClick={() => setIsOnboardingOpen(true)}
-              className="px-8 py-4 rounded-2xl bg-[#12213B] hover:bg-[#1a2d4f] text-white font-mono text-sm sm:text-base font-bold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-3 active:scale-98 cursor-pointer group"
+              className="px-8 py-4 rounded-2xl bg-[#D85A38] hover:bg-[#C24927] text-white font-mono text-sm sm:text-base font-bold transition-all duration-200 shadow-lg shadow-[#D85A38]/30 hover:shadow-xl hover:shadow-[#D85A38]/40 border border-[#B84724]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
             >
               <span>{solvedPlan ? 'Adjust Your Trip Plan' : 'Plan My Time'}</span>
-              <ArrowRight className="w-4 h-4 text-[#F0A63B] group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
           {/* Small illustrative aside: Never dominant headline, subtle sticker chip */}
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#D0D7CF] text-xs font-mono text-[#5B6B8C] shadow-2xs transform rotate-1">
-            <span className="text-[#F0A63B]">⚡</span>
+            <Zap className="w-3.5 h-3.5 text-[#D85A38] fill-[#D85A38]/20 flex-shrink-0" />
             <span>Have 2 hours before a flight? We solve that too.</span>
           </div>
         </motion.div>

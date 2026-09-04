@@ -20,6 +20,22 @@ import {
   ShieldCheck,
   CheckCircle2,
   Car,
+  User,
+  Heart,
+  Smile,
+  Landmark,
+  Palette,
+  Leaf,
+  ShoppingBag,
+  Salad,
+  Sprout,
+  Flame,
+  Award,
+  Accessibility,
+  Mountain,
+  Coffee,
+  Zap,
+  Scale,
 } from 'lucide-react';
 import {
   SquiggleUnderline,
@@ -76,27 +92,27 @@ const BUDGET_OPTIONS = [
 ];
 
 const COMPANIONS_OPTIONS = [
-  { id: 'solo', label: 'Solo Explorer', desc: 'Fast-paced, introspective, spontaneous', icon: '👤' },
-  { id: 'couple', label: 'Couple / Partner', desc: 'Atmospheric courtyards, quiet sunsets', icon: '👥' },
-  { id: 'family', label: 'Family with Kids', desc: 'Engaging, shaded, frequent rest stops', icon: '👨‍👩‍👧‍👦' },
-  { id: 'friends', label: 'Friends Group', desc: 'Vibrant, food-centric, photo-worthy', icon: '🎒' },
+  { id: 'solo', label: 'Solo Explorer', desc: 'Fast-paced, introspective, spontaneous', icon: <User className="w-5 h-5 text-[#F0A63B]" /> },
+  { id: 'couple', label: 'Couple / Partner', desc: 'Atmospheric courtyards, quiet sunsets', icon: <Heart className="w-5 h-5 text-[#D85A38]" /> },
+  { id: 'family', label: 'Family with Kids', desc: 'Engaging, shaded, frequent rest stops', icon: <Users className="w-5 h-5 text-[#1F7A6C]" /> },
+  { id: 'friends', label: 'Friends Group', desc: 'Vibrant, food-centric, photo-worthy', icon: <Smile className="w-5 h-5 text-[#F0A63B]" /> },
 ];
 
 const INTERESTS_OPTIONS = [
-  { id: 'heritage', label: 'Heritage & History', desc: 'Ancient stepwells, fort ruins, royal havelis', icon: '🏛️' },
-  { id: 'food', label: 'Food & Street Eats', desc: 'Century-old recipes, secret sweets, tea stalls', icon: '🍲' },
-  { id: 'art', label: 'Art & Local Markets', desc: 'Block printing, blue pottery, weaver guilds', icon: '🎨' },
-  { id: 'nature', label: 'Nature & Scenic Spots', desc: 'Rooftop vistas, lake ghats, lush gardens', icon: '🌿' },
-  { id: 'shopping', label: 'Shopping & Craft Bazaars', desc: 'Spices, handlooms, brassware, perfumeries', icon: '🛍️' },
-  { id: 'offbeat', label: 'Offbeat & Hidden Alleyways', desc: 'Undiscovered lanes away from tourist crowds', icon: '🧭' },
+  { id: 'heritage', label: 'Heritage & History', desc: 'Ancient stepwells, fort ruins, royal havelis', icon: <Landmark className="w-5 h-5 text-[#D85A38]" /> },
+  { id: 'food', label: 'Food & Street Eats', desc: 'Century-old recipes, secret sweets, tea stalls', icon: <Utensils className="w-5 h-5 text-[#F0A63B]" /> },
+  { id: 'art', label: 'Art & Local Markets', desc: 'Block printing, blue pottery, weaver guilds', icon: <Palette className="w-5 h-5 text-[#1F7A6C]" /> },
+  { id: 'nature', label: 'Nature & Scenic Spots', desc: 'Rooftop vistas, lake ghats, lush gardens', icon: <Leaf className="w-5 h-5 text-[#2D8978]" /> },
+  { id: 'shopping', label: 'Shopping & Craft Bazaars', desc: 'Spices, handlooms, brassware, perfumeries', icon: <ShoppingBag className="w-5 h-5 text-[#AC6A15]" /> },
+  { id: 'offbeat', label: 'Offbeat & Hidden Alleyways', desc: 'Undiscovered lanes away from tourist crowds', icon: <Compass className="w-5 h-5 text-[#1F7A6C]" /> },
 ];
 
 const FOOD_OPTIONS = [
-  { id: 'veg', label: 'Pure Vegetarian', desc: 'Strictly vegetarian kitchens & street carts', icon: '🥗' },
-  { id: 'vegan', label: '100% Plant-Based / Vegan', desc: 'Dairy-free, cruelty-free local food', icon: '🌱' },
-  { id: 'jain', label: 'Jain Friendly', desc: 'No root vegetables (onion, garlic, potato)', icon: '🪔' },
-  { id: 'halal', label: 'Halal Certified', desc: 'Permissible halal food & historic dining', icon: '🍗' },
-  { id: 'none', label: 'No Restrictions', desc: 'Eats anything authentic and tasty', icon: '✨' },
+  { id: 'veg', label: 'Pure Vegetarian', desc: 'Strictly vegetarian kitchens & street carts', icon: <Salad className="w-5 h-5 text-[#2D8978]" /> },
+  { id: 'vegan', label: '100% Plant-Based / Vegan', desc: 'Dairy-free, cruelty-free local food', icon: <Sprout className="w-5 h-5 text-[#1F7A6C]" /> },
+  { id: 'jain', label: 'Jain Friendly', desc: 'No root vegetables (onion, garlic, potato)', icon: <Flame className="w-5 h-5 text-[#F0A63B]" /> },
+  { id: 'halal', label: 'Halal Certified', desc: 'Permissible halal food & historic dining', icon: <Award className="w-5 h-5 text-[#D85A38]" /> },
+  { id: 'none', label: 'No Restrictions', desc: 'Eats anything authentic and tasty', icon: <Sparkles className="w-5 h-5 text-[#F0A63B]" /> },
 ];
 
 const MOBILITY_OPTIONS = [
@@ -104,7 +120,7 @@ const MOBILITY_OPTIONS = [
     id: 'wheelchair',
     label: 'Wheelchair-Friendly & Step-Free',
     desc: 'Mandatory elevators, ramps, no stairs or broken flagstones',
-    icon: '♿',
+    icon: <Accessibility className="w-6 h-6 text-[#1F7A6C]" />,
     wheelchair: true,
     lowWalking: true,
   },
@@ -112,7 +128,7 @@ const MOBILITY_OPTIONS = [
     id: 'low_walking',
     label: 'Low Walking (Shaded & Close-Hops)',
     desc: 'Max 300–400m between stops, comfortable sitting breaks',
-    icon: '🚶',
+    icon: <Footprints className="w-6 h-6 text-[#F0A63B]" />,
     wheelchair: false,
     lowWalking: true,
   },
@@ -120,7 +136,7 @@ const MOBILITY_OPTIONS = [
     id: 'moderate',
     label: 'Moderate Walking is Fine',
     desc: 'Happy to walk 1–3 km through historic bazaars at comfortable pace',
-    icon: '👟',
+    icon: <Navigation className="w-6 h-6 text-[#D85A38]" />,
     wheelchair: false,
     lowWalking: false,
   },
@@ -128,16 +144,16 @@ const MOBILITY_OPTIONS = [
     id: 'active',
     label: 'Active Pedestrian Explorer',
     desc: 'Can climb fort ramparts, stepwells, and long walking trails',
-    icon: '🥾',
+    icon: <Mountain className="w-6 h-6 text-[#12213B]" />,
     wheelchair: false,
     lowWalking: false,
   },
 ];
 
 const VIBE_OPTIONS = [
-  { id: 'relaxed', label: 'Relaxed & Slow', desc: 'Breathe, linger in courtyards, no clock-watching', icon: '🌿' },
-  { id: 'efficient', label: 'Efficient & Packed', desc: 'Maximize your time with high-density cultural gems', icon: '⚡' },
-  { id: 'balanced', label: 'A Balanced Mix', desc: 'High-energy morning exploration + leisurely afternoon tea', icon: '⚖️' },
+  { id: 'relaxed', label: 'Relaxed & Slow', desc: 'Breathe, linger in courtyards, no clock-watching', icon: <Coffee className="w-6 h-6 text-[#2D8978]" /> },
+  { id: 'efficient', label: 'Efficient & Packed', desc: 'Maximize your time with high-density cultural gems', icon: <Zap className="w-6 h-6 text-[#F0A63B]" /> },
+  { id: 'balanced', label: 'A Balanced Mix', desc: 'High-energy morning exploration + leisurely afternoon tea', icon: <Scale className="w-6 h-6 text-[#D85A38]" /> },
 ];
 
 interface TripOnboardingTakeoverProps {
@@ -430,7 +446,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>📍</span> Step 1 — Destination Context
+                    <MapPin className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 1 — Destination Context</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Where are you headed?
@@ -505,7 +522,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>⏳</span> Step 2 — Real Time Constraint
+                    <Clock className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 2 — Real Time Constraint</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     How much time do you have?
@@ -595,7 +613,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#1F7A6C] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>🪙</span> Step 3 — Hard Financial Wall
+                    <Coins className="w-3.5 h-3.5 text-[#1F7A6C] inline-block" />
+                    <span>Step 3 — Hard Financial Wall</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What's your budget ceiling?
@@ -684,7 +703,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>👥</span> Step 4 — Traveling Companions
+                    <Users className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 4 — Traveling Companions</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Who's traveling with you?
@@ -711,7 +731,7 @@ export function TripOnboardingTakeover({
                             : 'bg-white hover:bg-[#FAFBF9] text-[#12213B] border-[#D0D7CF]'
                         }`}
                       >
-                        <span className="text-2xl">{opt.icon}</span>
+                        <span className="flex-shrink-0 mt-0.5">{opt.icon}</span>
                         <div>
                           <span className="font-display font-bold text-base block">
                             {opt.label}
@@ -745,7 +765,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>🧭</span> Step 5 — Cultural Pulls
+                    <Compass className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 5 — Cultural Pulls</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What pulls you in most?
@@ -771,7 +792,7 @@ export function TripOnboardingTakeover({
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-xl">{opt.icon}</span>
+                          <span className="flex-shrink-0">{opt.icon}</span>
                           <div>
                             <span className="font-display font-bold text-sm block">
                               {opt.label}
@@ -816,7 +837,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>🍲</span> Step 6 — Culinary Guidelines
+                    <Utensils className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 6 — Culinary Guidelines</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Any food preferences?
@@ -843,7 +865,7 @@ export function TripOnboardingTakeover({
                             : 'bg-white hover:bg-[#FAFBF9] text-[#12213B] border-[#D0D7CF]'
                         }`}
                       >
-                        <span className="text-xl">{opt.icon}</span>
+                        <span className="flex-shrink-0">{opt.icon}</span>
                         <div>
                           <span className="font-display font-bold text-sm block">
                             {opt.label}
@@ -891,7 +913,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#1F7A6C] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>♿</span> Step 7 — Mobility & Routing Logic
+                    <Accessibility className="w-3.5 h-3.5 text-[#1F7A6C] inline-block" />
+                    <span>Step 7 — Mobility & Routing Logic</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     How do you like to move?
@@ -918,7 +941,7 @@ export function TripOnboardingTakeover({
                             : 'bg-white hover:bg-[#FAFBF9] text-[#12213B] border-[#D0D7CF]'
                         }`}
                       >
-                        <span className="text-2xl">{opt.icon}</span>
+                        <span className="flex-shrink-0 mt-0.5">{opt.icon}</span>
                         <div>
                           <span className="font-display font-bold text-sm block">
                             {opt.label}
@@ -952,7 +975,8 @@ export function TripOnboardingTakeover({
               >
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
-                    <span>✨</span> Step 8 — Rhythm & Atmosphere
+                    <Sparkles className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
+                    <span>Step 8 — Rhythm & Atmosphere</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What's the vibe?
@@ -979,7 +1003,7 @@ export function TripOnboardingTakeover({
                             : 'bg-white hover:bg-[#FAFBF9] text-[#12213B] border-[#D0D7CF]'
                         }`}
                       >
-                        <span className="text-2xl">{opt.icon}</span>
+                        <span className="flex-shrink-0">{opt.icon}</span>
                         <div>
                           <span className="font-display font-bold text-sm block">
                             {opt.label}
@@ -1148,8 +1172,9 @@ export function TripOnboardingTakeover({
                           <h4 className="text-sm sm:text-base font-display font-bold text-[#12213B]">
                             {stop.name}
                           </h4>
-                          <p className="text-xs font-mono text-[#1F7A6C] font-semibold leading-relaxed">
-                            ✓ {stop.fit_reason}
+                          <p className="text-xs font-mono text-[#1F7A6C] font-semibold leading-relaxed flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-[#1F7A6C]" />
+                            <span>{stop.fit_reason}</span>
                           </p>
                           {stop.match_notes && (
                             <p className="text-[11px] font-sans text-[#5B6B8C] italic">
