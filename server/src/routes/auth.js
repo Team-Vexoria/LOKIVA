@@ -81,31 +81,54 @@ authRouter.post('/register', async (req, res) => {
   }
 });
 
-// 3. Firebase Login / Sync
+// 3. Firebase Login / Sync — identity comes only from a verified ID token.
 authRouter.post('/firebase-login', async (req, res) => {
   try {
-    let { id_token, email, full_name, role = 'traveler' } = req.body;
+    const { id_token, role: requestedRole = 'traveler' } = req.body;
 
-    if (id_token && !email) {
-      try {
-        const decoded = jwt.decode(id_token);
-        if (decoded && decoded.email) {
-          email = decoded.email;
-          if (!full_name && decoded.name) full_name = decoded.name;
-        }
-      } catch {}
+    if (!id_token) {
+      return res.status(400).json({ detail: 'A Firebase ID token is required' });
+    }
+    if (!isFirebaseAdminConfigured()) {
+      return res.status(503).json({ detail: 'Firebase sign-in is not configured on the server (set FIREBASE_PROJECT_ID)' });
     }
 
-    if (!email) return res.status(400).json({ detail: 'Email is required for Firebase authentication' });
+    let verified;
+    try {
+      verified = await verifyFirebaseToken(id_token);
+    } catch (err) {
+      return res.status(401).json({ detail: `Invalid Firebase token: ${err.message}` });
+    }
 
-    let user = await dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [email.toLowerCase().trim()]);
+    if (!verified.email) {
+      return res.status(400).json({ detail: 'This Firebase account has no email address' });
+    }
+
+    const email = verified.email.toLowerCase().trim();
+
+    // Match on the Firebase uid first; fall back to email to adopt accounts
+    // that predate Firebase sign-in.
+    let user = await dbGet('SELECT * FROM users WHERE firebase_uid = ?', [verified.uid]);
     if (!user) {
-      const displayName = full_name || email.split('@')[0];
+      user = await dbGet('SELECT * FROM users WHERE LOWER(email) = ?', [email]);
+      if (user && user.firebase_uid && user.firebase_uid !== verified.uid) {
+        return res.status(409).json({ detail: 'This email is already linked to a different Firebase account' });
+      }
+      if (user) {
+        await dbRun('UPDATE users SET firebase_uid = ? WHERE id = ?', [verified.uid, user.id]);
+      }
+    }
+
+    if (!user) {
+      // New account. Only travelers may self-provision; elevated roles are
+      // granted server-side, never from the request body.
+      const role = requestedRole === 'provider' ? 'provider' : 'traveler';
+      const displayName = verified.name || email.split('@')[0];
       const salt = bcrypt.genSaltSync(10);
-      const hashed = bcrypt.hashSync('firebase_oauth_session', salt);
+      const hashed = bcrypt.hashSync(`firebase:${verified.uid}`, salt);
       const result = await dbRun(
-        'INSERT INTO users (email, full_name, hashed_password, role, is_active) VALUES (?, ?, ?, ?, 1)',
-        [email.toLowerCase().trim(), displayName, hashed, role]
+        'INSERT INTO users (email, full_name, hashed_password, role, is_active, firebase_uid) VALUES (?, ?, ?, ?, 1, ?)',
+        [email, displayName, hashed, role, verified.uid]
       );
       user = { id: result.lastID, role };
 
@@ -114,7 +137,7 @@ authRouter.post('/firebase-login', async (req, res) => {
           'INSERT INTO traveler_profiles (user_id, traveler_type, group_size, budget, interests) VALUES (?, ?, ?, ?, ?)',
           [user.id, 'Solo Explorer', 2, 2500, JSON.stringify(['culture', 'food'])]
         );
-      } else if (role === 'provider') {
+      } else {
         await dbRun(
           'INSERT INTO providers (user_id, business_name, city, is_verified) VALUES (?, ?, ?, 0)',
           [user.id, `${displayName}'s Studio`, 'Jaipur']

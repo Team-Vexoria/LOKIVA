@@ -322,8 +322,43 @@ export async function initDb() {
     )
   `);
 
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      title TEXT,
+      active_city TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `);
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+      content TEXT NOT NULL,
+      recommendations TEXT DEFAULT '[]',
+      city TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions (id)
+    )
+  `);
+
+  await dbRun('CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions (user_id, updated_at DESC)');
+  await dbRun('CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages (session_id, created_at, id)');
+
   // Safe migration check for new columns on existing database
   try {
+    const userInfo = await dbAll("PRAGMA table_info(users)");
+    const userCols = userInfo.map((c) => c.name);
+    if (!userCols.includes('firebase_uid')) {
+      await dbRun("ALTER TABLE users ADD COLUMN firebase_uid TEXT");
+      await dbRun("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_firebase_uid ON users (firebase_uid)");
+    }
+
     const stateInfo = await dbAll("PRAGMA table_info(states)");
     const stateCols = stateInfo.map((c) => c.name);
     if (!stateCols.includes('description')) await dbRun("ALTER TABLE states ADD COLUMN description TEXT");

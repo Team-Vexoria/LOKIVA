@@ -1,78 +1,184 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { User, TravelerProfile } from '../types';
+import { API_BASE } from './api';
+import {
+  auth,
+  isFirebaseConfigured,
+  signInWithGoogle,
+  loginWithFirebaseEmail,
+  registerWithFirebaseEmail,
+  logoutFirebase,
+} from './firebase';
+
+type Role = 'traveler' | 'provider' | 'admin';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password?: string, role?: 'traveler' | 'provider' | 'admin') => Promise<void>;
-  register: (email: string, name: string, password?: string, role?: 'traveler' | 'provider' | 'admin') => Promise<void>;
-  demoLogin: (role: 'traveler' | 'provider' | 'admin') => Promise<void>;
-  loginWithGoogle: (role?: 'traveler' | 'provider' | 'admin') => Promise<void>;
-  logout: () => void;
+  login: (email: string, password?: string, role?: Role) => Promise<void>;
+  register: (email: string, name: string, password?: string, role?: Role) => Promise<void>;
+  demoLogin: (role: Role) => Promise<void>;
+  loginWithGoogle: (role?: Role) => Promise<void>;
+  logout: () => Promise<void>;
   updateProfile: (data: Partial<TravelerProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+/** Firebase error codes that mean "this account isn't in Firebase" — we then
+ *  fall back to the backend's own credential login so seeded demo accounts
+ *  (which exist only in SQLite) keep working. */
+const FIREBASE_UNKNOWN_ACCOUNT = new Set([
+  'auth/user-not-found',
+  'auth/invalid-credential',
+  'auth/invalid-login-credentials',
+  'auth/wrong-password',
+  'auth/operation-not-allowed',
+]);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('lokiva_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize or fetch current user
+  const applySession = (data: { access_token: string; user: User }) => {
+    localStorage.setItem('lokiva_token', data.access_token);
+    setToken(data.access_token);
+    setUser(data.user);
+  };
+
+  /** Trade a verified Firebase ID token for a backend session JWT. The server
+   *  derives identity from the token itself — we never send an email. */
+  const exchangeFirebaseToken = async (idToken: string, role: Role = 'traveler') => {
+    const res = await fetch(`${API_BASE}/auth/firebase-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken, role }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Sign-in failed' }));
+      throw new Error(err.detail || 'Sign-in failed');
+    }
+
+    const data = await res.json();
+    applySession(data);
+    return data;
+  };
+
+  // Restore an existing session: stored backend JWT first, then Firebase.
   useEffect(() => {
-    async function fetchMe() {
+    let cancelled = false;
+    let handled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const finish = () => {
+      if (!cancelled) setIsLoading(false);
+    };
+
+    async function restoreSession() {
       const storedToken = localStorage.getItem('lokiva_token');
-      if (!storedToken) {
-        setIsLoading(false);
+
+      if (storedToken) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+
+          if (res.ok) {
+            const userData = await res.json();
+            if (cancelled) return;
+            setUser(userData);
+            setToken(storedToken);
+            finish();
+            return;
+          }
+
+          // Rejected or expired — discard and try Firebase below.
+          localStorage.removeItem('lokiva_token');
+          if (!cancelled) {
+            setToken(null);
+            setUser(null);
+          }
+        } catch (err) {
+          // Server unreachable. Keep the token so a later reload can retry.
+          console.error('Failed to authenticate session:', err);
+          finish();
+          return;
+        }
+      }
+
+      // No usable backend token. If Firebase still holds a session, exchange it.
+      if (!auth) {
+        finish();
+        return;
+      }
+
+      unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+        if (cancelled || handled) return;
+        handled = true;
+        unsubscribe?.();
+
+        if (!firebaseUser) {
+          finish();
+          return;
+        }
+
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          if (!cancelled) await exchangeFirebaseToken(idToken);
+        } catch (err) {
+          console.error('Failed to restore Firebase session:', err);
+        } finally {
+          finish();
+        }
+      });
+    }
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
+
+  /** Backend-only credential login, used directly when Firebase is not
+   *  configured and as a fallback for accounts that exist only in SQLite. */
+  const loginWithBackend = async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Login failed' }));
+      throw new Error(err.detail || 'Login failed');
+    }
+
+    applySession(await res.json());
+  };
+
+  const login = async (email: string, password: string = 'password123', role: Role = 'traveler') => {
+    setIsLoading(true);
+    try {
+      if (!isFirebaseConfigured()) {
+        await loginWithBackend(email, password);
         return;
       }
 
       try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
-        if (res.ok) {
-          const userData = await res.json();
-          setUser(userData);
-          setToken(storedToken);
-        } else {
-          localStorage.removeItem('lokiva_token');
-          setToken(null);
-          setUser(null);
-        }
-      } catch (err) {
-        console.error('Failed to authenticate session:', err);
-      } finally {
-        setIsLoading(false);
+        const { idToken } = await loginWithFirebaseEmail(email, password);
+        await exchangeFirebaseToken(idToken, role);
+      } catch (err: any) {
+        if (!FIREBASE_UNKNOWN_ACCOUNT.has(err?.code)) throw err;
+        // Not a Firebase account — try the local database instead.
+        await loginWithBackend(email, password);
       }
-    }
-
-    fetchMe();
-  }, []);
-
-  const login = async (email: string, password: string = 'password123', role?: 'traveler' | 'provider' | 'admin') => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Login failed' }));
-        throw new Error(err.detail || 'Login failed');
-      }
-
-      const data = await res.json();
-      localStorage.setItem('lokiva_token', data.access_token);
-      setToken(data.access_token);
-      setUser(data.user);
     } finally {
       setIsLoading(false);
     }
@@ -82,10 +188,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     fullName: string,
     password: string = 'password123',
-    role: 'traveler' | 'provider' | 'admin' = 'traveler'
+    role: Role = 'traveler'
   ) => {
     setIsLoading(true);
     try {
+      if (isFirebaseConfigured()) {
+        const { idToken } = await registerWithFirebaseEmail(email, fullName, password);
+        await exchangeFirebaseToken(idToken, role);
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,16 +209,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(err.detail || 'Registration failed');
       }
 
-      const data = await res.json();
-      localStorage.setItem('lokiva_token', data.access_token);
-      setToken(data.access_token);
-      setUser(data.user);
+      applySession(await res.json());
     } finally {
       setIsLoading(false);
     }
   };
 
-  const demoLogin = async (role: 'traveler' | 'provider' | 'admin' = 'traveler') => {
+  const demoLogin = async (role: Role = 'traveler') => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/demo-login/${role}`, {
@@ -118,47 +227,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(err.detail || 'Demo login failed');
       }
 
-      const data = await res.json();
-      localStorage.setItem('lokiva_token', data.access_token);
-      setToken(data.access_token);
-      setUser(data.user);
+      applySession(await res.json());
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loginWithGoogle = async (role: 'traveler' | 'provider' | 'admin' = 'traveler') => {
+  const loginWithGoogle = async (role: Role = 'traveler') => {
     setIsLoading(true);
     try {
-      // Simulate or call firebase-login fallback endpoint with a mock Google session for seamless demo
-      const res = await fetch(`${API_BASE}/auth/firebase-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: `${role}.demo@lokiva.com`,
-          full_name: role === 'admin' ? 'LOKIVA Admin' : role === 'provider' ? 'Cultural Artisan Host' : 'Sharma Family',
-          role,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Google login failed' }));
-        throw new Error(err.detail || 'Google login failed');
-      }
-
-      const data = await res.json();
-      localStorage.setItem('lokiva_token', data.access_token);
-      setToken(data.access_token);
-      setUser(data.user);
+      const { idToken } = await signInWithGoogle();
+      await exchangeFirebaseToken(idToken, role);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem('lokiva_token');
     setToken(null);
     setUser(null);
+    try {
+      await logoutFirebase();
+    } catch (err) {
+      console.error('Firebase sign-out failed:', err);
+    }
   };
 
   const updateProfile = async (data: Partial<TravelerProfile>) => {
