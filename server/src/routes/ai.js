@@ -93,50 +93,98 @@ function detectCityFromText(text) {
   return null;
 }
 
+// Helper: Generate contextual rule-based response when Gemini is offline
+export function generateFallbackResponse(message, city, recommendedPlaces = []) {
+  const msg = (message || '').toLowerCase();
+  let baseReply = '';
+
+  if (msg.includes('food') || msg.includes('eat') || msg.includes('street') || msg.includes('culinary')) {
+    baseReply = `For culinary discovery in **${city}**, I've prioritized authentic generational food traditions, local sweet-makers, and iconic flavor alleys.`;
+  } else if (msg.includes('craft') || msg.includes('pottery') || msg.includes('textile') || msg.includes('art')) {
+    baseReply = `For artisanal exploration in **${city}**, I've curated hands-on workshops with master craftspeople so you can experience living traditions firsthand.`;
+  } else if (msg.includes('family') || msg.includes('kids') || msg.includes('children')) {
+    baseReply = `For traveling with family in **${city}**, I've chosen comfortable, accessible spots with gentle pacing and engaging cultural stories for all ages.`;
+  } else if (msg.includes('budget') || msg.includes('cheap') || msg.includes('affordable')) {
+    baseReply = `To keep within your budget in **${city}**, these selections offer maximum cultural immersion with low or no entry fees.`;
+  } else if (msg.includes('hour') || msg.includes('time') || msg.includes('duration')) {
+    baseReply = `Based on your available time in **${city}**, I've selected 2 signature stops that are nearby each other to minimize transit and avoid rushing.`;
+  } else {
+    baseReply = `Based on your request, here are 2 signature cultural highlights in **${city}** that capture its authentic heritage.`;
+  }
+
+  if (Array.isArray(recommendedPlaces) && recommendedPlaces.length > 0) {
+    const names = recommendedPlaces.map((r) => `**${r.experience?.title || r.title || 'Selected Experience'}**`).join(' and ');
+    return `${baseReply}\n\nI recommend starting with ${names}.\n\n*If your available time, budget, or preferred vibe changes, just let me know and I'll adapt your recommendations immediately!*`;
+  }
+
+  return baseReply;
+}
+
 // POST /ai/concierge - real AI Cultural Concierge using destination-first flow
 aiRouter.post('/concierge', async (req, res) => {
   try {
     const { message, chat_history = [], city: requestedCity, state = 'India' } = req.body;
     if (!message) return res.status(400).json({ detail: 'Message is required' });
 
+    const cleanMsg = message.trim().toLowerCase();
+    const isGreeting = /^(hi|hello|hey|namaste|hola|good\s+(morning|afternoon|evening)|sup|yo|start|help|hi there|hello there|hi how are you|hello how are you|how are you|hey there|greetings)[\s!.]*$/i.test(cleanMsg);
+
     // 1. Resolve active destination city
-    let activeCity = requestedCity && requestedCity !== 'Mumbai' ? requestedCity : null;
+    // A. Check current message for explicit city mention
     const mentionedInMessage = detectCityFromText(message);
-    if (mentionedInMessage) {
-      activeCity = mentionedInMessage;
-    } else if (!activeCity && Array.isArray(chat_history)) {
+
+    // B. Check user turns ONLY in chat_history (NEVER scan assistant turns, which list example cities!)
+    let cityInUserHistory = null;
+    if (Array.isArray(chat_history)) {
       for (let i = chat_history.length - 1; i >= 0; i--) {
-        const turnCity = chat_history[i].city || detectCityFromText(chat_history[i].content);
-        if (turnCity) {
-          activeCity = turnCity;
-          break;
+        const turn = chat_history[i];
+        if (turn && turn.role === 'user' && typeof turn.content === 'string') {
+          const detected = detectCityFromText(turn.content);
+          if (detected) {
+            cityInUserHistory = detected;
+            break;
+          }
         }
       }
     }
-    if (!activeCity && requestedCity && requestedCity.trim()) {
-      activeCity = requestedCity.trim();
-    }
 
+    // Do not use requestedCity if it was defaulted to 'Mumbai' without user input
+    const cleanRequestedCity = requestedCity && requestedCity.trim() && requestedCity.toLowerCase() !== 'mumbai'
+      ? requestedCity.trim()
+      : null;
+
+    let activeCity = mentionedInMessage || cleanRequestedCity || cityInUserHistory || null;
     const intent = parseIntentFromPrompt(message);
-    const cleanMsg = message.trim().toLowerCase();
-    const isGreeting = /^(hi|hello|hey|namaste|hola|good\s+(morning|afternoon|evening)|sup|yo|start|help|hi how are you|hello how are you)[\s!.]*$/i.test(cleanMsg);
 
-    // 2. If NO destination city has been established yet:
-    if (!activeCity) {
-      // Do NOT send unsolicited recommendations!
-      if (isGreeting) {
+    // 2. CASE: Greeting ("hi", "hello", "hey", "namaste", etc.)
+    // Directives: Answer the greeting properly and ask the questions before recommending!
+    // NEVER return place recommendations on greetings!
+    if (isGreeting) {
+      if (!activeCity) {
         return res.json({
-          reply: `Namaste! 🙏 I'm your LOKIVA Cultural Concierge.\n\nWhich Indian city or destination are you heading to or exploring right now? (e.g., Jaipur, Varanasi, Mumbai, Goa, Delhi, Kochi, Udaipur, etc.)\n\nTell me where you're going, and I'll recommend 2 signature cultural spots and ask a few quick questions to customize a feasible plan for you!`,
-          tokens_used: 10,
+          reply: `Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India — from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nBefore I recommend any places, could you share a few details?\n1. **Where are you heading?** Which Indian city or destination are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n2. **How much time do you have?** (e.g., 2–3 hours quick stop, a half day, or a full day?)\n3. **Who is traveling?** (Solo explorer, couple, or family with kids/elders?)\n4. **What is your budget & preferred vibe?** (Historic architecture, hands-on craft workshops, food trails, or quiet spiritual heritage?)\n\nTell me where you're heading and what you enjoy, and I'll curate the top 2 signature spots perfectly suited for you!`,
+          tokens_used: 25,
           model: 'lokiva-instant',
           extracted_intent: intent,
           suggested_experiences: [],
           context_destination: null,
           state: 'India',
         });
+      } else {
+        return res.json({
+          reply: `Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours do you have available?** (e.g., 2–3 hours, half day, or full day?)\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare what you're in the mood for, and I'll recommend the top 2 cultural spots for you!`,
+          tokens_used: 20,
+          model: 'lokiva-instant',
+          extracted_intent: intent,
+          suggested_experiences: [],
+          context_destination: activeCity,
+          state,
+        });
       }
+    }
 
-      // Call AI to answer their general question and ask for their destination city
+    // 3. CASE: No destination known yet
+    if (!activeCity) {
       let aiResponse;
       try {
         aiResponse = await chatWithCulturalConcierge({
@@ -147,7 +195,7 @@ aiRouter.post('/concierge', async (req, res) => {
         });
       } catch (aiErr) {
         aiResponse = {
-          reply: `Namaste! I'd love to help you plan an authentic trip. Which city or destination in India are you exploring or planning to visit? (e.g. Jaipur, Varanasi, Mumbai, Goa, Delhi, etc.) Once you tell me the city, I'll recommend 2 signature cultural spots!`,
+          reply: `Namaste! I'd love to help you plan an authentic trip. Which city or destination in India are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nOnce you share your destination and how much time you have, I will curate the top 2 cultural spots for you!`,
           tokensUsed: 0,
           model: 'cultural-concierge-local',
         };
@@ -164,18 +212,42 @@ aiRouter.post('/concierge', async (req, res) => {
       });
     }
 
-    // 3. Destination IS known (activeCity is set!)
-    // Look up experiences for the specific destination city
+    // 4. Destination IS known (activeCity is set)
+    // Check if user ONLY mentioned the city and hasn't asked for places or shared constraints yet
+    const strippedMsg = cleanMsg.replace(/[.,!]/g, '').trim();
+    const isJustCity =
+      strippedMsg === activeCity.toLowerCase() ||
+      strippedMsg === `i want to explore ${activeCity.toLowerCase()}` ||
+      strippedMsg === `i am in ${activeCity.toLowerCase()}` ||
+      strippedMsg === `heading to ${activeCity.toLowerCase()}` ||
+      strippedMsg === `visiting ${activeCity.toLowerCase()}` ||
+      strippedMsg === `going to ${activeCity.toLowerCase()}` ||
+      strippedMsg === `explore ${activeCity.toLowerCase()}`;
+
+    if (isJustCity) {
+      return res.json({
+        reply: `Wonderful! **${activeCity}** has an incredible cultural fabric.\n\nTo ensure I recommend the 2 best places tailored specifically to your visit:\n1. **How much time do you have?** (e.g., 2–3 hours, half a day, or a full day?)\n2. **Who is traveling and what's your rough budget?** (Solo explorer, couple, or family with kids/elders?)\n3. **What excites you most?** (Royal architecture & forts, hands-on master artisan workshops like pottery/textiles, or authentic regional food trails?)\n\nTell me your preferences, and I'll curate the top 2 spots for you!`,
+        tokens_used: 20,
+        model: 'lokiva-instant',
+        extracted_intent: intent,
+        suggested_experiences: [],
+        context_destination: activeCity,
+        state,
+      });
+    }
+
+    // 5. User has specified activeCity and provided preferences OR asked a question / for recommendations
+    // Query experiences for activeCity
     const cityExps = await dbAll(
-      `SELECT title, category, price, approx_duration_mins, tagline, description, cultural_context,
-              wheelchair_accessible, low_walking, is_indoor, is_rain_safe, is_hidden_gem
+      `SELECT id, title, category, price, approx_duration_mins, tagline, description, cultural_context,
+              wheelchair_accessible, low_walking, is_indoor, is_rain_safe, is_hidden_gem, image_urls, tags
        FROM experiences
        WHERE LOWER(city) = ? AND is_active = 1
-       LIMIT 10`,
+       LIMIT 15`,
       [activeCity.toLowerCase()]
     );
 
-    // Score experiences based on the extracted intent
+    // Score experiences based on extracted intent
     const scoredExperiences = cityExps.map((exp) => {
       const { score, match_reasons } = scoreExperience(exp, intent, null, { is_raining: false });
       return {
@@ -199,33 +271,28 @@ aiRouter.post('/concierge', async (req, res) => {
     // User directive: "just recommend 2 places, and you can ask more questions to them based on the answers we will change our places recommendation"
     const topRecommendations = scoredExperiences.slice(0, 2);
 
-    // Fast greeting when city was just mentioned (e.g. user just said "Jaipur" or "I am in Jaipur")
-    const justCityName = cleanMsg.replace(/[.,!]/g, '').trim();
-    if (justCityName === activeCity.toLowerCase() || isGreeting) {
-      return res.json({
-        reply: `Wonderful! **${activeCity}** has an incredible cultural fabric.\n\nHere are 2 signature experiences to anchor your visit. To tailor this into a plan that works for you:\n• How many hours do you have available?\n• What's your rough budget, and are you traveling solo, with a partner, or with family?\n• Do you prefer historic architecture, generational food trails, or hands-on artisan crafts?`,
-        tokens_used: 15,
-        model: 'lokiva-instant',
-        extracted_intent: intent,
-        suggested_experiences: topRecommendations,
-        context_destination: activeCity,
-        state,
-      });
-    }
+    // Check if the user is asking for places/activities or sharing constraints (vs asking general knowledge question)
+    const hasPreferencesOrSeekingRecs =
+      /(hour|hr|half\s*day|full\s*day|budget|₹|rs|rupee|family|kids|children|couple|solo|friend|food|eat|street|craft|pottery|textile|walk|temple|fort|palace|monument|museum|recommend|places|spot|visit|attraction|itinerary|see|do|what to|where to)/i.test(cleanMsg) ||
+      Boolean(intent.budget && intent.budget !== 2500) ||
+      Boolean(intent.available_hours && intent.available_hours !== 8) ||
+      Boolean(intent.traveler_type && intent.traveler_type !== 'Solo Explorer') ||
+      Boolean(intent.interests && intent.interests.length > 0);
 
-    // Call Cultural Concierge grounded in the city's verified experiences
+    const placesToAttach = hasPreferencesOrSeekingRecs ? topRecommendations : [];
+
     let aiResponse;
     try {
       aiResponse = await chatWithCulturalConcierge({
         userMessage: message,
         chatHistory: chat_history,
         city: activeCity,
-        availableExperiences: cityExps,
+        availableExperiences: topRecommendations.map((r) => r.experience),
       });
     } catch (aiErr) {
       console.warn('AI Concierge model unavailable, using contextual fallback:', aiErr.message);
       aiResponse = {
-        reply: generateFallbackResponse(message, activeCity),
+        reply: generateFallbackResponse(message, activeCity, placesToAttach),
         tokensUsed: 0,
         model: 'cultural-concierge-local',
       };
@@ -236,7 +303,7 @@ aiRouter.post('/concierge', async (req, res) => {
       tokens_used: aiResponse.tokensUsed || 0,
       model: aiResponse.model || 'gemini-3.5-flash',
       extracted_intent: intent,
-      suggested_experiences: topRecommendations,
+      suggested_experiences: placesToAttach,
       context_destination: activeCity,
       state,
     });

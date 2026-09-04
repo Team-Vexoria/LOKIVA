@@ -32,7 +32,7 @@ export function AiGuidePage() {
       role: 'assistant',
       timestamp: 'Just now',
       content:
-        "Namaste! 🙏 I'm your LOKIVA Cultural Concierge.\n\nWhich Indian city or destination are you heading to or exploring right now? (e.g., Jaipur, Varanasi, Mumbai, Goa, Delhi, Kochi, Udaipur, etc.)\n\nTell me your destination, and I'll recommend 2 signature cultural spots and ask a few quick questions to customize a feasible plan for you!",
+        "Namaste! 🙏 Welcome to LOKIVA, your AI Cultural Concierge.\n\nI'm here to help you experience authentic Indian heritage, generational culinary traditions, and master artisan workshops.\n\nBefore I recommend any places, where are you heading? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nTell me your destination and what you're in the mood for, and I'll curate the top 2 signature spots for you!",
     },
   ]);
 
