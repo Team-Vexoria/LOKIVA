@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 81 IDs requested to be removed by user (67 previous + 14 from screenshots)
+// 83 IDs requested to be removed by user (81 previous + 2 more: CSMVS Museum, Haji Ali Dargah)
 export const REMOVE_IDS = [
   // Original 36
   3918, 3928, 3948, 3949, 3998, 3999, 4001, 4002, 4007, 4008,
@@ -21,6 +21,8 @@ export const REMOVE_IDS = [
   // Screenshot batch: Kumartuli, Bangalore Palace, Basilica, Fontainhas, Lake Palace (both),
   // Blue Pottery (both), Mehtab Bagh, Charminar, Dilli Haat, Fort Aguada, Dashashwamedh Ghat, Qutub Minar
   4031, 4032, 4033, 4034, 4004, 4035, 287, 1098, 3906, 3914, 3769, 3788, 3903, 3916,
+  // CSMVS Museum (1498), Haji Ali Dargah (3934)
+  1498, 3934,
 ];
 
 // Title patterns for removed places to prevent re-seeding
@@ -63,10 +65,10 @@ export const REMOVE_TITLE_PATTERNS = [
   '%Mattancherry Palace (Dutch Palace%',
 ];
 
-// 18 IDs requested by user to keep and showcase on Explore
+// 16 IDs to keep and showcase on Explore (removed 3934 Haji Ali and 1498 CSMVS per user request)
 export const KEEP_IDS = [
   4000, 760, 764, 773, 777, 781, 743, 744, 745,
-  1215, 497, 3932, 1495, 1491, 3934, 1497, 1492, 1498,
+  1215, 497, 3932, 1495, 1491, 1497, 1492,
 ];
 
 // Exact authentic terminal Wikipedia / Wikimedia photos (Zero Pexels!)
@@ -99,14 +101,10 @@ export const AUTHENTIC_TERMINAL_IMAGES = {
   1495: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Shree_Siddhivinayak_Temple_Mumbai.jpg/1280px-Shree_Siddhivinayak_Temple_Mumbai.jpg',
   // 1491: Marine Drive (Queen\'s Necklace Promenade), Mumbai
   1491: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Mumbai_03-2016_27_skyline_at_Marine_Drive.jpg/1280px-Mumbai_03-2016_27_skyline_at_Marine_Drive.jpg',
-  // 3934: Haji Ali Dargah, Mumbai
-  3934: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Haji_Ali_Dargah_Mumbai.jpg/1280px-Haji_Ali_Dargah_Mumbai.jpg',
   // 1497: Kanheri Caves & Sanjay Gandhi National Park, Mumbai
   1497: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Kanheri_Caves_prayer_hall.JPG/1280px-Kanheri_Caves_prayer_hall.JPG',
   // 1492: Gateway of India, Mumbai
   1492: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Mumbai_03-2016_30_Gateway_of_India.jpg/1280px-Mumbai_03-2016_30_Gateway_of_India.jpg',
-  // 1498: Chhatrapati Shivaji Maharaj Vastu Sangrahalaya (CSMVS Museum), Mumbai
-  1498: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Prince_of_Wales_Museum%2C_Mumbai.jpg/1280px-Prince_of_Wales_Museum%2C_Mumbai.jpg',
 };
 
 export async function applyUserSelection() {
