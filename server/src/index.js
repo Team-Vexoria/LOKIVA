@@ -61,6 +61,7 @@ import { seedDefinitiveFamousPlaces } from './services/ingestion/definitiveMajor
 import { seedDefinitiveMajorCitiesDataset } from './services/ingestion/definitiveMajorCitiesDataset.js';
 import { seedMumbaiMasterCatalog } from './services/ingestion/mumbaiMasterCatalog.js';
 import { seedArtisansAndGuides } from './services/ingestion/artisansAndGuidesCatalog.js';
+import { applyUserSelection } from './services/ingestion/applyUserSelection.js';
 
 // Initialize database and start listening
 async function startServer() {
@@ -73,6 +74,7 @@ async function startServer() {
   await seedDefinitiveMajorCitiesDataset();
   await seedMumbaiMasterCatalog();
   await seedArtisansAndGuides();
+  await applyUserSelection();
 
   app.listen(PORT, () => {
     console.log(`LOKIVA Backend API listening at http://localhost:${PORT}`);

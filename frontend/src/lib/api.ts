@@ -44,7 +44,9 @@ export function resolveImageUrl(url?: string | null): string {
   const backendOrigin =
     import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')
       ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
-      : (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'))
+      : typeof window !== 'undefined' &&
+        window.location.hostname !== 'localhost' &&
+        window.location.hostname !== '127.0.0.1'
       ? 'https://lokiva.onrender.com'
       : '';
 

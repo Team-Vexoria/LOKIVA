@@ -197,7 +197,7 @@ experiencesRouter.get('/', async (req, res) => {
 });
 
 // Specifically curated iconic landmark experiences for the landing page
-const LANDING_EXPERIENCE_IDS = [1087, 3752, 1491, 1495, 1497, 3934, 1094, 2468, 1098];
+const LANDING_EXPERIENCE_IDS = [4000, 1492, 3932, 1491, 1495, 773, 1497, 3934, 1498, 760, 743, 1215];
 
 // GET /experiences/landing
 experiencesRouter.get('/landing', async (req, res) => {
