@@ -262,7 +262,7 @@ export function ProviderDashboardPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-paper-300 scrollbar-none font-mono text-xs">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-paper-300 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch] font-mono text-xs">
           <button
             onClick={() => handleTabChange('dashboard')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
@@ -372,8 +372,8 @@ export function ProviderDashboardPage() {
             </div>
 
             {/* KPI Metrics Grid (100% Real DB-driven) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-              <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono">
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-xs text-dusk">
                   <span>Total Direct Revenue</span>
                   <DollarSign className="w-4 h-4 text-teal" />

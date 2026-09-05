@@ -20,24 +20,13 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, role?: Role) => Promise<void>;
   register: (email: string, name: string, password?: string, role?: Role) => Promise<void>;
-  demoLogin: (role: Role, customName?: string) => Promise<void>;
-  loginWithGoogle: (role?: Role, customName?: string) => Promise<void>;
+  demoLogin: (role: Role, customName?: string, customEmail?: string) => Promise<void>;
+  loginWithGoogle: (role?: Role, customName?: string, customEmail?: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<TravelerProfile>, newFullName?: string) => Promise<void>;
+  updateProfile: (data: Partial<TravelerProfile>, newFullName?: string, newEmail?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-/** Firebase error codes that mean "this account isn't in Firebase" — we then
- *  fall back to the backend's own credential login so seeded demo accounts
- *  (which exist only in SQLite) keep working. */
-const FIREBASE_UNKNOWN_ACCOUNT = new Set([
-  'auth/user-not-found',
-  'auth/invalid-credential',
-  'auth/invalid-login-credentials',
-  'auth/wrong-password',
-  'auth/operation-not-allowed',
-]);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
@@ -80,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data;
   };
 
-  // Restore an existing session: stored backend JWT first, then Firebase.
+  // Restore an existing session: check active Firebase Google account first, then backend token.
   useEffect(() => {
     let cancelled = false;
     let handled = false;
@@ -90,7 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) setIsLoading(false);
     };
 
-    async function restoreSession() {
+    async function restoreStoredBackendToken() {
+      if (handled || cancelled) return;
       const storedToken = localStorage.getItem('lokiva_token');
 
       if (storedToken) {
@@ -109,7 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Rejected or expired — discard and try Firebase below.
           localStorage.removeItem('lokiva_token');
           localStorage.removeItem('lokiva_user');
           if (!cancelled) {
@@ -117,38 +106,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
           }
         } catch (err) {
-          // Server unreachable. Keep the token so a later reload can retry.
           console.error('Failed to authenticate session:', err);
           finish();
           return;
         }
       }
+      finish();
+    }
 
-      // No usable backend token. If Firebase still holds a session, exchange it.
-      if (!auth) {
-        finish();
+    async function restoreSession() {
+      if (auth) {
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+          if (cancelled) return;
+          if (firebaseUser && firebaseUser.email) {
+            handled = true;
+            try {
+              const idToken = await firebaseUser.getIdToken();
+              if (!cancelled) {
+                await exchangeFirebaseToken(idToken, 'traveler', firebaseUser.displayName || undefined);
+              }
+            } catch (err) {
+              console.error('Failed to restore Firebase session:', err);
+              await restoreStoredBackendToken();
+            } finally {
+              finish();
+            }
+            return;
+          }
+
+          await restoreStoredBackendToken();
+        });
         return;
       }
 
-      unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
-        if (cancelled || handled) return;
-        handled = true;
-        unsubscribe?.();
-
-        if (!firebaseUser) {
-          finish();
-          return;
-        }
-
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          if (!cancelled) await exchangeFirebaseToken(idToken);
-        } catch (err) {
-          console.error('Failed to restore Firebase session:', err);
-        } finally {
-          finish();
-        }
-      });
+      await restoreStoredBackendToken();
     }
 
     restoreSession();
@@ -231,13 +222,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const demoLogin = async (role: Role = 'traveler', customName?: string) => {
+  const demoLogin = async (role: Role = 'traveler', customName?: string, customEmail?: string) => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/demo-login/${role}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: customName }),
+        body: JSON.stringify({ full_name: customName, email: customEmail }),
       });
 
       if (!res.ok) {
@@ -249,29 +240,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (customName && data.user) {
         data.user.full_name = customName;
       }
+      if (customEmail && data.user) {
+        data.user.email = customEmail;
+      }
       applySession(data);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loginWithGoogle = async (role: Role = 'traveler', customName?: string) => {
+  const loginWithGoogle = async (role: Role = 'traveler', customName?: string, customEmail?: string) => {
     setIsLoading(true);
     try {
       try {
-        const { idToken } = await signInWithGoogle();
-        await exchangeFirebaseToken(idToken, role, customName);
+        const { idToken, user: fbUser } = await signInWithGoogle();
+        const effectiveName = customName || fbUser?.displayName || undefined;
+        await exchangeFirebaseToken(idToken, role, effectiveName);
       } catch (err: any) {
         console.warn('[LOKIVA Auth] Google Sign-in error:', err);
+        // If user intentionally closed or cancelled popup, do not force demo fallback
+        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+          throw err;
+        }
         // If Firebase project has not enabled Google Auth (auth/configuration-not-found) or is not configured
         if (
           err?.code === 'auth/configuration-not-found' ||
           err?.message?.includes('configuration-not-found') ||
-          err?.message?.includes('not configured') ||
           !isFirebaseConfigured()
         ) {
-          console.warn('[LOKIVA Auth] Firebase Authentication is not yet enabled in Firebase Console for project lokiva-5fd10. Seamlessly provisioning Cultural Traveler session via backend.');
-          await demoLogin(role, customName);
+          console.warn('[LOKIVA Auth] Firebase Authentication is not yet enabled in Firebase Console for project lokiva-5fd10. Provisioning session via backend.');
+          await demoLogin(role, customName, customEmail);
           return;
         }
         throw err;
@@ -293,11 +291,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (data: Partial<TravelerProfile>, newFullName?: string) => {
+  const updateProfile = async (data: Partial<TravelerProfile>, newFullName?: string, newEmail?: string) => {
     if (!user) return;
     const updatedUser: User = {
       ...user,
       full_name: newFullName || user.full_name,
+      email: newEmail || user.email,
       profile: {
         ...(user.profile || {
           traveler_type: 'Family with Kids',
@@ -319,7 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const activeToken = token || localStorage.getItem('lokiva_token');
     if (activeToken) {
       try {
-        await fetch(`${API_BASE}/auth/me`, {
+        const res = await fetch(`${API_BASE}/auth/me`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -327,9 +326,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
           body: JSON.stringify({
             full_name: newFullName || user.full_name,
+            email: newEmail || user.email,
             profile: data,
           }),
         });
+        if (res.ok) {
+          const backendUser = await res.json();
+          setUser(backendUser);
+          localStorage.setItem('lokiva_user', JSON.stringify(backendUser));
+        }
       } catch (err) {
         console.error('Failed to sync profile update to backend:', err);
       }

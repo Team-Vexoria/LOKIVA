@@ -16,7 +16,7 @@ export function ItineraryViewTabs({ currentView, onViewChange }: ItineraryViewTa
   ];
 
   return (
-    <nav className="flex items-center gap-2 overflow-x-auto pb-1" aria-label="Itinerary View Modes">
+    <nav className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch]" aria-label="Itinerary View Modes">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = currentView === tab.id;

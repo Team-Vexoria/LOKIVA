@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
-import { User, Sparkles, MapPin, CheckCircle2, Shield, Briefcase, Heart, Lock } from 'lucide-react';
+import { User, Sparkles, MapPin, CheckCircle2 } from 'lucide-react';
 
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();

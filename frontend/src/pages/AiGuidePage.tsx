@@ -506,7 +506,7 @@ export function AiGuidePage() {
         )}
 
         {/* Input Bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-paper/95 backdrop-blur-md border-t border-paper-300 p-4 z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-paper/95 backdrop-blur-md border-t border-paper-300 p-2.5 sm:p-4 z-40">
           <div className="max-w-4xl mx-auto space-y-2">
             {!isAuthenticated ? (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-1 px-2">
@@ -514,17 +514,17 @@ export function AiGuidePage() {
                   <Lock className="w-4 h-4 text-marigold flex-shrink-0" />
                   <span>Please sign in or create an account to start chatting with the AI Concierge.</span>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-center">
                   <Link
                     to="/login/traveler?redirect=/ai-guide"
-                    className="px-4 py-2 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm"
+                    className="flex-1 sm:flex-none justify-center px-4 py-2 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm"
                   >
                     <span>Sign In</span>
                     <ArrowRight className="w-3.5 h-3.5 text-marigold" />
                   </Link>
                   <Link
                     to="/register/traveler?redirect=/ai-guide"
-                    className="px-4 py-2 bg-white hover:bg-paper-100 border border-paper-400 text-ink rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm"
+                    className="flex-1 sm:flex-none justify-center px-4 py-2 bg-white hover:bg-paper-100 border border-paper-400 text-ink rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm"
                   >
                     <span>Create Account</span>
                   </Link>
@@ -534,7 +534,7 @@ export function AiGuidePage() {
               <>
                 {/* Context Header / Destination Selector */}
                 {!currentCity ? (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch] text-xs">
                     <span className="text-dusk font-mono text-[10px] uppercase tracking-wider flex-shrink-0">
                       Select destination:
                     </span>
@@ -571,7 +571,7 @@ export function AiGuidePage() {
                     e.preventDefault();
                     handleSend();
                   }}
-                  className="flex items-center gap-2 bg-white border border-paper-400 rounded-2xl p-2 shadow-xl"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-white border border-paper-400 rounded-2xl p-1.5 sm:p-2 shadow-xl"
                 >
                   <input
                     ref={inputRef}
@@ -580,16 +580,16 @@ export function AiGuidePage() {
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder={
                       !currentCity
-                        ? 'Where in India are you heading? (e.g., Jaipur, Varanasi, Goa, Kochi...)'
-                        : `Ask anything about ${currentCity} (e.g., 3 hours with family, ₹2000 budget, street food)`
+                        ? 'Where in India are you heading? (e.g., Jaipur, Varanasi, Goa...)'
+                        : `Ask about ${currentCity} (e.g., 3 hours with family, street food)`
                     }
-                    className="flex-1 bg-transparent px-3.5 py-2 text-xs sm:text-sm text-ink focus:outline-none placeholder-dusk font-sans"
+                    className="flex-1 min-w-0 bg-transparent px-2.5 sm:px-3.5 py-2 text-xs sm:text-sm text-ink focus:outline-none placeholder-dusk font-sans"
                   />
 
                   <button
                     type="submit"
                     disabled={isLoading || !inputMessage.trim()}
-                    className="px-5 py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-md flex-shrink-0 cursor-pointer"
+                    className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-md flex-shrink-0 cursor-pointer"
                   >
                     <span>Solve</span>
                     <Send className="w-3.5 h-3.5 text-marigold" />

@@ -95,11 +95,11 @@ export function TripHeaderOverview({
           </div>
 
           {/* Action Button Row */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={onEditTrip}
-              className="px-4 py-2.5 bg-paper-100 hover:bg-paper-200 text-ink rounded-xl font-mono text-xs font-bold transition border border-paper-300 flex items-center gap-2 cursor-pointer"
+              className="justify-center px-3.5 py-2.5 bg-paper-100 hover:bg-paper-200 text-ink rounded-xl font-mono text-xs font-bold transition border border-paper-300 flex items-center gap-2 cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5 text-dusk" />
               <span>Edit Trip</span>
@@ -108,7 +108,7 @@ export function TripHeaderOverview({
             <button
               type="button"
               onClick={onShare}
-              className="px-4 py-2.5 bg-paper-100 hover:bg-paper-200 text-ink rounded-xl font-mono text-xs font-bold transition border border-paper-300 flex items-center gap-2 cursor-pointer"
+              className="justify-center px-3.5 py-2.5 bg-paper-100 hover:bg-paper-200 text-ink rounded-xl font-mono text-xs font-bold transition border border-paper-300 flex items-center gap-2 cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5 text-dusk" />
               <span>Share</span>
@@ -117,7 +117,7 @@ export function TripHeaderOverview({
             <button
               type="button"
               onClick={onPrint}
-              className="px-4 py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-sm flex items-center gap-2 cursor-pointer"
+              className="col-span-2 sm:col-span-1 justify-center px-4 py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl font-mono text-xs font-bold transition shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-marigold" />
               <span>Export PDF / Print</span>

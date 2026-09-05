@@ -116,7 +116,7 @@ export function DiscoveryMapPage() {
             </div>
 
             {/* The Interactive Map */}
-            <div className="h-[620px] rounded-2xl overflow-hidden border border-paper-400">
+            <div className="h-[380px] sm:h-[500px] lg:h-[620px] rounded-2xl overflow-hidden border border-paper-400">
               <IndiaInteractiveMap
                 states={states}
                 cities={cities}

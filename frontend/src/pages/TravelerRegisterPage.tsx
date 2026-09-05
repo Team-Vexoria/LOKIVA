@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
-import { Compass, User, Sparkles } from 'lucide-react';
+import { Compass } from 'lucide-react';
 
 export function TravelerRegisterPage() {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export function TravelerRegisterPage() {
           <p className="text-xs text-dusk-600 font-sans">Save cultural trails, custom itineraries, and AI recommendations</p>
         </div>
 
-        <GoogleSignInButton role="traveler" text="Sign up with Google" defaultName={fullName} redirectTo={redirectTo} />
+        <GoogleSignInButton role="traveler" text="Sign up with Google" redirectTo={redirectTo} />
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-paper-300" />

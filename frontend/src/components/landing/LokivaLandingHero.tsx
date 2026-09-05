@@ -109,7 +109,7 @@ export function LokivaLandingHero() {
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="space-y-2 relative"
         >
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-extrabold text-[#12213B] tracking-tight leading-[1.08]">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-[#12213B] tracking-tight leading-[1.1]">
             <span>Real Indian cultural experiences.</span>
             <br />
             <span className="relative inline-block mt-1">
@@ -122,7 +122,7 @@ export function LokivaLandingHero() {
           </h1>
 
           {/* Supporting Line */}
-          <p className="pt-3 text-base sm:text-lg text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed">
+          <p className="pt-2 sm:pt-3 text-sm sm:text-lg text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
             Tell us your available window, budget ceiling, and mobility needs. Lokiva evaluates real transit buffers, opening schedules, and crowd peaks to build a plan that actually works.
           </p>
         </motion.div>
@@ -132,10 +132,10 @@ export function LokivaLandingHero() {
           initial={reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
         >
           {/* Button wrapper anchoring the 'Takes 60s' arrow directly to button's edge */}
-          <div className="relative inline-flex items-center">
+          <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
             {/* Hand-drawn arrow curving toward and terminating at the button's left edge */}
             <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
               <span className="font-display italic text-xs font-semibold text-[#5B6B8C] transform -rotate-6 whitespace-nowrap">
@@ -147,7 +147,7 @@ export function LokivaLandingHero() {
             <button
               type="button"
               onClick={() => setIsOnboardingOpen(true)}
-              className="px-8 py-4 rounded-2xl bg-[#D85A38] hover:bg-[#C24927] text-white font-mono text-sm sm:text-base font-bold transition-all duration-200 shadow-lg shadow-[#D85A38]/30 hover:shadow-xl hover:shadow-[#D85A38]/40 border border-[#B84724]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
+              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#D85A38] hover:bg-[#C24927] text-white font-mono text-sm sm:text-base font-bold transition-all duration-200 shadow-lg shadow-[#D85A38]/30 hover:shadow-xl hover:shadow-[#D85A38]/40 border border-[#B84724]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
             >
               <span>{solvedPlan ? 'Adjust Your Trip Plan' : 'Plan My Time'}</span>
               <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
@@ -155,7 +155,7 @@ export function LokivaLandingHero() {
           </div>
 
           {/* Small illustrative aside: Never dominant headline, subtle sticker chip */}
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#D0D7CF] text-xs font-mono text-[#5B6B8C] shadow-2xs transform rotate-1">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#D0D7CF] text-[11px] sm:text-xs font-mono text-[#5B6B8C] shadow-2xs transform rotate-1 text-center">
             <Zap className="w-3.5 h-3.5 text-[#D85A38] fill-[#D85A38]/20 flex-shrink-0" />
             <span>Have 2 hours before a flight? We solve that too.</span>
           </div>

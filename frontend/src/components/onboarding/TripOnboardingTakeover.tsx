@@ -380,10 +380,10 @@ export function TripOnboardingTakeover({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 bg-[#EEF1EE]/95 backdrop-blur-md overflow-y-auto flex flex-col justify-between p-4 sm:p-6 lg:p-10 select-none">
+      <div className="fixed inset-0 z-50 bg-[#EEF1EE]/95 backdrop-blur-md overflow-y-auto flex flex-col justify-between p-3 sm:p-6 lg:p-10 select-none">
         {/* Top Header: Progress & Close Button */}
-        <div className="w-full max-w-4xl mx-auto flex items-center justify-between pb-4 border-b border-[#D0D7CF]">
-          <div className="flex items-center gap-3">
+        <div className="w-full max-w-4xl mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-[#D0D7CF]">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="font-display font-extrabold text-xl sm:text-2xl text-[#12213B] tracking-tight">
               LOKIVA
             </span>
@@ -1241,17 +1241,26 @@ export function TripOnboardingTakeover({
 
         {/* Bottom Footer Controls: Back & Next / Finish */}
         {!solvedPlanReady && !isSolving && (
-          <div className="w-full max-w-3xl mx-auto pt-4 border-t border-[#D0D7CF] flex items-center justify-between">
+          <div className="w-full max-w-3xl mx-auto pt-3 sm:pt-4 border-t border-[#D0D7CF] flex items-center justify-between gap-2">
             <div className="text-xs font-mono text-[#5B6B8C] hidden sm:block">
               Press <kbd className="px-1.5 py-0.5 bg-white border border-[#D0D7CF] rounded text-[10px] font-bold text-[#12213B]">Enter ↵</kbd> to proceed
             </div>
 
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end ml-auto">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="sm:hidden px-4 py-2.5 rounded-xl bg-white border border-[#D0D7CF] text-[#12213B] font-mono text-xs font-bold"
+                >
+                  Back
+                </button>
+              )}
               {currentStep < 8 ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="px-6 py-2.5 rounded-xl bg-[#12213B] hover:bg-[#1a2d4f] text-white font-mono text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer"
+                  className="flex-1 sm:flex-none justify-center px-6 py-2.5 rounded-xl bg-[#12213B] hover:bg-[#1a2d4f] text-white font-mono text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <span>Continue</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#F0A63B]" />
@@ -1260,7 +1269,7 @@ export function TripOnboardingTakeover({
                 <button
                   type="button"
                   onClick={handleGeneratePlan}
-                  className="px-6 py-2.5 rounded-xl bg-[#F0A63B] hover:bg-[#d88f28] text-[#12213B] font-mono text-xs font-extrabold transition shadow-md flex items-center gap-2 cursor-pointer"
+                  className="flex-1 sm:flex-none justify-center px-6 py-2.5 rounded-xl bg-[#F0A63B] hover:bg-[#d88f28] text-[#12213B] font-mono text-xs font-extrabold transition shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-[#12213B]" />
                   <span>Build My Plan</span>

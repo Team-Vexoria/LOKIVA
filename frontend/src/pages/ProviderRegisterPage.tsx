@@ -42,7 +42,7 @@ export function ProviderRegisterPage() {
           <p className="text-xs text-dusk-600 font-sans">Join verified local artisans, storytellers, and culinary hosts</p>
         </div>
 
-        <GoogleSignInButton role="provider" text="Sign up with Google" defaultName={businessName} />
+        <GoogleSignInButton role="provider" text="Sign up with Google" />
 
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-paper-300" />

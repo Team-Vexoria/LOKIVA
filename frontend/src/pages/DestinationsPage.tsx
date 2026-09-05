@@ -672,8 +672,8 @@ export function DestinationsPage() {
           </div>
 
           {/* Luggage Tag / Railway Ticket View Mode Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-paper-300">
-            <div className="flex items-center bg-paper-200/90 p-1.5 rounded-2xl gap-1 border border-paper-300 overflow-x-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-paper-300">
+            <div className="flex items-center bg-paper-200/90 p-1.5 rounded-2xl gap-1 border border-paper-300 overflow-x-auto max-w-full scrollbar-none [-webkit-overflow-scrolling:touch]">
               <button
                 onClick={() => setViewMode('all')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${

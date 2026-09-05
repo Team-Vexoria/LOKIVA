@@ -342,42 +342,42 @@ export function AdminDashboardPage() {
         </div>
 
         {/* Top KPI Cards (Live Real-Time DB Counts) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-          <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono">
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
             <div className="flex items-center justify-between text-xs text-dusk">
               <span>Verified Experiences</span>
               <Compass className="w-4 h-4 text-marigold" />
             </div>
-            <div className="text-2xl font-extrabold text-ink">{stats?.total_experiences || experiences.length}</div>
+            <div className="text-xl sm:text-2xl font-extrabold text-ink">{stats?.total_experiences || experiences.length}</div>
             <span className="text-[10px] text-teal font-semibold">Across All 36 States & UTs</span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
             <div className="flex items-center justify-between text-xs text-dusk">
               <span>Artisan Providers</span>
               <Building2 className="w-4 h-4 text-ink" />
             </div>
-            <div className="text-2xl font-extrabold text-ink">{stats?.total_providers || providers.length}</div>
+            <div className="text-xl sm:text-2xl font-extrabold text-ink">{stats?.total_providers || providers.length}</div>
             <span className="text-[10px] text-dusk">
               {stats?.pending_verifications ? `${stats.pending_verifications} pending review` : 'All verified'}
             </span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
             <div className="flex items-center justify-between text-xs text-dusk">
               <span>Active Users</span>
               <Users className="w-4 h-4 text-teal" />
             </div>
-            <div className="text-2xl font-extrabold text-ink">{stats?.total_users || users.length}</div>
+            <div className="text-xl sm:text-2xl font-extrabold text-ink">{stats?.total_users || users.length}</div>
             <span className="text-[10px] text-teal font-semibold">{stats?.total_bookings || 894} plans solved</span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
             <div className="flex items-center justify-between text-xs text-dusk">
               <span>Community Payout</span>
               <DollarSign className="w-4 h-4 text-teal" />
             </div>
-            <div className="text-2xl font-extrabold text-ink">
+            <div className="text-xl sm:text-2xl font-extrabold text-ink">
               ₹{Number(stats?.total_revenue || 1248000).toLocaleString('en-IN')}
             </div>
             <span className="text-[10px] text-teal font-semibold">100% fair artisan rate</span>
@@ -385,8 +385,8 @@ export function AdminDashboardPage() {
         </div>
 
         {/* Tab Navigation Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-paper-300 pb-2">
-          <div className="flex items-center bg-paper-200 p-1 rounded-2xl gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-300 pb-2">
+          <div className="flex items-center bg-paper-200 p-1 rounded-2xl gap-1 overflow-x-auto max-w-full scrollbar-none [-webkit-overflow-scrolling:touch]">
             <button
               onClick={() => setActiveTab('kyc')}
               className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 ${

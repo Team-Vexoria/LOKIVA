@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
-import { Compass, User, Sparkles } from 'lucide-react';
+import { Compass } from 'lucide-react';
 
 export function TravelerLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/explore';
   const { login } = useAuth();
-  const [email, setEmail] = useState('aarav.sharma@lokiva.com');
-  const [password, setPassword] = useState('traveler123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -59,6 +59,7 @@ export function TravelerLoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@gmail.com"
               className="w-full bg-paper-100 border border-paper-300 rounded-xl p-3 text-xs text-ink focus:outline-none focus:border-marigold font-sans"
             />
           </div>

@@ -6,15 +6,11 @@ import {
   MapPin,
   Clock,
   Star,
-  Bookmark,
   CheckCircle2,
   ShieldCheck,
   ArrowLeft,
   Calendar,
-  Users,
-  Coins,
   Sparkles,
-  Award,
   Leaf,
   Check,
 } from 'lucide-react';
@@ -92,8 +88,8 @@ export function ExperienceDetailPage() {
   const localImpact = Math.min(98, 85 + ((experience.id * 7) % 14));
 
   return (
-    <div className="min-h-screen bg-paper text-ink py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen bg-paper text-ink pt-6 sm:pt-10 pb-28 lg:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         {/* Back Link */}
         <Link
           to="/explore"
@@ -265,7 +261,7 @@ export function ExperienceDetailPage() {
           </div>
 
           {/* Right Col: Sticky Booking & Feasibility Action Card */}
-          <div>
+          <div id="booking-section">
             <div className="sticky top-24 bg-white rounded-3xl border border-paper-400 p-6 sm:p-7 space-y-6 shadow-xl text-ink">
               <div className="space-y-1 pb-4 border-b border-paper-300 font-mono">
                 <span className="text-[10px] text-dusk uppercase">Fair Direct Investment</span>
@@ -283,13 +279,13 @@ export function ExperienceDetailPage() {
               <form onSubmit={handleBooking} className="space-y-4 font-mono text-xs">
                 <div className="space-y-1.5">
                   <label className="text-dusk uppercase block">Party Size</label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     {[1, 2, 3, 4, 6].map((num) => (
                       <button
                         type="button"
                         key={num}
                         onClick={() => setPartySize(num)}
-                        className={`flex-1 py-2 rounded-xl font-bold border transition ${
+                        className={`flex-1 py-2 rounded-xl font-bold border transition cursor-pointer ${
                           partySize === num
                             ? 'bg-ink text-paper border-ink'
                             : 'bg-paper-100 text-ink border-paper-300 hover:bg-paper-200'
@@ -318,7 +314,7 @@ export function ExperienceDetailPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-marigold hover:bg-marigold-600 text-ink font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-marigold hover:bg-marigold-600 text-ink font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isBooked ? <Check className="w-4 h-4 text-teal" /> : <Calendar className="w-4 h-4" />}
                   <span>{isBooked ? 'Slot Reserved' : 'Reserve Experience Slot'}</span>
@@ -333,6 +329,41 @@ export function ExperienceDetailPage() {
               </form>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile-Only Sticky Booking Bottom Bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-paper-300 p-3 sm:p-4 z-40 shadow-2xl flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] font-mono text-dusk uppercase block">Investment</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold font-display text-ink">
+              {experience.price === 0 ? 'Free Entry' : `₹${experience.price}`}
+            </span>
+            {experience.price > 0 && <span className="text-[10px] font-mono text-dusk">/ person</span>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            to="/itinerary"
+            className="px-3 py-2.5 bg-paper-200 hover:bg-paper-300 text-ink text-xs font-mono font-bold rounded-xl whitespace-nowrap"
+          >
+            + Itinerary
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('booking-section');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="px-4 py-2.5 bg-marigold hover:bg-marigold-600 text-ink text-xs font-mono font-bold rounded-xl shadow-md flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Reserve Slot</span>
+          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { initDb } from './db/db.js';
 import { seedDatabase } from './db/seed.js';
 import { authRouter } from './routes/auth.js';
@@ -13,8 +13,6 @@ import { adminRouter } from './routes/admin.js';
 import { reviewsRouter } from './routes/reviews.js';
 import { router as ingestionRouter } from './routes/ingestion.js';
 import { mediaRouter } from './routes/media.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;

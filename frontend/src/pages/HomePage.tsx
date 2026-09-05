@@ -337,12 +337,12 @@ export function HomePage() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none [-webkit-overflow-scrolling:touch]">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition ${
+              className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition cursor-pointer ${
                 activeCategory === cat
                   ? 'bg-ink text-white shadow-sm'
                   : 'bg-white text-dusk hover:text-ink border border-paper-400'
@@ -355,13 +355,13 @@ export function HomePage() {
 
         {/* Cards Grid with Sibling Cascade Stagger */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-80 bg-paper-300 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredExperiences.map((exp) => (
               <div key={exp.id} className="reveal-stagger-item">
                 <ExperienceCard experience={exp} />
@@ -381,7 +381,7 @@ export function HomePage() {
 
       {/* THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border border-paper-400 p-8 sm:p-12 space-y-8">
+        <div className="bg-white rounded-3xl border border-paper-400 p-5 sm:p-8 lg:p-12 space-y-6 sm:space-y-8">
           <div className="max-w-2xl space-y-2">
             <div className="text-xs font-mono font-bold uppercase tracking-wider text-dusk">
               Algorithmic Guarantees
@@ -394,7 +394,7 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs font-mono">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs font-mono">
             {[
               { label: 'Time Window', desc: 'Exact hours before flight or dinner' },
               { label: 'Real Travel Time', desc: 'Isochrones with local auto traffic' },

@@ -11,11 +11,11 @@ import jwt from 'jsonwebtoken';
  */
 const CERT_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 
-const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || '';
+const getProjectId = () => process.env.FIREBASE_PROJECT_ID || 'lokiva-5fd10';
 
 let certCache = { certs: null, expiresAt: 0 };
 
-export const isFirebaseAdminConfigured = () => Boolean(PROJECT_ID);
+export const isFirebaseAdminConfigured = () => Boolean(getProjectId());
 
 async function getGoogleCerts() {
   if (certCache.certs && Date.now() < certCache.expiresAt) return certCache.certs;
@@ -37,7 +37,8 @@ async function getGoogleCerts() {
  * Never trust anything but the return value of this function for identity.
  */
 export async function verifyFirebaseToken(idToken) {
-  if (!PROJECT_ID) {
+  const projectId = getProjectId();
+  if (!projectId) {
     throw new Error('FIREBASE_PROJECT_ID is not set on the server; cannot verify Firebase tokens.');
   }
 
@@ -54,8 +55,8 @@ export async function verifyFirebaseToken(idToken) {
   // Validates signature, expiry, audience and issuer in one step.
   const claims = jwt.verify(idToken, cert, {
     algorithms: ['RS256'],
-    audience: PROJECT_ID,
-    issuer: `https://securetoken.google.com/${PROJECT_ID}`,
+    audience: projectId,
+    issuer: `https://securetoken.google.com/${projectId}`,
   });
 
   if (!claims.sub) throw new Error('Firebase ID token has no subject');

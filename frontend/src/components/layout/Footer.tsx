@@ -11,9 +11,9 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-ink text-paper-100 border-t border-ink-700/80 pt-14 pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="bg-[#E2D5C3] text-[#1C1814] border-t border-[#CCBCAB] pt-10 sm:pt-14 pb-8 sm:pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
           {/* Brand & Manifesto */}
           <div className="md:col-span-2 space-y-4">
             <Link to="/" className="inline-flex items-center gap-2.5">
@@ -22,47 +22,46 @@ export function Footer() {
                 alt="LOKIVA Platform Logo"
                 className="h-8 w-auto object-contain"
               />
-              <span className="text-2xl font-bold font-display text-white tracking-tight">
+              <span className="text-2xl font-bold font-display text-[#1C1814] tracking-tight">
                 LOKIVA
               </span>
             </Link>
-            <p className="text-xs text-dusk-100 leading-relaxed max-w-md">
+            <p className="text-xs text-[#4D443B] leading-relaxed max-w-md">
               The first live constraint solver and feasibility engine for authentic Indian cultural discovery. We don't just rank options, we guarantee they fit your exact time, travel buffer, and budget, and adapt the moment life changes.
             </p>
-            <div className="pt-2 flex items-center gap-4 text-[11px] font-mono text-teal-100">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4 text-teal" /> 100% Verified Local Artisans
+            <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] font-mono">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EFE8DC] border border-[#C5B4A0] text-[#135E52] shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#135E52]" /> 100% Verified Local Artisans
               </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4 text-marigold" /> 36 States & UTs (Pan-India)
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EFE8DC] border border-[#C5B4A0] text-[#9E3E26] shadow-xs">
+                <MapPin className="w-3.5 h-3.5 text-[#9E3E26]" /> 36 States & UTs (Pan-India)
               </span>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-marigold font-semibold">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-[#9E3E26] font-bold">
               Traveller Flow
             </h4>
-            <ul className="space-y-2 text-xs text-dusk-100 font-medium">
+            <ul className="space-y-2.5 text-xs text-[#3E362E] font-medium">
               <li>
-                <Link to="/explore" className="hover:text-white transition">
+                <Link to="/explore" className="hover:text-[#9E3E26] transition-colors">
                   Browse Pan-India Experiences
                 </Link>
               </li>
               <li>
-                <Link to="/destinations" className="hover:text-white transition">
+                <Link to="/destinations" className="hover:text-[#9E3E26] transition-colors">
                   State Heritage Collections
                 </Link>
               </li>
               <li>
-                <Link to="/ai-guide" className="hover:text-white transition">
+                <Link to="/ai-guide" className="hover:text-[#9E3E26] transition-colors">
                   AI Cultural Concierge
                 </Link>
               </li>
               <li>
-                <Link to="/itinerary" className="hover:text-white transition">
+                <Link to="/itinerary" className="hover:text-[#9E3E26] transition-colors">
                   Dynamic Itinerary Planner
                 </Link>
               </li>
@@ -71,22 +70,22 @@ export function Footer() {
 
           {/* Provider & Trust */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-teal-100 font-semibold">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-[#135E52] font-bold">
               Artisans & Hosts
             </h4>
-            <ul className="space-y-2 text-xs text-dusk-100 font-medium">
+            <ul className="space-y-2.5 text-xs text-[#3E362E] font-medium">
               <li>
-                <Link to="/provider" className="hover:text-white transition">
+                <Link to="/provider" className="hover:text-[#135E52] transition-colors">
                   Host Console & Analytics
                 </Link>
               </li>
               <li>
-                <Link to="/register/provider" className="hover:text-white transition">
+                <Link to="/register/provider" className="hover:text-[#135E52] transition-colors">
                   List Your Cultural Workshop
                 </Link>
               </li>
               <li>
-                <Link to="/admin" className="hover:text-white transition">
+                <Link to="/admin" className="hover:text-[#135E52] transition-colors">
                   Platform Moderation
                 </Link>
               </li>
@@ -95,7 +94,7 @@ export function Footer() {
         </div>
 
         {/* Bottom copyright line */}
-        <div className="pt-8 border-t border-ink-800 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-dusk-200 gap-4">
+        <div className="pt-8 border-t border-[#CCBCAB] flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-[#61564B] gap-4">
           <div>
             © {new Date().getFullYear()} LOKIVA. Handcrafted for authentic regional discovery across India.
           </div>

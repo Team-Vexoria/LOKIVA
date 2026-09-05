@@ -54,17 +54,15 @@ export function Navbar() {
       <motion.nav
         animate={{
           maxWidth: isScrolled ? 940 : 1060,
-          paddingTop: isScrolled ? 7 : 10,
-          paddingBottom: isScrolled ? 7 : 10,
-          paddingLeft: isScrolled ? 20 : 26,
-          paddingRight: isScrolled ? 20 : 26,
+          paddingTop: isScrolled ? 6 : 9,
+          paddingBottom: isScrolled ? 6 : 9,
           backgroundColor: isScrolled
-            ? 'rgba(255, 255, 255, 0.96)'
-            : 'rgba(238, 241, 238, 0.95)',
-          borderColor: '#D0D7CF',
+            ? 'rgba(255, 255, 255, 0.97)'
+            : 'rgba(255, 255, 255, 0.92)',
+          borderColor: isScrolled ? '#D0D7CF' : '#CCD4CB',
           boxShadow: isScrolled
             ? '0 10px 25px -5px rgba(18, 33, 59, 0.08), 0 8px 10px -6px rgba(18, 33, 59, 0.04)'
-            : '0 4px 6px -1px rgba(18, 33, 59, 0.04), 0 2px 4px -2px rgba(18, 33, 59, 0.02)',
+            : '0 4px 12px -2px rgba(18, 33, 59, 0.07), 0 2px 6px -2px rgba(18, 33, 59, 0.04)',
         }}
         transition={{
           type: 'spring',
@@ -72,7 +70,9 @@ export function Navbar() {
           damping: 20,
           mass: 0.8,
         }}
-        className="w-full mx-auto pointer-events-auto rounded-full border backdrop-blur-md"
+        className={`w-full mx-auto pointer-events-auto border backdrop-blur-md px-3 sm:px-5 lg:px-6 transition-[border-radius] duration-200 ${
+          mobileMenuOpen ? 'rounded-2xl sm:rounded-3xl shadow-xl' : 'rounded-full'
+        }`}
       >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Left: Brand Logo & Wordmark */}
@@ -237,16 +237,16 @@ export function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden pt-3 pb-2 border-t border-paper-300 mt-2 space-y-2 text-xs"
+              className="md:hidden pt-3 pb-3 border-t border-paper-300 mt-2 space-y-1.5 text-xs max-h-[78vh] overflow-y-auto"
             >
               {navLinks.map(({ to, label }) => (
                 <Link
                   key={to}
                   to={to}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-3 py-2 rounded-xl transition ${
+                  className={`block px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
                     isActive(to)
-                      ? 'bg-paper-200 text-ink font-bold'
+                      ? 'bg-paper-200 text-ink font-bold border border-paper-300'
                       : 'text-dusk hover:text-ink hover:bg-paper-100'
                   }`}
                 >
@@ -254,53 +254,78 @@ export function Navbar() {
                 </Link>
               ))}
 
-              <div className="pt-2 border-t border-paper-300 flex items-center justify-between">
-                <div className="flex gap-2">
+              {/* Persona Switcher Strip */}
+              <div className="pt-2.5 pb-1 border-t border-paper-300 space-y-1.5">
+                <span className="text-[10px] font-mono text-dusk-600 uppercase tracking-wider block px-1">
+                  Workspace Persona
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
+                    type="button"
                     onClick={() => {
                       demoLogin('traveler');
                       setMobileMenuOpen(false);
+                      navigate('/explore');
                     }}
-                    className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
+                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
                   >
                     Traveler
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       demoLogin('provider');
                       setMobileMenuOpen(false);
                       navigate('/provider/dashboard');
                     }}
-                    className="px-2.5 py-1 bg-paper-100 rounded-lg text-[10px] font-mono font-bold text-ink"
+                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
                   >
                     Provider
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      demoLogin('admin');
+                      setMobileMenuOpen(false);
+                      navigate('/admin');
+                    }}
+                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
+                  >
+                    Admin
+                  </button>
                 </div>
+              </div>
+
+              {/* User Account / Sign In */}
+              <div className="pt-2 border-t border-paper-300 flex items-center justify-between px-1">
                 {user ? (
-                  <div className="flex items-center gap-3">
+                  <>
                     <Link
                       to="/profile"
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-xs font-semibold text-ink flex items-center gap-1.5 hover:text-[#D85A38] transition-colors"
                     >
-                      <User className="w-3.5 h-3.5 text-[#D85A38]" />
-                      <span>{user.full_name?.split(' ')[0] || 'Profile'}</span>
+                      <div className="w-5 h-5 rounded-full bg-[#D85A38] text-white flex items-center justify-center text-[10px] font-bold">
+                        {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <span className="truncate max-w-[140px]">{user.full_name || 'Profile'}</span>
                     </Link>
                     <button
+                      type="button"
                       onClick={() => {
                         logout();
                         setMobileMenuOpen(false);
                       }}
-                      className="text-xs text-clay font-medium"
+                      className="px-3 py-1 bg-paper-100 rounded-full text-xs text-clay font-medium border border-paper-300"
                     >
                       Sign Out
                     </button>
-                  </div>
+                  </>
                 ) : (
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-ink"
+                    className="w-full py-2 bg-ink text-white rounded-xl text-center text-xs font-bold block"
                   >
                     Sign In
                   </Link>

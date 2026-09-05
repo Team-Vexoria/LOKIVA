@@ -284,7 +284,7 @@ export function ExplorePage() {
           </form>
 
           {/* Quick-Jump Enclaves Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch] text-xs">
             <span className="text-dusk font-mono uppercase text-[10px] tracking-wider whitespace-nowrap">
               Featured Enclaves:
             </span>
@@ -560,7 +560,7 @@ export function ExplorePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {experiences.map((exp) => (
                 <ExperienceCard key={exp.id} experience={exp} />
               ))}

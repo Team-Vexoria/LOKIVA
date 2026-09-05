@@ -265,9 +265,17 @@ authRouter.put('/me', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.sub;
 
-    const { full_name, profile } = req.body || {};
+    const { full_name, email, profile } = req.body || {};
     if (full_name && full_name.trim()) {
       await dbRun('UPDATE users SET full_name = ? WHERE id = ?', [full_name.trim(), userId]);
+    }
+
+    if (email && email.trim()) {
+      const cleanEmail = email.toLowerCase().trim();
+      const existing = await dbGet('SELECT id FROM users WHERE LOWER(email) = ? AND id != ?', [cleanEmail, userId]);
+      if (!existing) {
+        await dbRun('UPDATE users SET email = ? WHERE id = ?', [cleanEmail, userId]);
+      }
     }
 
     if (profile && typeof profile === 'object') {
