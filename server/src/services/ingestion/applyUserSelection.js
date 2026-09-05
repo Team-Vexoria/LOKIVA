@@ -23,6 +23,10 @@ export const REMOVE_IDS = [
   4031, 4032, 4033, 4034, 4004, 4035, 287, 1098, 3906, 3914, 3769, 3788, 3903, 3916,
   // CSMVS Museum (1498), Haji Ali Dargah (3934)
   1498, 3934,
+  // Batch of 29 (Johari Bazaar, Amer, Pink City, C-Scheme, Sanganer, etc.)
+  2968, 3077, 3096, 3100, 3121, 2419, 56, 58, 59, 61,
+  2466, 2470, 2472, 2474, 2478, 2479, 2929, 2930, 2934, 2935,
+  2938, 2939, 2940, 2950, 2964, 2978, 2986, 2990, 791,
 ];
 
 // Title patterns for removed places to prevent re-seeding
