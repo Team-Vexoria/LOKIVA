@@ -447,7 +447,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 1 — Destination Context</span>
+                    <span>Step 1: Destination Context</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Where are you headed?
@@ -523,7 +523,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 2 — Real Time Constraint</span>
+                    <span>Step 2: Real Time Constraint</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     How much time do you have?
@@ -614,13 +614,13 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#1F7A6C] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Coins className="w-3.5 h-3.5 text-[#1F7A6C] inline-block" />
-                    <span>Step 3 — Hard Financial Wall</span>
+                    <span>Step 3: Hard Financial Wall</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What's your budget ceiling?
                   </h2>
                   <p className="text-sm text-[#5B6B8C] font-sans">
-                    Lokiva treats this as a hard wall — every entry ticket, chai stop, and auto fare fits inside.
+                    Lokiva treats this as a hard wall: every entry ticket, chai stop, and auto fare fits inside.
                   </p>
                 </div>
 
@@ -704,7 +704,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Users className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 4 — Traveling Companions</span>
+                    <span>Step 4: Traveling Companions</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Who's traveling with you?
@@ -766,7 +766,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Compass className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 5 — Cultural Pulls</span>
+                    <span>Step 5: Cultural Pulls</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What pulls you in most?
@@ -838,7 +838,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Utensils className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 6 — Culinary Guidelines</span>
+                    <span>Step 6: Culinary Guidelines</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     Any food preferences?
@@ -914,7 +914,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#1F7A6C] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Accessibility className="w-3.5 h-3.5 text-[#1F7A6C] inline-block" />
-                    <span>Step 7 — Mobility & Routing Logic</span>
+                    <span>Step 7: Mobility & Routing Logic</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     How do you like to move?
@@ -976,7 +976,7 @@ export function TripOnboardingTakeover({
                 <div className="space-y-2 text-center sm:text-left">
                   <span className="text-xs font-mono font-bold text-[#F0A63B] uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#F0A63B] inline-block" />
-                    <span>Step 8 — Rhythm & Atmosphere</span>
+                    <span>Step 8: Rhythm & Atmosphere</span>
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-[#12213B] leading-tight">
                     What's the vibe?
@@ -1126,7 +1126,7 @@ export function TripOnboardingTakeover({
                       </span>
                     </div>
                     <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-[#12213B]">
-                      Everything fits — mathematically packed.
+                      Everything fits, mathematically packed.
                     </h3>
                     <p className="text-xs font-mono text-[#5B6B8C]">
                       {dayPlan.feasibility_summary}
