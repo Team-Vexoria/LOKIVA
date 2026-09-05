@@ -6,12 +6,18 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 36 IDs requested to be removed by user
+// 67 IDs requested to be removed by user (36 original + 31 new batch)
 export const REMOVE_IDS = [
+  // Original 36
   3918, 3928, 3948, 3949, 3998, 3999, 4001, 4002, 4007, 4008,
   4009, 4010, 4011, 4012, 4013, 4014, 4015, 4016, 4017, 4018,
   4019, 4021, 4022, 4023, 4024, 4025, 4026, 4027, 4028, 4029,
   4030, 761, 762, 776, 4036, 4037,
+  // New batch of 31
+  4039, 1382, 1384, 566, 575, 598, 765, 770, 775, 778,
+  784, 785, 788, 793, 795, 796,
+  49, 51, 53, 2957, 2977, 2989, 3008, 3021, 3024, 3028,
+  3036, 3037, 3041, 3071, 3076,
 ];
 
 // Title patterns for removed places to prevent re-seeding
