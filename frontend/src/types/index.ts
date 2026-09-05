@@ -265,6 +265,8 @@ export interface Experience {
   image_url?: string;
   images?: string[];
   image_urls?: string[];
+  image_source?: string;
+  image_distance_m?: number;
   why_it_fits?: string;
   target_audience?: string[];
   is_verified?: boolean;
