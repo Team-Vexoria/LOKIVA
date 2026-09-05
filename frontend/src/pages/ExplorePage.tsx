@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, resolveImageUrl } from '../lib/api';
 import { Experience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
@@ -430,7 +430,7 @@ export function ExplorePage() {
               {/* Visual Frame */}
               <div className="lg:col-span-7 relative h-72 sm:h-96 lg:h-auto overflow-hidden bg-paper-200">
                 <img
-                  src={spotlightExperience.image_url || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80'}
+                  src={resolveImageUrl(spotlightExperience.image_url) || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80'}
                   alt={spotlightExperience.title}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition duration-700"
                 />

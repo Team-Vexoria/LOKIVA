@@ -14,6 +14,7 @@ import {
   Palette,
   Moon,
 } from 'lucide-react';
+import { resolveImageUrl } from '../../lib/api';
 
 interface MomentCardProps {
   experience: Experience;
@@ -43,16 +44,14 @@ export function MomentCard({ experience }: MomentCardProps) {
     return <Sparkles className="w-3 h-3 text-marigold" />;
   };
 
-  let rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
-  if (rawImage && rawImage.includes('upload.wikimedia.org') && !rawImage.includes('/proxy-image')) {
-    rawImage = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(rawImage)}`;
-  }
+  const rawImage = experience.image_url || experience.image_urls?.[0] || experience.images?.[0];
+  const resolvedImage = resolveImageUrl(rawImage);
 
   // If failed or missing, use distinct category-specific fallback
   const [currentSrc, setCurrentSrc] = useState<string>(() =>
-    imageError || !rawImage
+    imageError || !resolvedImage
       ? getCardFallback(experience.category, experience.id)
-      : rawImage
+      : resolvedImage
   );
 
   const rating = experience.rating ? experience.rating.toFixed(1) : '4.8';

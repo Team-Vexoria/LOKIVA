@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, resolveImageUrl } from '../lib/api';
 import { Experience, Review } from '../types';
 import {
   MapPin,
@@ -58,15 +58,17 @@ export function ExperienceDetailPage() {
     );
   }
 
-  const galleryImages =
+  const rawGalleryImages =
     experience.image_urls && experience.image_urls.length > 0
       ? experience.image_urls
       : experience.image_url
       ? [experience.image_url]
       : [];
 
+  const galleryImages = rawGalleryImages.map((u) => resolveImageUrl(u));
+
   const currentDisplayImage =
-    galleryImages[selectedImageIndex] || experience.image_url || null;
+    galleryImages[selectedImageIndex] || resolveImageUrl(experience.image_url) || null;
 
   const isGeotagged =
     Boolean(

@@ -23,9 +23,48 @@ import {
 
 export const API_BASE =
   import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.port === '3000'
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? '/api/v1'
+    : typeof window !== 'undefined' && window.location.port === '3000'
     ? '/api/v1'
     : 'http://localhost:8000/api/v1');
+
+/**
+ * Resolves an image URL to an absolute URL pointing to the live Render backend
+ * if it is an /api/ proxy path or a raw Wikimedia URL.
+ */
+export function resolveImageUrl(url?: string | null): string {
+  if (!url) return '';
+
+  // Direct Pexels / Unsplash / external CDN images work as-is
+  if (url.startsWith('http') && !url.includes('upload.wikimedia.org')) {
+    return url;
+  }
+
+  const backendOrigin =
+    import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '')
+      : (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'))
+      ? 'https://lokiva.onrender.com'
+      : '';
+
+  // If it's already a proxy path
+  if (url.startsWith('/api/v1/experiences/proxy-image')) {
+    return backendOrigin ? `${backendOrigin}${url}` : url;
+  }
+
+  // If it's a raw Wikimedia image, wrap it through our proxy
+  if (url.includes('upload.wikimedia.org')) {
+    const proxyPath = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(url)}`;
+    return backendOrigin ? `${backendOrigin}${proxyPath}` : proxyPath;
+  }
+
+  if (url.startsWith('/api/')) {
+    return backendOrigin ? `${backendOrigin}${url}` : url;
+  }
+
+  return url;
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('lokiva_token');
