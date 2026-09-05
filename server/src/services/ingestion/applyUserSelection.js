@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 67 IDs requested to be removed by user (36 original + 31 new batch)
+// 81 IDs requested to be removed by user (67 previous + 14 from screenshots)
 export const REMOVE_IDS = [
   // Original 36
   3918, 3928, 3948, 3949, 3998, 3999, 4001, 4002, 4007, 4008,
@@ -18,6 +18,9 @@ export const REMOVE_IDS = [
   784, 785, 788, 793, 795, 796,
   49, 51, 53, 2957, 2977, 2989, 3008, 3021, 3024, 3028,
   3036, 3037, 3041, 3071, 3076,
+  // Screenshot batch: Kumartuli, Bangalore Palace, Basilica, Fontainhas, Lake Palace (both),
+  // Blue Pottery (both), Mehtab Bagh, Charminar, Dilli Haat, Fort Aguada, Dashashwamedh Ghat, Qutub Minar
+  4031, 4032, 4033, 4034, 4004, 4035, 287, 1098, 3906, 3914, 3769, 3788, 3903, 3916,
 ];
 
 // Title patterns for removed places to prevent re-seeding
