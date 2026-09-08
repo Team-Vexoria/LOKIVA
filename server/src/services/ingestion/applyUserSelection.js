@@ -35,8 +35,6 @@ export const REMOVE_TITLE_PATTERNS = [
   '%Rashtrapati Bhavan%',
   '%Lalbagh Botanical%',
   '%Tipu Sultan%Summer Palace%',
-  '%Agra Fort (Red Fort of Agra)%',
-  '%Fatehpur Sikri & Buland Darwaza%',
   '%Jantar Mantar Astronomical Observatory%',
   '%City Palace of Jaipur & Chandra Mahal%',
   '%Jallianwala Bagh National Memorial%',

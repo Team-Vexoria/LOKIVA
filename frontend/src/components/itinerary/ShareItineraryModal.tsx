@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Share2,
-  Copy,
-  Check,
-  Mail,
-  QrCode,
-  Printer,
-  X,
-  Sparkles,
-} from 'lucide-react';
+import { X, Check, Copy, Share2, Printer, Mail, MessageCircle, Calendar, MapPin } from 'lucide-react';
 import { ItineraryTripDetails } from '../../types/itinerary';
 
 interface ShareItineraryModalProps {
@@ -25,27 +16,40 @@ export function ShareItineraryModal({
   onPrint,
 }: ShareItineraryModalProps) {
   const [copied, setCopied] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailSent, setEmailSent] = useState(false);
 
   if (!isOpen) return null;
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://lokiva.in/itinerary';
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://lokiva.vercel.app/itinerary';
+  const shareText = `Check out our curated itinerary for ${tripDetails.title} (${tripDetails.destination}, ${tripDetails.state}) on LOKIVA!`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(currentUrl);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = currentUrl;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
   };
 
-  const handleSendEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setEmailSent(true);
-    setTimeout(() => {
-      setEmailSent(false);
-      setEmail('');
-    }, 4000);
+  const handleWhatsApp = () => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${currentUrl}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent(`Travel Itinerary: ${tripDetails.title}`);
+    const body = encodeURIComponent(`${shareText}\n\nLink: ${currentUrl}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -60,84 +64,118 @@ export function ShareItineraryModal({
         </button>
 
         <div className="space-y-1">
-          <span className="text-xs font-mono font-bold text-marigold uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-xs font-mono font-bold text-teal uppercase tracking-wider flex items-center gap-1.5">
             <Share2 className="w-3.5 h-3.5" />
             <span>Collaborate & Share</span>
           </span>
           <h3 className="text-2xl font-display font-bold text-ink">
-            Share Your Travel Journey
+            Share Itinerary
           </h3>
           <p className="text-xs text-dusk-600 font-sans">
-            Invite travel companions to review times, costs, and cultural landmarks.
+            Share this personalized travel plan with your co-travelers, family, or friends.
           </p>
         </div>
 
-        {/* Copy Share Link */}
+        {/* Trip Overview Snippet */}
+        <div className="p-4 bg-paper-50 rounded-2xl border border-paper-300 space-y-2">
+          <p className="font-display font-bold text-ink text-sm leading-snug">
+            {tripDetails.title}
+          </p>
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-dusk font-mono">
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-teal" />
+              {tripDetails.destination}, {tripDetails.state}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-marigold" />
+              {tripDetails.startDate} – {tripDetails.endDate}
+            </span>
+          </div>
+        </div>
+
+        {/* Direct Link Copy */}
         <div className="space-y-2">
-          <label className="text-xs font-mono font-bold text-ink block">
-            Direct Shareable Link
+          <label className="text-xs font-bold text-ink block font-mono">
+            Direct Share Link
           </label>
           <div className="flex items-center gap-2">
             <input
               type="text"
               readOnly
-              value={shareUrl}
-              className="flex-1 px-3.5 py-2.5 bg-paper-100 border border-paper-300 rounded-xl text-xs font-mono text-ink select-all focus:outline-none"
+              value={currentUrl}
+              className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl text-ink font-mono text-xs focus:outline-none select-all"
             />
             <button
               type="button"
               onClick={handleCopy}
-              className="px-4 py-2.5 bg-ink text-paper hover:bg-ink-800 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className={`px-4 py-2.5 rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                copied
+                  ? 'bg-teal text-white'
+                  : 'bg-ink text-white hover:bg-ink-700 active:scale-98'
+              }`}
             >
-              {copied ? <Check className="w-4 h-4 text-marigold" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>Copy</span>
+                </>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Email Travel Companion Form */}
-        <form onSubmit={handleSendEmail} className="space-y-2 pt-2 border-t border-paper-200">
-          <label className="text-xs font-mono font-bold text-ink block">
-            Send via Email
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="email"
-              placeholder="companion@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl text-xs font-sans text-ink focus:outline-none focus:border-ink transition"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2.5 bg-teal hover:bg-teal-700 text-white rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Mail className="w-4 h-4" />
-              <span>{emailSent ? 'Sent!' : 'Send'}</span>
-            </button>
-          </div>
-          {emailSent && (
-            <span className="text-[11px] font-mono text-teal block">
-              ✓ Itinerary overview sent to companion.
-            </span>
-          )}
-        </form>
+        {/* Action Channels */}
+        <div className="grid grid-cols-3 gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border border-paper-300 bg-white hover:bg-paper-50 hover:border-teal/50 transition cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition">
+              <MessageCircle className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-mono font-bold text-ink">WhatsApp</span>
+          </button>
 
-        {/* Print / PDF Option */}
-        <div className="pt-2 border-t border-paper-200 flex items-center justify-between">
-          <div className="text-xs font-mono text-dusk">
-            Need an offline paper copy?
-          </div>
+          <button
+            type="button"
+            onClick={handleEmail}
+            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border border-paper-300 bg-white hover:bg-paper-50 hover:border-teal/50 transition cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition">
+              <Mail className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-mono font-bold text-ink">Email</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
               onClose();
               onPrint();
             }}
-            className="px-4 py-2 bg-paper-100 hover:bg-paper-200 text-ink rounded-xl text-xs font-mono font-bold border border-paper-300 flex items-center gap-1.5 transition cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border border-paper-300 bg-white hover:bg-paper-50 hover:border-teal/50 transition cursor-pointer group"
           >
-            <Printer className="w-3.5 h-3.5 text-marigold" />
-            <span>Print Itinerary PDF</span>
+            <div className="w-9 h-9 rounded-full bg-amber-50 text-marigold flex items-center justify-center group-hover:scale-105 transition">
+              <Printer className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-mono font-bold text-ink">Print / PDF</span>
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-paper-300 font-mono text-xs font-bold text-ink hover:bg-paper-100 transition cursor-pointer"
+          >
+            Close
           </button>
         </div>
       </div>

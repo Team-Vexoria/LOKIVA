@@ -54,7 +54,7 @@ export const PAN_INDIA_STATES_DATASET = [
     code: 'CG',
     region: 'Central India',
     is_union_territory: 0,
-    image_url: 'https://images.unsplash.com/photo-1626014303757-64663673fdf8?auto=format&fit=crop&w=800&q=80',
+    image_url: '/assets/states/chhattisgarh.jpg',
     description: 'Bastar tribal bell-metal Dhokra casting, Chitrakote horseshoe falls, 7th-century brick temples of Sirpur, and sacred Sal forests.',
     heritage_count: 18,
   },

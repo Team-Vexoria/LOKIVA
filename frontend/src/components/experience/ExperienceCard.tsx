@@ -101,7 +101,6 @@ export function ExperienceCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
             loading="lazy"
             referrerPolicy="no-referrer"
-            crossOrigin="anonymous"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}

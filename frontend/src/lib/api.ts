@@ -38,6 +38,17 @@ export const API_BASE =
 export function resolveImageUrl(url?: string | null): string {
   if (!url) return '';
 
+  // If it's a Google image redirect URL, extract the underlying imgurl parameter
+  if (url.includes('google.com/imgres') && url.includes('imgurl=')) {
+    try {
+      const parsed = new URL(url);
+      const imgurl = parsed.searchParams.get('imgurl');
+      if (imgurl) return imgurl;
+    } catch {
+      // ignore
+    }
+  }
+
   // Direct Pexels / Unsplash / external CDN images work as-is
   if (url.startsWith('http') && !url.includes('upload.wikimedia.org')) {
     return url;

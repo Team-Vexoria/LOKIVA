@@ -1,0 +1,435 @@
+import { dbRun, dbAll } from '../db/db.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const KERALA_EXPERIENCES = [
+  // Alleppey (Alappuzha)
+  {
+    id: 5001,
+    title: 'Alleppey Backwaters',
+    tagline: 'Scenic labyrinth of palm-fringed lagoons, canals, and traditional thatched houseboats',
+    description: 'Traverse the serene backwater network of Alappuzha aboard traditional Kettuvallams or country boats. Experience rural canal villages, paddy fields below sea level, and tranquil water mirrors.',
+    category: 'Nature & Wildlife',
+    city: 'Alleppey',
+    state: 'Kerala',
+    area_name: 'Punnamada & Vembanad Backwaters, Alappuzha',
+    price: 1200,
+    rating: 4.95,
+    review_count: 1840,
+    approx_duration_mins: 180,
+    image_url: 'https://www.lostwithpurpose.com/wp-content/uploads/2016/12/DSC_3462.jpg',
+    image_urls: JSON.stringify([
+      'https://www.lostwithpurpose.com/wp-content/uploads/2016/12/DSC_3462.jpg',
+      'https://www.lostwithpurpose.com/alleppey-backwaters-kerala/comment-page-1/',
+    ]),
+    tags: JSON.stringify(['backwaters', 'alleppey', 'kerala', 'houseboat', 'nature', 'verified']),
+    latitude: 9.4981,
+    longitude: 76.3388,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5002,
+    title: 'Alappuzha Beach',
+    tagline: 'Iconic Arabian Sea shoreline featuring a historic 150-year-old landmark sea pier',
+    description: 'Famed coastal stretch with golden sands, Victorian-era sea pier ruins jutting into the waves, lighthouse views, and lively evening seaside cultural gatherings.',
+    category: 'Nature & Wildlife',
+    city: 'Alleppey',
+    state: 'Kerala',
+    area_name: 'Alappuzha Beach Road, Sea View Ward, Alappuzha',
+    price: 0,
+    rating: 4.78,
+    review_count: 920,
+    approx_duration_mins: 90,
+    image_url: 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/06/92/53/58/alappuzha-beach.jpg?w=900&h=500&s=1',
+    image_urls: JSON.stringify([
+      'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/06/92/53/58/alappuzha-beach.jpg?w=900&h=500&s=1',
+    ]),
+    tags: JSON.stringify(['beach', 'sea-pier', 'alappuzha', 'kerala', 'sunset', 'verified']),
+    latitude: 9.4925,
+    longitude: 76.3178,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5003,
+    title: 'Vembanad Lake',
+    tagline: 'India’s longest freshwater lake and epicenter of Kerala’s backwater ecosystem',
+    description: 'Spanning across three districts, Vembanad Lake hosts the legendary Nehru Trophy Snake Boat Race, migratory bird sanctuaries, and tranquil sunrise cruise trails.',
+    category: 'Nature & Wildlife',
+    city: 'Alleppey',
+    state: 'Kerala',
+    area_name: 'Vembanad Kayal Basin, Muhamma & Kumarakom Border, Alappuzha',
+    price: 300,
+    rating: 4.86,
+    review_count: 670,
+    approx_duration_mins: 120,
+    image_url: 'https://static.toiimg.com/thumb/100302720/Vembanad-Lake-in-Alleppey.jpg?width=1200&height=900',
+    image_urls: JSON.stringify([
+      'https://static.toiimg.com/thumb/100302720/Vembanad-Lake-in-Alleppey.jpg?width=1200&height=900',
+    ]),
+    tags: JSON.stringify(['lake', 'vembanad', 'backwaters', 'alappuzha', 'birdwatching', 'verified']),
+    latitude: 9.6105,
+    longitude: 76.4024,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5004,
+    title: 'Marari Beach',
+    tagline: 'Pristine white-sand fishing village coastline fringed with whispering coconut groves',
+    description: 'An idyllic, unhurried beach haven near Mararikulam. Renowned for sustainable village tourism, traditional fishing catamarans, and pristine turquoise Arabian sea tides.',
+    category: 'Nature & Wildlife',
+    city: 'Alleppey',
+    state: 'Kerala',
+    area_name: 'Mararikulam North, Alappuzha',
+    price: 0,
+    rating: 4.84,
+    review_count: 530,
+    approx_duration_mins: 120,
+    image_url: 'https://trekgo.in/blog/marari-beach-kerala/hero.jpg',
+    image_urls: JSON.stringify([
+      'https://trekgo.in/blog/marari-beach-kerala/hero.jpg',
+    ]),
+    tags: JSON.stringify(['beach', 'marari', 'white-sand', 'alappuzha', 'kerala', 'verified']),
+    latitude: 9.5986,
+    longitude: 76.2991,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+
+  // Kochi (Cochin)
+  {
+    id: 5005,
+    title: 'Fort Kochi',
+    tagline: 'Atmospheric colonial seaside trading quarter rich with 500 years of global maritime history',
+    description: 'Stroll through storied lanes shaped by Portuguese, Dutch, and British settlers. Discover Vasco da Gama’s original tomb church, heritage courtyards, seaside promenades, and vibrant art spaces.',
+    category: 'Heritage & History',
+    city: 'Kochi',
+    state: 'Kerala',
+    area_name: 'Vasco da Gama Square & Princess Street, Fort Kochi',
+    price: 0,
+    rating: 4.91,
+    review_count: 1450,
+    approx_duration_mins: 150,
+    image_url: 'https://travel.davidmbyrne.com/wp-content/uploads/2013/11/Chinese-Fishing-Nets-at-Sunset-Forth-Cochin-Kerala-India..jpg',
+    image_urls: JSON.stringify([
+      'https://travel.davidmbyrne.com/wp-content/uploads/2013/11/Chinese-Fishing-Nets-at-Sunset-Forth-Cochin-Kerala-India..jpg',
+      'https://travel.davidmbyrne.com/fort-cochin-kerala-india/',
+    ]),
+    tags: JSON.stringify(['fort-kochi', 'heritage', 'colonial', 'cochin', 'kerala', 'verified']),
+    latitude: 9.9658,
+    longitude: 76.2427,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5006,
+    title: 'Mattancherry Palace',
+    tagline: '1555 CE Dutch Palace preserving magnificent Hindu mythological tempera frescoes',
+    description: 'Constructed by the Portuguese as a gift to Raja Veera Kerala Varma and renovated by the Dutch. Renowned for its intricate woodwork and masterclass mural cycles depicting the Ramayana and Mahabharata.',
+    category: 'Heritage & History',
+    city: 'Kochi',
+    state: 'Kerala',
+    area_name: 'Palace Road, Mattancherry, Kochi',
+    price: 10,
+    rating: 4.85,
+    review_count: 890,
+    approx_duration_mins: 60,
+    image_url: 'https://cdn.cholantours.com/city_attraction_todos/1769083793_mattancherry-palace-museum-dutch-palace.webp',
+    image_urls: JSON.stringify([
+      'https://cdn.cholantours.com/city_attraction_todos/1769083793_mattancherry-palace-museum-dutch-palace.webp',
+    ]),
+    tags: JSON.stringify(['palace', 'dutch-palace', 'murals', 'mattancherry', 'kochi', 'verified']),
+    latitude: 9.9583,
+    longitude: 76.2592,
+    is_indoor: 1,
+    is_rain_safe: 1,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5007,
+    title: 'Chinese Fishing Nets',
+    tagline: 'Monumental 14th-century cantilevered shore-operated fishing machines on the harbor',
+    description: 'Living testament to historic Spice Route trade links with Kublai Khan’s court. Teams of local fishermen operate counterbalanced teak timbers and granite weights against the golden Arabian sea glow.',
+    category: 'Art & Craft',
+    city: 'Kochi',
+    state: 'Kerala',
+    area_name: 'River Road, Vasco da Gama Square, Fort Kochi',
+    price: 50,
+    rating: 4.88,
+    review_count: 1620,
+    approx_duration_mins: 45,
+    image_url: 'https://images.squarespace-cdn.com/content/v1/56ec44b41d07c0db86a517e5/1515409598778-T5UUC2P55XN2Y8MD0XR6/visit-kochi-kerela-chinese-fishing-nets',
+    image_urls: JSON.stringify([
+      'https://images.squarespace-cdn.com/content/v1/56ec44b41d07c0db86a517e5/1515409598778-T5UUC2P55XN2Y8MD0XR6/visit-kochi-kerela-chinese-fishing-nets',
+    ]),
+    tags: JSON.stringify(['chinese-nets', 'fort-kochi', 'fishing', 'harbor', 'sunset', 'verified']),
+    latitude: 9.9674,
+    longitude: 76.2411,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5008,
+    title: 'Jew Town & Paradesi Synagogue',
+    tagline: '1568 CE active Commonwealth synagogue paved with hand-painted Chinese porcelain tiles',
+    description: 'Wander the evocative spice and antique markets of Jew Town to reach the sacred Paradesi Synagogue, adorned with Belgian glass chandeliers, gold pulpits, and 18th-century clock tower.',
+    category: 'Heritage & History',
+    city: 'Kochi',
+    state: 'Kerala',
+    area_name: 'Synagogue Lane, Jew Town, Mattancherry, Kochi',
+    price: 10,
+    rating: 4.87,
+    review_count: 940,
+    approx_duration_mins: 60,
+    image_url: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Jewish_synagouge_kochi_india.jpg',
+    image_urls: JSON.stringify([
+      'https://upload.wikimedia.org/wikipedia/commons/b/bb/Jewish_synagouge_kochi_india.jpg',
+      'https://www.tripadvisor.in/Attraction_Review-g297633-d450998-Reviews-Paradesi_Synagogue-Kochi_Cochin_Ernakulam_District_Kerala.html',
+    ]),
+    tags: JSON.stringify(['synagogue', 'jew-town', 'mattancherry', 'heritage', 'spices', 'verified']),
+    latitude: 9.9575,
+    longitude: 76.2594,
+    is_indoor: 1,
+    is_rain_safe: 1,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+
+  // Munnar
+  {
+    id: 5009,
+    title: 'Munnar Tea Gardens',
+    tagline: 'Endless emerald carpet of rolling high-altitude tea estates in the Western Ghats',
+    description: 'Immerse in the aromatic slopes of Munnar’s century-old tea plantations. Walk along mist-draped estate trails, witness traditional plucking, and sample premium orthodox black and green teas.',
+    category: 'Nature & Wildlife',
+    city: 'Munnar',
+    state: 'Kerala',
+    area_name: 'Kannan Devan Hills, Tea Estate Trail, Munnar',
+    price: 150,
+    rating: 4.93,
+    review_count: 1750,
+    approx_duration_mins: 120,
+    image_url: 'http://www.traveleast.in/wp-content/uploads/2022/07/291ea68227a843521f00b1fc0948c0ce.jpeg',
+    image_urls: JSON.stringify([
+      'http://www.traveleast.in/wp-content/uploads/2022/07/291ea68227a843521f00b1fc0948c0ce.jpeg',
+    ]),
+    tags: JSON.stringify(['tea-gardens', 'munnar', 'plantations', 'western-ghats', 'nature', 'verified']),
+    latitude: 10.0889,
+    longitude: 77.0595,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 0,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5010,
+    title: 'Eravikulam National Park',
+    tagline: 'Sanctuary of the endangered Nilgiri Tahr against the slopes of 2,695m Anamudi Peak',
+    description: 'UNESCO World Heritage high-elevation shola-grassland ecosystem. Home to the largest surviving population of Nilgiri Tahr and the legendary Neelakurinji flower that blooms once every 12 years.',
+    category: 'Nature & Wildlife',
+    city: 'Munnar',
+    state: 'Kerala',
+    area_name: 'Kanan Devan Hills, Idukki District, Munnar',
+    price: 200,
+    rating: 4.89,
+    review_count: 1280,
+    approx_duration_mins: 180,
+    image_url: 'https://res.cloudinary.com/kmadmin/image/upload/v1725350982/kiomoi/Eravikulam_National_Park_8338.jpg',
+    image_urls: JSON.stringify([
+      'https://res.cloudinary.com/kmadmin/image/upload/v1725350982/kiomoi/Eravikulam_National_Park_8338.jpg',
+    ]),
+    tags: JSON.stringify(['national-park', 'nilgiri-tahr', 'anamudi', 'wildlife', 'munnar', 'verified']),
+    latitude: 10.2001,
+    longitude: 77.0426,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5011,
+    title: 'Mattupetty Dam',
+    tagline: 'Picturesque concrete gravity dam and placid mountain lake framed by Anamudi hills',
+    description: 'Located at 1,700m elevation. Offers calm speedboating on the reservoir waters, panoramic views of the Western Ghats catchment, and frequent elephant herds drinking at the lakeside.',
+    category: 'Nature & Wildlife',
+    city: 'Munnar',
+    state: 'Kerala',
+    area_name: 'Mattupetty, Munnar-Top Station Highway, Idukki',
+    price: 50,
+    rating: 4.79,
+    review_count: 810,
+    approx_duration_mins: 90,
+    image_url: 'https://s7ap1.scene7.com/is/image/incredibleindia/mattupetty-dam-munnar-kerala-2-attr-hero?qlt=82&ts=1726672825178',
+    image_urls: JSON.stringify([
+      'https://s7ap1.scene7.com/is/image/incredibleindia/mattupetty-dam-munnar-kerala-2-attr-hero?qlt=82&ts=1726672825178',
+    ]),
+    tags: JSON.stringify(['dam', 'boating', 'lake', 'mattupetty', 'munnar', 'verified']),
+    latitude: 10.1062,
+    longitude: 77.1235,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 1,
+    wheelchair_accessible: 1,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+  {
+    id: 5012,
+    title: 'Top Station',
+    tagline: '1,880m mountain ridge summit delivering breathtaking 360° views of Tamil Nadu & Kerala plains',
+    description: 'Historic ropeway terminal perched on the crest of the Western Ghats. Watch blankets of white clouds roll below your feet and take in sweeping vistas of the Palani Hills valley floor.',
+    category: 'Nature & Wildlife',
+    city: 'Munnar',
+    state: 'Kerala',
+    area_name: 'Top Station Highway, Kerala-Tamil Nadu Border, Munnar',
+    price: 25,
+    rating: 4.86,
+    review_count: 980,
+    approx_duration_mins: 120,
+    image_url: 'https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/07/8d/0f/b8.jpg',
+    image_urls: JSON.stringify([
+      'https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/07/8d/0f/b8.jpg',
+    ]),
+    tags: JSON.stringify(['top-station', 'viewpoint', 'clouds', 'western-ghats', 'munnar', 'verified']),
+    latitude: 10.1245,
+    longitude: 77.2458,
+    is_indoor: 0,
+    is_rain_safe: 0,
+    is_hidden_gem: 0,
+    is_family_friendly: 1,
+    low_walking: 0,
+    wheelchair_accessible: 0,
+    is_active: 1,
+    source: 'user_curated_link',
+  },
+];
+
+export async function syncKerala() {
+  console.log('[Kerala Sync] Starting synchronization of 12 popular Kerala destinations...');
+
+  for (const exp of KERALA_EXPERIENCES) {
+    const existing = await dbAll('SELECT id FROM experiences WHERE id = ?', [exp.id]);
+    if (existing.length > 0) {
+      await dbRun(
+        `UPDATE experiences SET
+          title = ?, tagline = ?, description = ?, category = ?, city = ?, state = ?, area_name = ?,
+          price = ?, rating = ?, review_count = ?, approx_duration_mins = ?, image_urls = ?,
+          tags = ?, latitude = ?, longitude = ?, is_indoor = ?, is_rain_safe = ?, is_hidden_gem = ?,
+          is_family_friendly = ?, low_walking = ?, wheelchair_accessible = ?, is_active = 1, source = ?
+        WHERE id = ?`,
+        [
+          exp.title, exp.tagline, exp.description, exp.category, exp.city, exp.state, exp.area_name,
+          exp.price, exp.rating, exp.review_count, exp.approx_duration_mins, exp.image_urls,
+          exp.tags, exp.latitude, exp.longitude, exp.is_indoor, exp.is_rain_safe, exp.is_hidden_gem,
+          exp.is_family_friendly, exp.low_walking, exp.wheelchair_accessible, exp.source, exp.id,
+        ]
+      );
+      console.log(`[Kerala Sync] Updated: ${exp.title} (ID ${exp.id})`);
+    } else {
+      await dbRun(
+        `INSERT INTO experiences (
+          id, title, tagline, description, category, city, state, area_name,
+          price, rating, review_count, approx_duration_mins, image_urls,
+          tags, latitude, longitude, is_indoor, is_rain_safe, is_hidden_gem,
+          is_family_friendly, low_walking, wheelchair_accessible, is_active, source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+        [
+          exp.id, exp.title, exp.tagline, exp.description, exp.category, exp.city, exp.state, exp.area_name,
+          exp.price, exp.rating, exp.review_count, exp.approx_duration_mins, exp.image_urls,
+          exp.tags, exp.latitude, exp.longitude, exp.is_indoor, exp.is_rain_safe, exp.is_hidden_gem,
+          exp.is_family_friendly, exp.low_walking, exp.wheelchair_accessible, exp.source,
+        ]
+      );
+      console.log(`[Kerala Sync] Inserted: ${exp.title} (ID ${exp.id})`);
+    }
+  }
+
+  // Update experiences_image_map.json
+  const mapPath = path.resolve(__dirname, '../../experiences_image_map.json');
+  if (fs.existsSync(mapPath)) {
+    const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf-8'));
+    for (const exp of KERALA_EXPERIENCES) {
+      const idx = mapData.findIndex((m) => m.id === exp.id);
+      const entry = {
+        id: exp.id,
+        title: exp.title,
+        city: exp.city,
+        state: exp.state,
+        category: exp.category,
+        image_url: exp.image_url,
+      };
+      if (idx >= 0) {
+        mapData[idx] = entry;
+      } else {
+        mapData.push(entry);
+      }
+    }
+    fs.writeFileSync(mapPath, JSON.stringify(mapData, null, 2), 'utf-8');
+    console.log('[Kerala Sync] Updated experiences_image_map.json with 12 Kerala entries');
+  }
+
+  console.log('[Kerala Sync] Successfully synchronized all 12 Kerala destinations across Alleppey, Kochi, and Munnar!');
+}
+
+syncKerala().catch(console.error);

@@ -172,14 +172,40 @@ export function getUniqueImageForExperience(
 
 /**
  * Deduplicates an entire array of experiences so that NO TWO cards on screen ever
- * share the same image URL.
+ * share the same experience ID, title, or image URL.
  */
 export function deduplicateExperienceList(experiences: Experience[]): Experience[] {
   if (!Array.isArray(experiences) || experiences.length === 0) return experiences;
 
+  // 1. Deduplicate by unique ID and normalized Title so no destination is repeated
+  const seenIds = new Set<string | number>();
+  const seenTitles = new Set<string>();
+  const uniqueExperiences = experiences.filter((exp) => {
+    if (!exp) return false;
+
+    // Check ID uniqueness
+    if (exp.id !== undefined && exp.id !== null) {
+      if (seenIds.has(exp.id)) return false;
+      seenIds.add(exp.id);
+    }
+
+    // Check normalized title uniqueness
+    const normTitle = (exp.title || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 25);
+    if (normTitle) {
+      if (seenTitles.has(normTitle)) return false;
+      seenTitles.add(normTitle);
+    }
+
+    return true;
+  });
+
+  // 2. Ensure distinct image URLs across cards
   const seenUrls = new Set<string>();
 
-  return experiences.map((exp, idx) => {
+  return uniqueExperiences.map((exp, idx) => {
     const uniqueImg = getUniqueImageForExperience(exp, idx, seenUrls);
     return {
       ...exp,

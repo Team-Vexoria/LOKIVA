@@ -93,7 +93,7 @@ const MOOD_FILTERS: MoodFilter[] = [
 
 // State signature imagery fallback
 function getStateCoverImage(state: State): string {
-  if (state.image_url && state.image_url.startsWith('http')) {
+  if (state.image_url && (state.image_url.startsWith('http') || state.image_url.startsWith('/'))) {
     return state.image_url;
   }
   const pool = CATEGORY_IMAGE_POOLS.heritage || CATEGORY_IMAGE_POOLS.culture;
@@ -190,8 +190,100 @@ export function DestinationsPage() {
           api.getCities({ limit: 150 }),
           api.getExperiences({ limit: 250 }),
         ]);
-        setStates(statesData || []);
-        setCities(citiesData || []);
+        const STATE_IMAGE_OVERRIDES: Record<string, string> = {
+          'karnataka': '/assets/states/karnataka.jpg',
+          'punjab': '/assets/states/punjab.jpg',
+          'haryana': '/assets/states/haryana.jpg',
+          'mizoram': '/assets/states/mizoram.jpg',
+          'chandigarh': '/assets/states/chandigarh.jpg',
+          'jammu and kashmir': '/assets/states/jammu_kashmir.jpg',
+          'jammu & kashmir': '/assets/states/jammu_kashmir.jpg',
+          'telangana': '/assets/states/telangana.jpg',
+          'odisha': '/assets/states/odisha.jpg',
+          'manipur': '/assets/states/manipur.jpg',
+          'chhattisgarh': '/assets/states/chhattisgarh.jpg',
+          'chattisgarh': '/assets/states/chhattisgarh.jpg',
+        };
+
+        const enrichedStates = (statesData || []).map((s) => {
+          const lower = s.name.toLowerCase();
+          if (STATE_IMAGE_OVERRIDES[lower]) {
+            s = { ...s, image_url: STATE_IMAGE_OVERRIDES[lower] };
+          }
+          if (s.name.toLowerCase() === 'goa') {
+            return {
+              ...s,
+              experience_count: 8,
+              heritage_count: 8,
+              image_url: 'https://explore.rehlat.ae/static/media/searchdestination/thingstodo/images/panjim/candolim_beach/large_Candolim_beach.webp',
+              description: 'Sun-kissed Arabian shores, UNESCO Baroque basilicas, 17th-century Portuguese coastal fortresses, and majestic Western Ghat waterfalls.',
+            };
+          }
+          if (s.name.toLowerCase().includes('himachal')) {
+            return {
+              ...s,
+              experience_count: 6,
+              heritage_count: 15,
+              image_url: 'https://yehsafarhamarahai.com/wp-content/uploads/2025/05/dnhc8mr7tmp71-e1746330230265.jpg',
+              description: 'Snow-clad Himalayan peaks, British colonial summer retreats, neo-Gothic sanctuaries, and serene cedar-dusted mountain ridges.',
+            };
+          }
+          if (s.name.toLowerCase().includes('uttarakhand')) {
+            return {
+              ...s,
+              experience_count: 6,
+              heritage_count: 31,
+              image_url: 'https://www.trawell.in/admin/images/thumbs/363732905Almora_Binsar_Wildlife_Sanctuary_Main_thumb.jpg',
+              description: 'Sacred Himalayan peaks of Nanda Devi and Trishul, spiritual geomagnetic sanctuary of Kasar Devi, ancient Katyuri temples, and misty cedar ridges.',
+            };
+          }
+          return s;
+        });
+        const enrichedCities = (citiesData || []).map((c) => {
+          if (c.name.toLowerCase() === 'agra') {
+            return {
+              ...c,
+              experience_count: 8,
+              image_url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1200&q=80',
+              tagline: 'Imperial Mughal Capital, UNESCO World Heritage & Living Craft Bazaars',
+            };
+          }
+          if (c.name.toLowerCase() === 'goa') {
+            return {
+              ...c,
+              experience_count: 8,
+              image_url: 'https://explore.rehlat.ae/static/media/searchdestination/thingstodo/images/panjim/candolim_beach/large_Candolim_beach.webp',
+              tagline: 'Golden Coastlines, UNESCO Basilicas & Sea-Breeze Coastal Fortresses',
+            };
+          }
+          if (c.name.toLowerCase() === 'shimla') {
+            return {
+              ...c,
+              experience_count: 6,
+              image_url: 'https://imgcld.yatra.com/ytimages/image/upload/t_yt_blog_c_fill_q_auto:good_f_auto_w_800_h_500/v1556258419/The%20Famous%20Ridge_1556257575.jpg',
+              tagline: 'Colonial Summer Capital, The Ridge Promenade & Alpine Himalayan Panoramas',
+            };
+          }
+          if (c.name.toLowerCase() === 'almora') {
+            return {
+              ...c,
+              experience_count: 6,
+              image_url: 'https://www.trawell.in/admin/images/thumbs/363732905Almora_Binsar_Wildlife_Sanctuary_Main_thumb.jpg',
+              tagline: 'Cultural Heart of Kumaon, Magnetic Van Allen Ridge & Himalayan Panoramas',
+            };
+          }
+          if (c.name.toLowerCase() === 'udaipur') {
+            return {
+              ...c,
+              experience_count: 5,
+              image_url: 'https://wanderon-images.gumlet.io/gallery/new/2025/10/08/1759921247369-city-palace-udaipur.jpg?auto=compress,format&w=768',
+              tagline: 'The City of Lakes, Majestic Mewar Palaces & Sunset Ghats',
+            };
+          }
+          return c;
+        });
+        setStates(enrichedStates);
+        setCities(enrichedCities);
         setExperiences(expData || []);
       } catch (err) {
         console.error('Failed to load Pan-India destinations:', err);
@@ -660,7 +752,7 @@ export function DestinationsPage() {
           {/* Trending Suggestions Strip */}
           <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs font-mono">
             <span className="text-dusk-500 text-[11px] uppercase tracking-wider font-bold">Trending:</span>
-            {['Rajasthan', 'Kerala', 'Kolkata', 'Varanasi', 'Goa', 'Himachal Pradesh'].map((kw) => (
+            {['Agra', 'Rajasthan', 'Kerala', 'Kolkata', 'Varanasi', 'Goa', 'Himachal Pradesh'].map((kw) => (
               <button
                 key={kw}
                 onClick={() => setSearchQuery(kw)}
@@ -970,6 +1062,8 @@ export function DestinationsPage() {
                   );
                   const regionStyle = getRegionBadgeStyle(state.region);
 
+                  const isProvidedCover = Boolean(stateCover && stateCover.startsWith('/assets/states/') && !stateCover.includes('chhattisgarh'));
+
                   return (
                     <div
                       key={state.id}
@@ -984,33 +1078,37 @@ export function DestinationsPage() {
                             loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700 ease-out"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-transparent" />
+                          {!isProvidedCover && (
+                            <>
+                              <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/40 to-transparent" />
 
-                          {/* Top Badges */}
-                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${regionStyle.badge}`}>
-                              {state.region}
-                            </span>
+                              {/* Top Badges */}
+                              <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${regionStyle.badge}`}>
+                                  {state.region}
+                                </span>
 
-                            {/* Collectible Postal Stamp Motif */}
-                            <div className="border-2 border-dashed border-marigold/80 bg-paper-50/95 backdrop-blur-md px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest text-ink uppercase shadow-2xs flex items-center gap-1">
-                              <span>IND POST</span>
-                              <span>•</span>
-                              <span>{state.code}</span>
-                              <span>•</span>
-                              <span className="text-marigold font-extrabold">₹5</span>
-                            </div>
-                          </div>
+                                {/* Collectible Postal Stamp Motif */}
+                                <div className="border-2 border-dashed border-marigold/80 bg-paper-50/95 backdrop-blur-md px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest text-ink uppercase shadow-2xs flex items-center gap-1">
+                                  <span>IND POST</span>
+                                  <span>•</span>
+                                  <span>{state.code}</span>
+                                  <span>•</span>
+                                  <span className="text-marigold font-extrabold">₹5</span>
+                                </div>
+                              </div>
 
-                          {/* Card Title on Image */}
-                          <div className="absolute bottom-3 left-4 right-4">
-                            <div className="text-[10px] font-mono uppercase tracking-wider text-paper-300">
-                              {state.is_union_territory ? 'Union Territory' : 'Indian State'}
-                            </div>
-                            <h3 className="text-2xl sm:text-3xl font-display font-bold text-white group-hover:text-marigold transition-colors">
-                              {state.name}
-                            </h3>
-                          </div>
+                              {/* Card Title on Image */}
+                              <div className="absolute bottom-3 left-4 right-4">
+                                <div className="text-[10px] font-mono uppercase tracking-wider text-paper-300">
+                                  {state.is_union_territory ? 'Union Territory' : 'Indian State'}
+                                </div>
+                                <h3 className="text-2xl sm:text-3xl font-display font-bold text-white group-hover:text-marigold transition-colors">
+                                  {state.name}
+                                </h3>
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         {/* Storytelling Content */}
@@ -1043,16 +1141,55 @@ export function DestinationsPage() {
                               Verified Enclaves:
                             </div>
                             <div className="flex flex-wrap gap-1.5">
-                              {stateCities.slice(0, 3).map((city) => (
-                                <Link
-                                  key={city.id}
-                                  to={`/destination/${encodeURIComponent(state.name)}/${encodeURIComponent(city.name)}`}
-                                  className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
-                                >
-                                  <MapPin className="w-3 h-3 text-marigold" />
-                                  <span>{city.name}</span>
-                                </Link>
-                              ))}
+                              {state.name.toLowerCase() === 'goa' ? (
+                                <>
+                                  <Link
+                                    to="/destination/Goa"
+                                    className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
+                                  >
+                                    <MapPin className="w-3 h-3 text-marigold" />
+                                    <span>North & South Goa</span>
+                                  </Link>
+                                  <Link
+                                    to="/destination/Goa"
+                                    className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
+                                  >
+                                    <Sparkles className="w-3 h-3 text-teal" />
+                                    <span>8 Destinations</span>
+                                  </Link>
+                                </>
+                              ) : state.name.toLowerCase().includes('himachal') ? (
+                                <>
+                                  <Link
+                                    to="/destination/Himachal%20Pradesh/Shimla"
+                                    className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
+                                  >
+                                    <MapPin className="w-3 h-3 text-marigold" />
+                                    <span>Shimla (6 Destinations)</span>
+                                  </Link>
+                                </>
+                              ) : state.name.toLowerCase().includes('uttarakhand') ? (
+                                <>
+                                  <Link
+                                    to="/destination/Uttarakhand/Almora"
+                                    className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
+                                  >
+                                    <MapPin className="w-3 h-3 text-marigold" />
+                                    <span>Almora (6 Destinations)</span>
+                                  </Link>
+                                </>
+                              ) : (
+                                stateCities.slice(0, 3).map((city) => (
+                                  <Link
+                                    key={city.id}
+                                    to={`/destination/${encodeURIComponent(state.name)}/${encodeURIComponent(city.name)}`}
+                                    className="px-2.5 py-1 bg-paper-100 hover:bg-ink hover:text-white border border-paper-300 rounded-lg text-xs font-mono text-ink transition flex items-center gap-1"
+                                  >
+                                    <MapPin className="w-3 h-3 text-marigold" />
+                                    <span>{city.name}</span>
+                                  </Link>
+                                ))
+                              )}
                               {stateCities.length > 3 && (
                                 <button
                                   onClick={() => setSelectedStateDetail(state)}
@@ -1092,7 +1229,7 @@ export function DestinationsPage() {
         {/* ==================================================================== */}
         {selectedStateDetail && (
           <div className="fixed inset-0 z-50 bg-ink/65 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-3xl rounded-3xl border-2 border-paper-300 p-6 sm:p-8 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="bg-white w-full max-w-4xl rounded-3xl border-2 border-paper-300 p-6 sm:p-8 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto">
               <div className="flex items-start justify-between border-b border-paper-200 pb-4">
                 <div className="space-y-1">
                   <div className="inline-flex items-center gap-2 px-3 py-0.5 bg-paper-100 text-teal-800 rounded-full text-xs font-mono font-bold border border-paper-300">
@@ -1118,11 +1255,11 @@ export function DestinationsPage() {
                 </button>
               </div>
 
-              {/* Verified Cities in this State */}
+              {/* Verified Cities / Enclaves in this State */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-mono font-bold text-ink uppercase tracking-wider">
-                    Verified Enclaves & Hubs in {selectedStateDetail.name}
+                    {`VERIFIED ENCLAVES & HUBS IN ${selectedStateDetail.name.toUpperCase()}`}
                   </h3>
                   <span className="text-[11px] font-mono text-dusk">
                     Click to explore individual city guides
@@ -1131,7 +1268,11 @@ export function DestinationsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {cities
-                    .filter((c) => c.state_id === selectedStateDetail.id || c.state_name === selectedStateDetail.name)
+                    .filter(
+                      (c) =>
+                        c.state_id === selectedStateDetail.id ||
+                        (c.state_name && c.state_name.toLowerCase() === selectedStateDetail.name.toLowerCase())
+                    )
                     .map((c) => (
                       <Link
                         key={c.id}

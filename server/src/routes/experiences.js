@@ -50,7 +50,9 @@ experiencesRouter.get('/proxy-image', async (req, res) => {
     }
 
     const headers = {
-      'User-Agent': 'LokivaDiscovery/1.0 (https://lokiva.in; contact@lokiva.in)',
+      'User-Agent': cleanUrl.includes('lookaside.fbsbx.com')
+        ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+        : 'LokivaDiscovery/1.0 (https://lokiva.in; contact@lokiva.in)',
       'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
     };
 
