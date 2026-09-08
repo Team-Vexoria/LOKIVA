@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lokiva-ink: #12213B;
+  --lokiva-paper: #EEF1EE;
+  --lokiva-marigold: #F0A63B;
+  --lokiva-teal: #1F7A6C;
+  --lokiva-clay: #C1443B;
+  --lokiva-dusk: #5B6B8C;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #EEF1EE;
+  color: #12213B;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Dotted ReKnit Thread Connector Animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animate-reknit {
+  stroke-dasharray: 6 6;
+  animation: dash 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reknit {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EEF1EE;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CED7E4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5B6B8C;
+}
