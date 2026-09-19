@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOKIVA - Master Implementation Plan & Production Engineering Blueprint (25+ Pages)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0B132B;
+      --secondary: #1C2541;
+      --accent: #D97706;
+      --accent-light: #F59E0B;
+      --teal: #0D9488;
+      --paper: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #1E293B;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --code-bg: #0B132B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #EDF2F7;
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 13.5px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .no-print-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--primary);
+      color: #FFF;
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+
+    .print-btn {
+      background: var(--accent-light);
+      color: var(--primary);
+      font-weight: 800;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(245,158,11,0.4);
+      transition: all 0.2s ease;
+    }
+    .print-btn:hover {
+      background: #B45309;
+      color: #FFF;
+    }
+
+    .doc-wrapper {
+      max-width: 980px;
+      margin: 36px auto;
+      background: var(--card);
+      box-shadow: 0 12px 45px rgba(0,0,0,0.08);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 70px 80px;
+    }
+
+    @media print {
+      body {
+        background: #FFF;
+      }
+      .no-print-bar {
+        display: none !important;
+      }
+      .doc-wrapper {
+        max-width: 100%;
+        margin: 0;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+      }
+      .page-break {
+        page-break-before: always;
+        break-before: page;
+      }
+      @page {
+        margin: 18mm 14mm;
+        size: A4 portrait;
+      }
+    }
+
+    .cover-section {
+      min-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 50px;
+      margin-bottom: 50px;
+    }
+
+    .pill-badge {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 6px 14px;
+      background: #FEF3C7;
+      color: #92400E;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-radius: 999px;
+      margin-bottom: 24px;
+      border: 1px solid #FDE68A;
+    }
+
+    h1.doc-title {
+      font-family: 'Cinzel', serif;
+      font-size: 44px;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1.15;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .doc-subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .meta-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: 12px;
+    }
+    .meta-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meta-cell span.caption {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .meta-cell span.val {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    h2.section-header {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 8px;
+      margin-top: 48px;
+      margin-bottom: 20px;
+    }
+
+    h3.sub-header {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 28px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 18px;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 12.5px;
+    }
+    table th {
+      background: var(--primary);
+      color: #FFF;
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 700;
+      border: 1px solid #1E293B;
+    }
+    table td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      color: #334155;
+    }
+    table tr:nth-child(even) {
+      background: #F8FAFC;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #F1F5F9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0F172A;
+      border: 1px solid #E2E8F0;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: #E2E8F0;
+      padding: 18px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 1.5;
+      margin: 18px 0;
+      border: 1px solid #1E293B;
+    }
+
+    .callout-box {
+      background: #F0FDF4;
+      border-left: 4px solid var(--teal);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-size: 13.5px;
+    }
+
+    .callout-warning {
+      background: #FFFBEB;
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-size: 13.5px;
+    }
+
+    .formula-banner {
+      background: #FAF5FF;
+      border: 1px solid #E9D5FF;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      margin: 18px 0;
+      font-size: 13px;
+      color: #581C87;
+    }
+
+    .device-showcase-container {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 20px;
+      margin: 24px 0;
+      background: #F1F5F9;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #E2E8F0;
+    }
+    .desktop-mockup {
+      background: #FFFFFF;
+      border-radius: 8px;
+      border: 1px solid #CBD5E1;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .desktop-topbar {
+      background: #E2E8F0;
+      padding: 6px 12px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .desktop-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94A3B8;
+    }
+    .desktop-body {
+      padding: 16px;
+      font-size: 12px;
+    }
+    .mobile-mockup {
+      background: #FFFFFF;
+      border-radius: 20px;
+      border: 4px solid #1E293B;
+      padding: 14px 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print-bar">
+    <div>
+      <strong>LOKIVA</strong> &bull; Hackathon Finale Production Engineering Blueprint (25+ Pages)
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print to PDF (Full Density)</button>
+  </div>
+
+  <div class="doc-wrapper">
+
+    <!-- COVER PAGE -->
+    <div class="cover-section">
+      <div class="pill-badge">Official Architecture RFC &bull; Hackathon 2026</div>
+      <h1 class="doc-title">LOKIVA: Autonomous Cultural Experience Engine</h1>
+      <div class="doc-subtitle">
+        Comprehensive Production Engineering Specification, Gemini 1.5 Subsystems Blueprint, Pan-India Ground-Truth Ingestion Protocol, and 7-Day Sprint Roadmap for 85–95% Production Polish
+      </div>
+
+      <div class="meta-card-grid">
+        <div class="meta-cell">
+          <span class="caption">Target Milestone</span>
+          <span class="val">National Offline Finale (Sept 26–27, 2026)</span>
+        </div>
+        <div class="meta-cell">
+          <span class="caption">Production Benchmark</span>
+          <span class="val">MakeMyTrip (Depth) + Airbnb (Editorial UI)</span>
+        </div>
+        <div class="meta-cell">
+          <span class="caption">Generative AI Engine</span>
+          <span class="val">Google Gemini 1.5 Pro &amp; Flash (Multimodal)</span>
+        </div>
+        <div class="meta-cell">
+          <span class="caption">Data Taxonomy Standard</span>
+          <span class="val">36 States/UTs &bull; 1,080 Verified Experiences (0% Dummy Data)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="page-break"></div>
+    <h2 class="section-header">Table of Contents</h2>
+    <ol style="line-height: 2.2; font-weight: 600; font-size: 14px; margin-top: 16px;">
+      <li>Executive Summary &amp; Competitive Moat against Commercial OTAs</li>
+      <li>Global Microservice Architecture &amp; Network Topology</li>
+      <li>Editorial Landing Page: High-Res Device Frame Mockups &amp; Scroll Motion</li>
+      <li>Generative AI Engine Architecture (Gemini 1.5 Subsystems)</li>
+      <li>Pan-India Ground-Truth Data Curation Protocol: 5-Member Team Math Model</li>
+      <li>Universal Database Schemas, SQL DDL &amp; TypeScript Interfaces</li>
+      <li>The Two-Sided Marketplace: Artisan Provider Console &amp; AI Listing Studio</li>
+      <li>Financial &amp; Transactional Realism: UPI/Razorpay Simulator &amp; QR Pass Engine</li>
+      <li>Faceted Search Matrix &amp; Non-Negotiable Accessibility Filter Engine</li>
+      <li>Offline-First PWA Resilience Architecture for Hackathon Venues</li>
+      <li>7-Day Daily Execution Roadmap (Sept 20 – Sept 26, 2026)</li>
+      <li>3-Minute Hackathon Winning Live Pitch Script &amp; Technical Defense Matrix</li>
+    </ol>
+
+    <!-- SECTION 1 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">1. Executive Summary &amp; Competitive Moat</h2>
+    <p>
+      Commercial Indian online travel portals (MakeMyTrip, EaseMyTrip, Yatra, TripAdvisor) are architected around bulk transactional volume: corporate hotels, airline seat inventory, and crowded mass bus tours. While efficient for booking flights and chain hotels, they possess structural blind spots when addressing living Indian cultural heritage.
+    </p>
+    <p>
+      India's authentic cultural assets—400-year-old Zari and Kadhwa silk handloom guilds in Varanasi, 4th-generation Rogan castor oil textile artists in Kutch, secret spice alleyways in Chandni Chowk, ancient stepwells in Bundi, and sacred sunset rituals along the Aravallis—are fundamentally absent from commercial discovery algorithms. Travelers are forced to spend days piecing together fragmented Instagram reels, regional blogs, and unverified Reddit threads.
+    </p>
+
+    <div class="callout-box">
+      <strong>The LOKIVA Value Thesis:</strong> "MakeMyTrip sells hotel rooms and crowded bus seats. LOKIVA connects conscious travelers directly with generational artisan guilds, sacred architecture, and AI-negotiated micro-itineraries strictly optimized for the traveler's exact remaining hours, budget, and accessibility constraints—while equipping rural hosts with an AI listing studio and vernacular voice bridge."
+    </div>
+
+    <h3 class="sub-header">Competitive Feature Matrix</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Evaluation Dimension</th>
+          <th>MakeMyTrip / EaseMyTrip</th>
+          <th>Instagram / Reddit Travel</th>
+          <th>LOKIVA Experience Engine</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cultural Depth</strong></td>
+          <td>Corporate tour operators &amp; resort stays</td>
+          <td>Inspiring visuals, zero booking logistics</td>
+          <td>1,080+ Ground-truth verified artisanal workshops &amp; shrines</td>
+        </tr>
+        <tr>
+          <td><strong>Personalization</strong></td>
+          <td>Fixed, rigid multi-day bus packages</td>
+          <td>Manual bookmarking &amp; map plotting</td>
+          <td>Minute-by-minute dynamic itinerary constraint solver</td>
+        </tr>
+        <tr>
+          <td><strong>Artisan Direct Connection</strong></td>
+          <td>None (Brokers take 35–50% cuts)</td>
+          <td>Language-barrier DMs</td>
+          <td>Multimodal Vernacular Voice &amp; Dialect translation bridge</td>
+        </tr>
+        <tr>
+          <td><strong>Accessibility Context</strong></td>
+          <td>Rarely documented</td>
+          <td>Zero accessibility context</td>
+          <td>Verified wheelchair ramps, step-free entry, low-walking meters</td>
+        </tr>
+        <tr>
+          <td><strong>Offline Resilience</strong></td>
+          <td>Requires constant high-speed connection</td>
+          <td>None</td>
+          <td>IndexedDB catalog cache + deterministic fallback planner</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SECTION 2 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">2. Global Architecture &amp; Component Topology</h2>
+    <p>
+      LOKIVA is built as an enterprise-grade decoupled system. The frontend is a high-performance React 18 Single-Page Application (SPA) bundled via Vite and styled with Tailwind CSS, utilizing Framer Motion and GSAP ScrollTrigger for seamless editorial transitions. The backend is an Express/TypeScript API service deployed on Render, communicating with SQLite/PostgreSQL and Google Gemini 1.5 APIs.
+    </p>
+
+    <pre>
++-----------------------------------------------------------------------------------------------+
+|                                      CLIENT APPLICATION                                       |
+|                  React 18.3 + TypeScript + Vite + Tailwind CSS + Framer Motion                |
+|                                                                                               |
+|  +---------------------------+  +---------------------------+  +---------------------------+  |
+|  |   Editorial Landing Page  |  |     Faceted Explore UI    |  |  Dynamic Itinerary Engine |  |
+|  |  - Storytelling Hero      |  |  - 36 State Grid          |  |  - Spatio-temporal solver |  |
+|  |  - Device Frame Mockups   |  |  - 6 Heritage Perspectives|  |  - Minute-by-minute cards |  |
+|  |  - GSAP Scroll Triggers   |  |  - Instant Filter Debounce|  |  - Transit buffer logic   |  |
+|  +---------------------------+  +---------------------------+  +---------------------------+  |
+|  +---------------------------+  +---------------------------+  +---------------------------+  |
+|  |  Artisan Provider Console |  |   Checkout & Pass Engine  |  |   Offline Service Worker  |  |
+|  |  - 3-Prompt AI Studio     |  |  - Simulated UPI / Razor  |  |  - Cache API (Shell/Fonts)|  |
+|  |  - Vernacular Audio Chat  |  |  - Cryptographic QR Pass  |  |  - IndexedDB (1,080 places|  |
+|  +---------------------------+  +---------------------------+  +---------------------------+  |
++-----------------------------------------------------------------------------------------------+
+                                               │
+                                               │ HTTPS / JSON & WebSockets
+                                               ▼
++-----------------------------------------------------------------------------------------------+
+|                                     API GATEWAY (Node.js)                                     |
+|                      Express 4.19 / Fastify + TypeScript + CORS + Rate Limiter                |
+|                                                                                               |
+|  +--------------------+ +--------------------+ +--------------------+ +--------------------+  |
+|  |    /api/auth       | |  /api/experiences  | |   /api/itinerary   | |   /api/providers   |  |
+|  |  - Token Exchange  | |  - Spatial Queries | |  - Solver Pipeline | |  - Artisan Studio  |  |
+|  |  - Profile State   | |  - Facet Aggregator| |  - Timeline Engine | |  - Booking Engine  |  |
+|  +--------------------+ +--------------------+ +--------------------+ +--------------------+  |
++-----------------------------------------------------------------------------------------------+
+                                               │
+                      ┌────────────────────────┴────────────────────────┐
+                      ▼                                                 ▼
++---------------------------------------------+   +---------------------------------------------+
+|          GENERATIVE AI ORCHESTRATOR         |   |                 DATA LAYER                  |
+|             Google Gemini 1.5               |   |          SQLite 3 / PostgreSQL 15           |
+|                                             |   |                                             |
+|  +---------------------------------------+  |   |  +---------------------------------------+  |
+|  | Gemini 1.5 Flash: Sub-second Routing   |  |   |  | Core Tables:                          |  |
+|  +---------------------------------------+  |   |  | - users, traveler_profiles            |  |
+|  +---------------------------------------+  |   |  | - providers, experiences              |  |
+|  | Gemini 1.5 Pro: Lore RAG & Multimodal |  |   |  | - bookings, reviews, saved_itineraries|  |
+|  +---------------------------------------+  |   |  +---------------------------------------+  |
+|  +---------------------------------------+  |   |  +---------------------------------------+  |
+|  | Vernacular Dialect Translation Engine |  |   |  | Static Assets:                        |  |
+|  +---------------------------------------+  |   |  | - /public/assets/states/*.jpg         |  |
+|  +---------------------------------------+  |   |  | - userVerifiedPlacesData.ts (1,080)   |  |
+|  | Deterministic Fallback Solver Cache   |  |   |  +---------------------------------------+  |
+|  +---------------------------------------+  |   +---------------------------------------------+
++---------------------------------------------+
+    </pre>
+
+    <!-- SECTION 3 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">3. Editorial Landing Page &amp; Device Frame Mockups</h2>
+    <p>
+      High-end digital platforms (Stripe, Linear, Airbnb) never immediately dump catalog cards on the user. LOKIVA structures its landing page into an editorial storytelling journey that builds credibility, visual allure, and product understanding before transitioning into exploration.
+    </p>
+
+    <h3 class="sub-header">3.1 High-Resolution Device Frame Specifications</h3>
+    <p>
+      The hero section seamlessly scrolls into an interactive side-by-side graphic preview featuring a metallic macOS desktop browser frame and an iPhone 16 Pro mobile frame:
+    </p>
+
+    <div class="device-showcase-container">
+      <div class="desktop-mockup">
+        <div class="desktop-topbar">
+          <div class="desktop-dot" style="background: #EF4444;"></div>
+          <div class="desktop-dot" style="background: #F59E0B;"></div>
+          <div class="desktop-dot" style="background: #10B981;"></div>
+          <span style="font-size: 11px; color: #64748B; margin-left: 10px; font-family: 'JetBrains Mono';">https://lokiva.com/jaipur/live-circuit</span>
+        </div>
+        <div class="desktop-body">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <strong style="font-size: 13px;">4-Hour Jaipur Cultural Circuit (Family &amp; Low-Walking)</strong>
+            <span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">ACTIVE PLAN</span>
+          </div>
+          <p style="margin: 0 0 10px 0; color: #64748B; font-size: 11.5px;">Optimized for step-free access and minimal road friction between historic landmarks.</p>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+            <strong>📍 10:00 AM - 10:45 AM:</strong> Hawa Mahal Honeycomb Photography (45 mins) &bull; Cost: ₹50<br/>
+            <span style="color: #0D9488; font-size: 11px;">Tip: View from first-floor cafe terrace across street to avoid pedestrian road steps.</span>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; border-radius: 6px;">
+            <strong>📍 11:00 AM - 12:00 PM:</strong> Juneja Art Gallery Canvas Masters (60 mins) &bull; Cost: ₹0<br/>
+            <span style="color: #0D9488; font-size: 11px;">Tip: Level entry elevator available for senior family members.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-mockup">
+        <div style="text-align: center; font-weight: 800; font-size: 12px; margin-bottom: 12px; color: var(--primary);">
+          🎙️ Artisan Vernacular Bridge
+        </div>
+        <div style="background: #FEF3C7; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #FDE68A;">
+          <div style="font-size: 10px; color: #92400E; font-weight: 700; text-transform: uppercase;">Artisan Voice Note (Hindi)</div>
+          <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #1E293B;">
+            "हम 300 साल से यह रोगन कला कर रहे हैं। अरंडी के तेल से प्राकृतिक रंग बनते हैं।"
+          </p>
+        </div>
+        <div style="background: #EFF6FF; padding: 10px; border-radius: 8px; border: 1px solid #BFDBFE;">
+          <div style="font-size: 10px; color: #1D4ED8; font-weight: 700; text-transform: uppercase;">AI Translation (English)</div>
+          <p style="margin: 4px 0 0 0; font-size: 11px; color: #1E293B;">
+            "Our family has preserved this Rogan textile art for 300 years using natural boiled castor-oil pigments."
+          </p>
+        </div>
+        <div style="margin-top: 12px; text-align: center; background: #0B132B; color: #FFF; padding: 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">
+          Direct WhatsApp Chat Connected
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">4. Generative AI Subsystems (Gemini 1.5 Architecture)</h2>
+    <p>
+      LOKIVA leverages Google Gemini 1.5's massive context window and native multimodal capabilities across four dedicated micro-services:
+    </p>
+
+    <h3 class="sub-header">4.1 Subsystem 1: Spatio-Temporal Constraint Solver</h3>
+    <p>
+      The planner runs as a hybrid pipeline. The backend queries candidate places matching the city, active status, and physical constraints (wheelchair, rain-safe). The pre-filtered candidates are then presented to Gemini 1.5 Flash with strict temporal budgeting instructions.
+    </p>
+
+    <pre>
+// Gemini 1.5 Flash Itinerary System Prompt
+You are the LOKIVA Chief Cultural Navigator for India.
+You receive a strictly validated list of candidate cultural places within a specific city enclave.
+Every candidate has a known duration, entry price, geographic coordinate, and accessibility flags.
+
+YOUR MANDATE:
+1. Synthesize a sequential, minute-by-minute itinerary fitting precisely within the user's available hours.
+2. NEVER introduce venues that are not present in the provided candidates array.
+3. Calculate realistic transit buffers between stops: minimum 15 minutes for walking within 1km, 25 minutes for vehicular transit between 1km and 5km.
+4. Total cumulative time (stops + transit) MUST NOT exceed the user's total available minutes.
+5. Total ticket fees MUST NOT exceed the user's budget.
+6. Provide an authentic, non-generic "Insider Tip" for every stop.
+7. Respond ONLY with valid JSON conforming to the DayPlanResponse schema.
+    </pre>
+
+    <h3 class="sub-header">4.2 Subsystem 2: Artisan Vernacular Audio &amp; Dialect Bridge</h3>
+    <p>
+      Rural Indian craftspeople communicate via spoken regional dialects (Hindi, Marwari, Bhojpuri, Gujarati, Tamil, etc.). LOKIVA captures audio via the browser MediaRecorder API, feeds the audio blob to Gemini 1.5 Multimodal, and produces:
+    </p>
+    <ul>
+      <li><strong>Accurate Transcript:</strong> Original regional dialect transcription in native script.</li>
+      <li><strong>Idiomatic English Translation:</strong> Culturally rich translation explaining craft terminology (e.g. explaining what <em>Kadhwa</em>, <em>Meenakari</em>, or <em>Gharana</em> means).</li>
+      <li><strong>Romanized Phonetics (Hinglish):</strong> Allows international travelers to speak basic polite phrases back to the artisan with phonetically correct pronunciation.</li>
+    </ul>
+
+    <h3 class="sub-header">4.3 Subsystem 3: Artisan AI Listing Studio</h3>
+    <p>
+      To onboard non-technical artisans, LOKIVA provides a 3-question conversational prompt: (1) Craft Name, (2) Location, (3) Price &amp; Workshop Duration. Gemini 1.5 expands this into a world-class tourism listing with historical context, take-home sample details, and etiquette advisories.
+    </p>
+
+    <!-- SECTION 5 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">5. Pan-India Ground-Truth Data Curation Protocol</h2>
+    <p>
+      LOKIVA rejects low-quality third-party web scraping and hallucinated place generation. To achieve 100% ground-truth accuracy across all of India, the 5-member engineering team executes a structured mathematical data protocol:
+    </p>
+
+    <div class="formula-banner">
+      Total Target = 36 States &amp; Union Territories &times; 30 Verified Places = 1,080 Places<br/>
+      Per Member Allocation = 1,080 / 5 Members = 216 Places<br/>
+      5-Day Daily Pace = 216 / 5 Days = 43.2 Places/Day/Member (&approx; 5.4 Places/Hour)
+    </div>
+
+    <h3 class="sub-header">5.1 Team Regional Assignment Matrix</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Team Member</th>
+          <th>Assigned Geographic Zone</th>
+          <th>States &amp; Union Territories Covered</th>
+          <th>Quota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Member 1</strong></td>
+          <td>North Heritage Belt</td>
+          <td>Rajasthan, Delhi NCT, Uttar Pradesh, Punjab, Haryana, Chandigarh, Himachal Pradesh</td>
+          <td>216 Places</td>
+        </tr>
+        <tr>
+          <td><strong>Member 2</strong></td>
+          <td>West &amp; Central Gateway</td>
+          <td>Maharashtra, Gujarat, Goa, Madhya Pradesh, Chhattisgarh, Daman &amp; Diu</td>
+          <td>216 Places</td>
+        </tr>
+        <tr>
+          <td><strong>Member 3</strong></td>
+          <td>South Classical Corridor</td>
+          <td>Karnataka, Tamil Nadu, Kerala, Telangana, Andhra Pradesh, Puducherry</td>
+          <td>216 Places</td>
+        </tr>
+        <tr>
+          <td><strong>Member 4</strong></td>
+          <td>East &amp; Himalayan Belt</td>
+          <td>West Bengal, Odisha, Bihar, Jharkhand, Uttarakhand, Jammu &amp; Kashmir, Ladakh</td>
+          <td>216 Places</td>
+        </tr>
+        <tr>
+          <td><strong>Member 5</strong></td>
+          <td>Northeast &amp; Island Territories</td>
+          <td>Assam, Meghalaya, Sikkim, Arunachal, Nagaland, Manipur, Mizoram, Tripura, A&amp;N</td>
+          <td>216 Places</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-header">5.2 Tiered Place Breakdown per State</h3>
+    <ul>
+      <li><strong>Tier 1: Iconic Capital / Major Metro Enclave (14 Places):</strong> 6 Historic/Architectural monuments, 4 Culinary/Street-food heritage alleys, 2 Evening rituals/performing arts, 2 Scenic promenades.</li>
+      <li><strong>Tier 2: Living Heritage &amp; Craft District (10 Places):</strong> 4 Master artisan guild workshops, 3 Ancient stepwells/sacred shrines, 3 Traditional bazaars.</li>
+      <li><strong>Tier 3: Off-Beat Hidden Gems (6 Places):</strong> Authentic rural artisan villages and sacred groves unknown to commercial tourism agencies.</li>
+    </ul>
+
+    <!-- SECTION 6 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">6. Universal Database Schemas &amp; Data Models</h2>
+
+    <pre>
+-- Core SQL DDL Schema (SQLite / PostgreSQL)
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    hashed_password TEXT NOT NULL,
+    role TEXT CHECK(role IN ('traveler', 'provider', 'admin')) DEFAULT 'traveler',
+    is_active BOOLEAN DEFAULT 1,
+    firebase_uid TEXT UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE experiences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider_id INTEGER REFERENCES providers(id),
+    title TEXT NOT NULL,
+    tagline TEXT,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    area_name TEXT,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    price REAL DEFAULT 0,
+    approx_duration_mins INTEGER DEFAULT 60,
+    image_url TEXT NOT NULL,
+    image_urls TEXT, -- JSON Array of verified URLs
+    is_active BOOLEAN DEFAULT 1,
+    wheelchair_accessible BOOLEAN DEFAULT 0,
+    low_walking BOOLEAN DEFAULT 0,
+    is_rain_safe BOOLEAN DEFAULT 0,
+    is_hidden_gem BOOLEAN DEFAULT 0,
+    rating REAL DEFAULT 4.9,
+    review_count INTEGER DEFAULT 120,
+    tags TEXT, -- JSON Array of tokens
+    source TEXT DEFAULT 'user_curated_link'
+);
+
+CREATE TABLE bookings (
+    booking_id TEXT PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    experience_id INTEGER REFERENCES experiences(id),
+    booking_date DATE NOT NULL,
+    slot_time TEXT NOT NULL,
+    travelers_count INTEGER DEFAULT 1,
+    total_amount REAL NOT NULL,
+    status TEXT CHECK(status IN ('pending', 'confirmed', 'completed', 'cancelled')) DEFAULT 'confirmed',
+    payment_method TEXT DEFAULT 'upi_simulated',
+    payment_hash TEXT,
+    qr_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+    </pre>
+
+    <!-- SECTION 7 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">7. Financial Realism &amp; Dynamic QR Pass Engine</h2>
+    <p>
+      LOKIVA features a complete simulated transaction loop to demonstrate commercial readiness to the judging panel:
+    </p>
+
+    <h3 class="sub-header">7.1 Simulated UPI &amp; Razorpay Checkout Modal</h3>
+    <ul>
+      <li><strong>UPI Dynamic QR Display:</strong> Generates an authentic dynamic QR code simulating Google Pay, PhonePe, and Paytm, accompanied by an interactive 1.5-second verification countdown, status chime, and green checkmark animation.</li>
+      <li><strong>1-Click Sandbox Card:</strong> Provides pre-filled sandbox credentials for rapid evaluation.</li>
+    </ul>
+
+    <h3 class="sub-header">7.2 Cryptographic Digital Ticket Pass</h3>
+    <p>
+      Upon transaction completion, LOKIVA generates a high-resolution, printable digital pass:
+    </p>
+    <ul>
+      <li><strong>Cryptographic Dynamic QR Code:</strong> Encodes booking ID, verified traveler name, timestamp, and provider signature key.</li>
+      <li><strong>Venue Geolocation:</strong> One-tap Google Maps directions to the exact workshop or monument doorstep.</li>
+      <li><strong>Cultural Etiquette Advisory:</strong> Ground-truth dress codes (e.g. <em>"Please remove footwear and leather belts before entering the sanctum"</em>).</li>
+      <li><strong>Direct WhatsApp Channel:</strong> Pre-filled vernacular greeting connecting the traveler directly to the artisan.</li>
+    </ul>
+
+    <!-- SECTION 8 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">8. Offline-First PWA Resilience Architecture</h2>
+    <div class="callout-warning">
+      <strong>The Hackathon Venue Reality:</strong> Convention center Wi-Fi networks routinely collapse under the weight of hundreds of competing teams during judging rounds. An application that shows a blank white page or an infinite loading spinner loses critical evaluation points.
+    </div>
+
+    <h3 class="sub-header">8.1 The LOKIVA Zero-Crash Defense</h3>
+    <ol>
+      <li><strong>Service Worker Cache-First Shell:</strong> All compiled JavaScript chunks, CSS stylesheets, Google Webfonts, and regional state card banners are cached locally upon initial launch.</li>
+      <li><strong>IndexedDB Full-Catalog Persistence:</strong> The entire 1,080-experience ground-truth catalog is synced into client-side IndexedDB storage. If the network drops, search, category pills, and enclave switching continue functioning instantaneously with sub-50ms latency.</li>
+      <li><strong>Deterministic Fallback Route Engine:</strong> If an API call to Google Gemini exceeds 3,500ms or fails due to network termination, the client seamlessly invokes the local topological route sorter, presenting a complete 4-hour micro-circuit without throwing an error dialog.</li>
+    </ol>
+
+    <!-- SECTION 9 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">9. 7-Day Daily Execution Roadmap (Sept 20 – Sept 26)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Sprint Day</th>
+          <th>Engineering Milestones (Frontend, Backend &amp; AI)</th>
+          <th>Data &amp; Verification Squad (5 Team Members)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Day 1 (Sept 20)</strong></td>
+          <td>Landing Page Overhaul: Editorial Hero, macOS &amp; iPhone Graphic Mockup Frames, GSAP Scroll Triggers</td>
+          <td>Data kickoff: Distribute regional state sheets; lock strict JSON schema format.</td>
+        </tr>
+        <tr>
+          <td><strong>Day 2 (Sept 21)</strong></td>
+          <td>Gemini 1.5 Spatio-Temporal Constraint Solver endpoint &amp; Frontend Micro-Circuit Timeline UI</td>
+          <td>Member 1 &amp; 2: Complete North &amp; West Heritage Zones (250+ places verified).</td>
+        </tr>
+        <tr>
+          <td><strong>Day 3 (Sept 22)</strong></td>
+          <td>Artisan Provider Console, AI Listing Studio Generator, and WhatsApp Connect Handlers</td>
+          <td>Member 3: Complete South Classical Corridor (216 places verified).</td>
+        </tr>
+        <tr>
+          <td><strong>Day 4 (Sept 23)</strong></td>
+          <td>Simulated UPI / Razorpay Checkout Modal, Dynamic QR Generation &amp; Printable Digital Pass</td>
+          <td>Member 4: Complete East &amp; Himalayan Belt (216 places verified).</td>
+        </tr>
+        <tr>
+          <td><strong>Day 5 (Sept 24)</strong></td>
+          <td>Vernacular Audio &amp; Dialect Translation Interface + Grounded Lore RAG Concierge</td>
+          <td>Member 5: Complete Northeast Seven Sisters &amp; Islands (216 places verified).</td>
+        </tr>
+        <tr>
+          <td><strong>Day 6 (Sept 25)</strong></td>
+          <td>IndexedDB Offline Catalog Sync, Service Worker PWA Caching &amp; Production Performance Audit</td>
+          <td>Execute Catalog Ingestion &amp; Image Ground Check: Run automated script to verify all 1,080 URLs.</td>
+        </tr>
+        <tr>
+          <td><strong>Day 7 (Sept 26)</strong></td>
+          <td>3-Minute Live Presentation Rehearsals, Judging Rubric Alignment, Repository Freeze</td>
+          <td>Deploy production build to Vercel &amp; Render; verify offline fallback on presentation laptops.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SECTION 10 -->
+    <div class="page-break"></div>
+    <h2 class="section-header">10. 3-Minute Live Hackathon Pitch Script</h2>
+    
+    <div class="callout-box">
+      <strong>Minute 0:00 - 0:45 (The Problem Hook):</strong><br/>
+      "Judges, imagine you just landed in Jaipur. You have exactly 4 hours free before your return flight, your 75-year-old grandmother is with you requiring step-free walking, and you have a budget of ₹1,500. If you open MakeMyTrip, it will try to sell you a 2-day bus package or a corporate hotel room. It cannot tell you how to spend those 4 hours discovering a 5th-generation Blue Pottery artisan without getting trapped in Chandpol traffic. That is why we built LOKIVA."
+    </div>
+
+    <div class="callout-box">
+      <strong>Minute 0:45 - 1:45 (The Live Demo):</strong><br/>
+      "Watch this live on screen: We select Jaipur, set 4 hours, select 'Family Low-Walking'. LOKIVA's Gemini 1.5 constraint solver evaluates coordinates, opening hours, and road transit buffers, outputting an optimal minute-by-minute circuit. We click into the Sanganer Pottery Guild, test the Vernacular AI voice bridge where the artisan speaks in Hindi and the traveler receives translated English, execute a simulated UPI checkout, and generate a verified digital pass with dynamic QR code—all in 45 seconds."
+    </div>
+
+    <div class="callout-box">
+      <strong>Minute 1:45 - 3:00 (The Two-Sided Moat &amp; Technical Defense):</strong><br/>
+      "On the provider side, non-technical rural artisans use our AI Listing Studio to create international-standard cultural listings from 3 spoken words. Under the hood, we have zero dummy data—1,080 ground-truth verified places across all 36 Indian States and Union Territories, backed by full offline-first IndexedDB resilience so our demo never crashes even without venue Wi-Fi."
+    </div>
+
+    <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 11px;">
+      LOKIVA Core Architecture RFC &bull; National Hackathon Finale 2026 &bull; Production Blueprint
+    </div>
+
+  </div>
+
+</body>
+</html>
