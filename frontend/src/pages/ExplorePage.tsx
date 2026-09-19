@@ -48,13 +48,14 @@ const THEMATIC_PERSPECTIVES = [
 export function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLocation = searchParams.get('location') || searchParams.get('city') || '';
+  const initialSearch = searchParams.get('search') || searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || '';
   const initialBudget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
   const initialWheelchair = searchParams.get('wheelchair') === 'true';
   const initialWalking = searchParams.get('walking') === 'true';
 
   const [experiences, setExperiences] = useState<Experience[]>(USER_CURATED_PLACES);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [locationInput, setLocationInput] = useState(initialLocation);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [maxPrice, setMaxPrice] = useState(initialBudget);
@@ -174,6 +175,23 @@ export function ExplorePage() {
     hiddenGemsOnly,
     rainSafeOnly,
   ]);
+
+  // Synchronize state when URL search parameters change dynamically
+  useEffect(() => {
+    const loc = searchParams.get('location') || searchParams.get('city') || '';
+    const q = searchParams.get('search') || searchParams.get('q') || '';
+    const cat = searchParams.get('category') || '';
+    const budget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
+    const wheelchair = searchParams.get('wheelchair') === 'true';
+    const walking = searchParams.get('walking') === 'true';
+
+    setLocationInput(loc);
+    setSearchQuery(q);
+    setSelectedCategory(cat);
+    setMaxPrice(budget);
+    setWheelchairOnly(wheelchair);
+    setLowWalkingOnly(walking);
+  }, [searchParams]);
 
   // Form submit: immediate instant query (no debounce wait)
   const handleSearchSubmit = (e: React.FormEvent) => {

@@ -30,6 +30,38 @@
   font-family: 'JetBrains Mono', monospace !important;
 }
 
+/* Moving Photo Stream Marquee Animations */
+@keyframes verticalScroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes verticalScrollReverse {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-vertical-scroll {
+  animation: verticalScroll 24s linear infinite;
+}
+
+.animate-vertical-scroll-reverse {
+  animation: verticalScrollReverse 28s linear infinite;
+}
+
+.animate-vertical-scroll:hover,
+.animate-vertical-scroll-reverse:hover {
+  animation-play-state: paused;
+}
+
 /* Leaflet CSS fixes */
 .leaflet-container {
   font-family: inherit !important;

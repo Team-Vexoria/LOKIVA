@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Zap,
   Layers,
-  Award,
 } from 'lucide-react';
 import {
   SquiggleUnderline,
@@ -130,32 +129,17 @@ export function LokivaLandingHero() {
           </p>
         </motion.div>
 
-        {/* Key Pan-India Verification Metrics Bar */}
+        {/* Pan-India Verification Micro-Line (Clean Editorial Typography - Zero Capsules) */}
         <motion.div
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-2 text-xs font-mono text-ink-800"
+          className="flex items-center justify-center gap-2 pt-1 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase"
         >
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
-            <MapPin className="w-3.5 h-3.5 text-ink-800" />
-            <span className="font-bold">36 / 36</span>
-            <span className="text-dusk-500">States & UTs</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
-            <Award className="w-3.5 h-3.5 text-marigold-600" />
-            <span className="font-bold">1,080</span>
-            <span className="text-dusk-500">Curated Places</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-            <span className="font-bold">0% Dummy Data</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#C1443B]" />
-            <span className="font-bold">Gemini 1.5 Pro</span>
-            <span className="text-dusk-500">Powered</span>
-          </div>
+          <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
+          <span>Curated Across</span>
+          <span className="font-mono text-[#12213B] font-extrabold text-sm">36 / 36</span>
+          <span>States & Union Territories</span>
         </motion.div>
 
         {/* Primary CTA with Hand-Drawn Annotation Arrow */}

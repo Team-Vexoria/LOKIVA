@@ -34,7 +34,6 @@ import {
   Bot,
   User,
   Ticket,
-  ChevronDown,
 } from 'lucide-react';
 
 export type FeatureTab = 'itinerary' | 'vernacular' | 'checkout';
@@ -211,8 +210,7 @@ export function DeviceMockupSection() {
     <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pt-4 pb-8 select-none">
       {/* Interactive Feature Tab Selector */}
       <div className="flex flex-col items-center justify-center mb-8 space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C1443B]" />
+        <div>
           <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
             Interactive Platform Preview
           </span>
@@ -729,19 +727,22 @@ export function DeviceMockupSection() {
         >
           {/* Titanium Inner Screen */}
           <div className="relative bg-[#FFFFFF] rounded-[38px] overflow-hidden border border-[#D5CEC2] h-[550px] flex flex-col justify-between">
-            {/* Top Status Bar & Dynamic Island (Pure Hardware Sensor Pill - No Text) */}
+            {/* Top Status Bar & Dynamic Island (Interactive Camera Notch Sensor) */}
             <div
               onWheel={handleTopBarWheel}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)}
-              title="Swipe down or click to open Notification Center"
-              className="pt-2 px-4 pb-1 flex justify-between items-center text-[10px] font-mono font-bold text-ink select-none cursor-pointer bg-[#F8F5EE] border-b border-[#EBE4D8] hover:bg-[#F2ECE0] transition group"
+              title="Tap camera notch to open live notifications"
+              className="pt-2 px-4 pb-2 flex justify-between items-center text-[10px] font-mono font-bold text-ink select-none cursor-pointer bg-[#F8F5EE] border-b border-[#EBE4D8] hover:bg-[#F2ECE0] transition group"
             >
               <span>09:41</span>
 
-              {/* Dynamic Island Pill */}
-              <div className="bg-black w-20 h-5 rounded-full flex items-center justify-between px-2 shadow-inner">
+              {/* Dynamic Island Pill / Camera Notch */}
+              <div
+                className="bg-black w-22 h-5.5 rounded-full flex items-center justify-between px-2.5 shadow-inner transition-transform group-hover:scale-105"
+                title="Tap notch to open notifications"
+              >
                 <span className="w-2 h-2 rounded-full bg-neutral-900 border border-neutral-700" />
                 <span className="w-1.5 h-1.5 rounded-full bg-neutral-800" />
               </div>
@@ -749,18 +750,6 @@ export function DeviceMockupSection() {
               <div className="flex items-center gap-1 text-[10px]">
                 <span>5G</span>
                 <span>100%</span>
-              </div>
-            </div>
-
-            {/* Visual Pull-Down Notch Grabber Indicator */}
-            <div
-              onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)}
-              title="Pull down notification shade"
-              className="w-full bg-[#F8F5EE] py-1 flex items-center justify-center cursor-pointer hover:bg-[#EFEAE1] transition group border-b border-[#E5DFD5]"
-            >
-              <div className="flex items-center gap-1 text-[10px] font-heading font-bold text-dusk-600 group-hover:text-[#C1443B] transition-colors">
-                <ChevronDown className="w-3 h-3 animate-bounce" />
-                <span>Swipe down for live alerts</span>
               </div>
             </div>
 
@@ -1033,7 +1022,7 @@ export function DeviceMockupSection() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate('/explore')}
+                      onClick={() => navigate('/explore?search=Ghat')}
                       className="w-full py-1.5 rounded-lg bg-[#FAF4ED] text-[#C1443B] text-[11px] font-heading font-bold hover:bg-[#F2ECE0] transition border border-[#E8DCCB] cursor-pointer"
                     >
                       Explore Ghats
@@ -1055,7 +1044,7 @@ export function DeviceMockupSection() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate('/explore')}
+                      onClick={() => navigate('/explore?city=Agra')}
                       className="w-full py-1.5 rounded-lg bg-[#FAF4ED] text-[#C1443B] text-[11px] font-heading font-bold hover:bg-[#F2ECE0] transition border border-[#E8DCCB] cursor-pointer"
                     >
                       Explore Agra
