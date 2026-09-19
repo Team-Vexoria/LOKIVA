@@ -87,9 +87,10 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Fraunces', 'serif'],
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['"Josefin Sans"', 'sans-serif'],
+        heading: ['"Raleway"', 'sans-serif'],
+        sans: ['"Nunito"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
     },
   },

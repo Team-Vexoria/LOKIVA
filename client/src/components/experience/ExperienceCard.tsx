@@ -112,7 +112,7 @@ export function ExperienceCard({
           <div className="w-12 h-12 rounded-xl bg-white border border-[#D0D7CF] shadow-xs flex items-center justify-center text-ink mb-2.5 group-hover:scale-110 transition-transform">
             {getCategoryIcon(experience.category)}
           </div>
-          <span className="text-[13px] font-serif font-bold text-ink text-center line-clamp-1 max-w-[200px]">
+          <span className="text-[13px] font-heading font-bold text-ink text-center line-clamp-1 max-w-[200px]">
             {experience.title}
           </span>
           <span className="text-[9px] font-mono text-dusk tracking-wider uppercase mt-1">
@@ -170,7 +170,7 @@ export function ExperienceCard({
           </div>
 
           {/* Title */}
-          <h3 className="font-serif font-bold text-ink text-base sm:text-lg group-hover:text-clay transition-colors line-clamp-1 leading-snug mb-1">
+          <h3 className="font-heading font-bold text-ink text-base sm:text-lg group-hover:text-clay transition-colors line-clamp-1 leading-snug mb-1">
             {experience.title}
           </h3>
 

@@ -99,7 +99,7 @@ export function Footer() {
             © {new Date().getFullYear()} LOKIVA. Handcrafted for authentic regional discovery across India.
           </div>
           <div className="flex items-center gap-2">
-            <span>Fraunces & JetBrains Mono typography</span>
+            <span>Josefin Sans, Raleway & Nunito typography</span>
           </div>
         </div>
       </div>

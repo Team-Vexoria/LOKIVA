@@ -62,9 +62,10 @@ export default {
         surface: '#FFFFFF',
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
-        sans: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['"Josefin Sans"', 'sans-serif'],
+        heading: ['"Raleway"', 'sans-serif'],
+        sans: ['"Nunito"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
     },
   },

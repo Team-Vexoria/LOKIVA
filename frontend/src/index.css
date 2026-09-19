@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    font-family: 'Nunito', sans-serif !important;
+  }
+  h1, h2 {
+    font-family: 'Josefin Sans', sans-serif;
+  }
+  h3, h4, h5, h6 {
+    font-family: 'Raleway', sans-serif;
+  }
+}
+
+.font-display {
+  font-family: 'Josefin Sans', sans-serif !important;
+}
+
+.font-heading {
+  font-family: 'Raleway', sans-serif !important;
+}
+
+.font-sans {
+  font-family: 'Nunito', sans-serif !important;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
 /* Leaflet CSS fixes */
 .leaflet-container {
   font-family: inherit !important;

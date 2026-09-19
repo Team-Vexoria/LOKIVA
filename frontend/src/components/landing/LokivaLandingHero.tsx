@@ -14,6 +14,8 @@ import {
   Car,
   ChevronRight,
   Zap,
+  Layers,
+  Award,
 } from 'lucide-react';
 import {
   SquiggleUnderline,
@@ -23,6 +25,7 @@ import {
 } from '../ui/HandDrawnAnnotations';
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
 import { DayPlanResponse } from '../../types';
+import { DeviceMockupSection } from './DeviceMockupSection';
 
 export function LokivaLandingHero() {
   const navigate = useNavigate();
@@ -44,7 +47,7 @@ export function LokivaLandingHero() {
   };
 
   return (
-    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-12 sm:pb-16 text-[#12213B] overflow-hidden">
+    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-[#12213B] overflow-hidden">
       {/* Onboarding Full-Screen Takeover Modal */}
       <TripOnboardingTakeover
         isOpen={isOnboardingOpen}
@@ -54,7 +57,7 @@ export function LokivaLandingHero() {
 
       {/* Decorative Indian Monument Cutouts (Asymmetrically Flanking Negative Space) */}
       <div className="pointer-events-none select-none z-0 absolute inset-0 overflow-hidden hidden lg:block" aria-hidden="true">
-        {/* 1. Hawa Mahal (Jaipur) - Primary Left Anchor (Upper-Mid) */}
+        {/* 1. Hawa Mahal (Jaipur) - Primary Left Anchor */}
         <div className="absolute left-0 xl:left-4 top-6 xl:top-8 w-36 lg:w-44 xl:w-56 -rotate-3 transition-transform duration-700 ease-out hover:rotate-0">
           <img
             src="/assets/monuments/hawa-mahal-cutout.png"
@@ -64,7 +67,7 @@ export function LokivaLandingHero() {
           />
         </div>
 
-        {/* 2. Taj Mahal (Agra) - Secondary Right Anchor (Upper-Right) */}
+        {/* 2. Taj Mahal (Agra) - Secondary Right Anchor */}
         <div className="absolute right-0 xl:right-4 top-4 xl:top-6 w-36 lg:w-40 xl:w-52 -rotate-2 transition-transform duration-700 ease-out hover:rotate-0">
           <img
             src="/assets/monuments/taj-mahal-cutout.png"
@@ -74,8 +77,8 @@ export function LokivaLandingHero() {
           />
         </div>
 
-        {/* 3. Temple Gopuram (Madurai) - Lower Left Accent (Flanking CTA) */}
-        <div className="hidden xl:block absolute left-2 xl:left-8 top-[52%] w-32 xl:w-40 rotate-[2.5deg] transition-transform duration-700 ease-out hover:rotate-0">
+        {/* 3. Temple Gopuram (Madurai) - Lower Left Accent */}
+        <div className="hidden xl:block absolute left-2 xl:left-8 top-[48%] w-32 xl:w-40 rotate-[2.5deg] transition-transform duration-700 ease-out hover:rotate-0">
           <img
             src="/assets/monuments/temple-gopuram-cutout.png"
             alt="South Indian Temple Gopuram tower cutout"
@@ -84,8 +87,8 @@ export function LokivaLandingHero() {
           />
         </div>
 
-        {/* 4. Gateway of India (Mumbai) - Lower Right Accent (Flanking CTA) */}
-        <div className="hidden xl:block absolute right-2 xl:right-8 top-[50%] w-36 xl:w-48 rotate-3 transition-transform duration-700 ease-out hover:rotate-0">
+        {/* 4. Gateway of India (Mumbai) - Lower Right Accent */}
+        <div className="hidden xl:block absolute right-2 xl:right-8 top-[46%] w-36 xl:w-48 rotate-3 transition-transform duration-700 ease-out hover:rotate-0">
           <img
             src="/assets/monuments/gateway-of-india-cutout.png"
             alt="Gateway of India Mumbai arch cutout"
@@ -95,11 +98,11 @@ export function LokivaLandingHero() {
         </div>
       </div>
 
-      {/* Main Hero Display (Clean, Confident, Not AI-Boxy) */}
-      <div className="relative z-10 text-center max-w-3xl mx-auto space-y-6">
+      {/* Main Hero Editorial Display */}
+      <div className="relative z-10 text-center max-w-4xl mx-auto space-y-6">
         {/* Subtle Stamp Badge */}
         <div className="flex items-center justify-center gap-2">
-          <StampBadge text="ALGORITHMIC CULTURAL CONCIERGE" />
+          <StampBadge text="PAN-INDIA CULTURAL DISCOVERY ENGINE" />
         </div>
 
         {/* Confident Headline */}
@@ -107,24 +110,52 @@ export function LokivaLandingHero() {
           initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="space-y-2 relative"
+          className="space-y-3 relative"
         >
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-[#12213B] tracking-tight leading-[1.1]">
-            <span>Real Indian cultural experiences.</span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-[#12213B] tracking-tight leading-[1.12]">
+            <span>Real Indian Cultural Experiences.</span>
             <br />
             <span className="relative inline-block mt-1">
-              <span>Packed around your </span>
-              <span className="relative inline-block text-[#1F7A6C]">
-                exact constraints.
+              <span>Packed Around Your </span>
+              <span className="relative inline-block text-[#C1443B]">
+                Exact Constraints.
                 <SquiggleUnderline className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-4 sm:h-5" />
               </span>
             </span>
           </h1>
 
           {/* Supporting Line */}
-          <p className="pt-2 sm:pt-3 text-sm sm:text-lg text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
-            Tell us your available window, budget ceiling, and mobility needs. Lokiva evaluates real transit buffers, opening schedules, and crowd peaks to build a plan that actually works.
+          <p className="pt-2 sm:pt-3 text-sm sm:text-base lg:text-lg text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
+            India's living artisan guilds, sacred stepwells, and vernacular heritage are scattered across oral lore. LOKIVA evaluates real street transit buffers, opening schedules, and budget limits to build cultural micro-circuits that actually work.
           </p>
+        </motion.div>
+
+        {/* Key Pan-India Verification Metrics Bar */}
+        <motion.div
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-2 text-xs font-mono text-ink-800"
+        >
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
+            <MapPin className="w-3.5 h-3.5 text-ink-800" />
+            <span className="font-bold">36 / 36</span>
+            <span className="text-dusk-500">States & UTs</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
+            <Award className="w-3.5 h-3.5 text-marigold-600" />
+            <span className="font-bold">1,080</span>
+            <span className="text-dusk-500">Curated Places</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+            <span className="font-bold">0% Dummy Data</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#D5CEC2] shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#C1443B]" />
+            <span className="font-bold">Gemini 1.5 Pro</span>
+            <span className="text-dusk-500">Powered</span>
+          </div>
         </motion.div>
 
         {/* Primary CTA with Hand-Drawn Annotation Arrow */}
@@ -132,11 +163,10 @@ export function LokivaLandingHero() {
           initial={reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
+          className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
         >
-          {/* Button wrapper anchoring the 'Takes 60s' arrow directly to button's edge */}
           <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
-            {/* Hand-drawn arrow curving toward and terminating at the button's left edge */}
+            {/* Hand-drawn arrow curving toward button */}
             <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
               <span className="font-display italic text-xs font-semibold text-[#5B6B8C] transform -rotate-6 whitespace-nowrap">
                 Takes 60s
@@ -147,18 +177,21 @@ export function LokivaLandingHero() {
             <button
               type="button"
               onClick={() => setIsOnboardingOpen(true)}
-              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#D85A38] hover:bg-[#C24927] text-white font-mono text-sm sm:text-base font-bold transition-all duration-200 shadow-lg shadow-[#D85A38]/30 hover:shadow-xl hover:shadow-[#D85A38]/40 border border-[#B84724]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
+              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#C1443B] hover:bg-[#A8372F] text-white font-heading text-sm sm:text-base font-bold tracking-wide transition-all duration-200 shadow-lg shadow-[#C1443B]/25 hover:shadow-xl hover:shadow-[#C1443B]/35 border border-[#9E2E27]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
             >
-              <span>{solvedPlan ? 'Adjust Your Trip Plan' : 'Plan My Time'}</span>
+              <span>{solvedPlan ? 'Adjust Your Micro-Circuit' : 'Plan Instant Micro-Itinerary'}</span>
               <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
-          {/* Small illustrative aside: Never dominant headline, subtle sticker chip */}
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#D0D7CF] text-[11px] sm:text-xs font-mono text-[#5B6B8C] shadow-2xs transform rotate-1 text-center">
-            <Zap className="w-3.5 h-3.5 text-[#D85A38] fill-[#D85A38]/20 flex-shrink-0" />
-            <span>Have 2 hours before a flight? We solve that too.</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/explore')}
+            className="w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-[#FAF8F5] text-ink font-heading text-sm font-bold tracking-wide border border-[#DDD7CC] transition shadow-xs flex items-center justify-center gap-2 hover:border-ink cursor-pointer"
+          >
+            <Compass className="w-4 h-4 text-teal-600" />
+            <span>Explore 36 States</span>
+          </button>
         </motion.div>
 
         {/* If user completed the onboarding flow, display their active solved plan */}
@@ -168,7 +201,7 @@ export function LokivaLandingHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-10 p-6 sm:p-8 bg-white rounded-3xl border border-[#D0D7CF] shadow-xl text-left space-y-5"
+              className="mt-8 p-6 sm:p-8 bg-white rounded-3xl border border-[#D0D7CF] shadow-xl text-left space-y-5"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#EEF1EE]">
                 <div>
@@ -259,6 +292,9 @@ export function LokivaLandingHero() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* High-Resolution Layered Device Showcase (macOS Safari + iPhone 16 Pro) */}
+      <DeviceMockupSection />
     </section>
   );
 }
