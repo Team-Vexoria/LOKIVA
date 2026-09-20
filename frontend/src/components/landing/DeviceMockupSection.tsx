@@ -207,57 +207,52 @@ export function DeviceMockupSection() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pt-4 pb-8 select-none">
-      {/* Interactive Feature Tab Selector */}
-      <div className="flex flex-col items-center justify-center mb-8 space-y-3">
-        <div>
-          <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-            Interactive Platform Preview
-          </span>
-        </div>
+    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pt-1 pb-6 select-none">
+      {/* Feature Tab Selector */}
+      <div className="flex flex-col items-center justify-center mb-5 sm:mb-6 space-y-2">
         <h3 className="text-2xl sm:text-4xl font-display font-black text-ink text-center tracking-tight">
-          Explore LOKIVA Across Desktop & Mobile
+          Authentic Cultural Journeys, Beautifully Planned
         </h3>
         <p className="text-xs sm:text-sm text-dusk-700 text-center max-w-xl font-sans font-medium">
-          Test live macOS controls and swipe down the iPhone camera notch to reveal real-time alerts.
+          From ancient river ghats and artisan guilds to intimate neighborhood trails, explore India with clarity and ease.
         </p>
 
         {/* Tab Pills - Clean High-Contrast Sandstone Style */}
-        <div className="inline-flex p-1.5 rounded-xl bg-[#EBE5DA] border-2 border-[#D8CFC0] shadow-sm gap-1 sm:gap-2 mt-2">
+        <div className="inline-flex p-1.5 rounded-xl bg-[#EBE5DA] border-2 border-[#D8CFC0] shadow-sm gap-1 sm:gap-2 mt-1">
           <button
             onClick={() => setActiveTab('itinerary')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
               activeTab === 'itinerary'
                 ? 'bg-white text-ink shadow-sm border border-[#DDD7CC]'
                 : 'text-ink-800 hover:text-ink hover:bg-white/60'
             }`}
           >
             <Compass className="w-4 h-4 text-[#C1443B]" />
-            <span>AI Spatio-Temporal Solver</span>
+            <span>Curated Heritage Circuit</span>
           </button>
 
           <button
             onClick={() => setActiveTab('vernacular')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
               activeTab === 'vernacular'
                 ? 'bg-white text-ink shadow-sm border border-[#DDD7CC]'
                 : 'text-ink-800 hover:text-ink hover:bg-white/60'
             }`}
           >
             <Mic className="w-4 h-4 text-[#C1443B]" />
-            <span>Artisan Vernacular Voice</span>
+            <span>Artisan Masterclasses</span>
           </button>
 
           <button
             onClick={() => setActiveTab('checkout')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all cursor-pointer ${
               activeTab === 'checkout'
                 ? 'bg-white text-ink shadow-sm border border-[#DDD7CC]'
                 : 'text-ink-800 hover:text-ink hover:bg-white/60'
             }`}
           >
             <QrCode className="w-4 h-4 text-[#C1443B]" />
-            <span>Dynamic UPI QR & Pass</span>
+            <span>Passes & Gate Access</span>
           </button>
         </div>
       </div>
@@ -723,7 +718,7 @@ export function DeviceMockupSection() {
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
-          className="hidden md:block absolute -bottom-10 -right-2 lg:-right-4 w-[310px] min-w-[310px] max-w-[310px] bg-[#111622] rounded-[48px] p-2.5 border-[5px] border-[#252E3E] shadow-[0_25px_60px_rgba(18,33,59,0.3)] z-20"
+          className="hidden md:block absolute -bottom-2 lg:-bottom-4 -right-2 lg:-right-4 w-[310px] min-w-[310px] max-w-[310px] bg-[#111622] rounded-[48px] p-2.5 border-[5px] border-[#252E3E] shadow-[0_25px_60px_rgba(18,33,59,0.3)] z-20"
         >
           {/* Titanium Inner Screen */}
           <div className="relative bg-[#FFFFFF] rounded-[38px] overflow-hidden border border-[#D5CEC2] h-[550px] flex flex-col justify-between">

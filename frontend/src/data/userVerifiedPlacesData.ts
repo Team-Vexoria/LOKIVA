@@ -2031,10 +2031,9 @@ export const JAISALMER_POPULAR_DESTINATIONS: Experience[] = [
     rating: 4.94,
     review_count: 1720,
     approx_duration_mins: 180,
-    image_url: 'https://scontent.cdninstagram.com/v/t51.82787-15/588792590_18545702470054127_7503386497180787272_n.jpg?stp=dst-jpg_e35_s640x640_tt6&_nc_cat=101&ccb=7-5&_nc_sid=18de74&efg=eyJlZmdfdGFnIjoiRkVFRC5iZXN0X2ltYWdlX3VybGdlbi5DMyJ9&_nc_ohc=AwqTTAM-6E4Q7kNvwFtFghW&_nc_oc=Adr4qQv2ZBqak6K_O1JSMCv2_9ILksFEPcdtXE0b8lQ0M1ge6qE3_WVIyHxSKKAb_2E&_nc_zt=23&_nc_ht=scontent.cdninstagram.com&_nc_gid=-YDG0ORqMVkDUYhl9mQErg&_nc_ss=7fa8c&oh=00_AQKwMriLHCVbMqac9H6GuvFTV9P-vyN3JulRLdBCNmwvbw&oe=6AA5E0FD',
+    image_url: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?auto=format&fit=crop&w=1200&q=80',
     image_urls: [
-      'https://scontent.cdninstagram.com/v/t51.82787-15/588792590_18545702470054127_7503386497180787272_n.jpg?stp=dst-jpg_e35_s640x640_tt6&_nc_cat=101&ccb=7-5&_nc_sid=18de74&efg=eyJlZmdfdGFnIjoiRkVFRC5iZXN0X2ltYWdlX3VybGdlbi5DMyJ9&_nc_ohc=AwqTTAM-6E4Q7kNvwFtFghW&_nc_oc=Adr4qQv2ZBqak6K_O1JSMCv2_9ILksFEPcdtXE0b8lQ0M1ge6qE3_WVIyHxSKKAb_2E&_nc_zt=23&_nc_ht=scontent.cdninstagram.com&_nc_gid=-YDG0ORqMVkDUYhl9mQErg&_nc_ss=7fa8c&oh=00_AQKwMriLHCVbMqac9H6GuvFTV9P-vyN3JulRLdBCNmwvbw&oe=6AA5E0FD',
-      'https://www.google.com/imgres?q=jaisalmer%20fort&imgurl=https%3A%2F%2Flookaside.instagram.com%2Fseo%2Fgoogle_widget%2Fcrawler%2F%3Fmedia_id%3D3786775631238055622',
+      'https://images.unsplash.com/photo-1609137144813-7d9921338f24?auto=format&fit=crop&w=1200&q=80',
     ],
     tags: ['fort', 'unesco', 'jaisalmer', 'golden-fort', 'sonar-qila', 'desert', 'verified'],
     latitude: 26.9124,
@@ -2842,7 +2841,7 @@ export const USER_CURATED_PLACES: Experience[] = [
   },
 ];
 
-const LANDING_IDS = [1087, 1094, 1491, 1109, 1096, 1102, 743, 3932, 1098, 1097, 1501, 1111, 1099, 746, 5001, 5005, 5009, 6001, 6006, 7001, 7004, 7007, 7010, 7013, 7016, 7019, 8001, 8005, 8008];
+const LANDING_IDS = [1087, 1094, 1491, 1109, 1096, 1102, 743, 3932, 1098, 1097, 1501, 1111, 1099, 746, 5001, 5005, 5009, 6001, 6006, 7001, 7004, 7007, 7010, 7013, 7016, 7019, 8001, 8008];
 
 export const USER_LANDING_PLACES: Experience[] = LANDING_IDS
   .map((id) => USER_CURATED_PLACES.find((p) => p.id === id))

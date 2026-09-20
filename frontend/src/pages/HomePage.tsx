@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { LokivaLandingHero } from '../components/landing/LokivaLandingHero';
+import { HeroScrollExperience } from '../components/landing/HeroScrollExperience';
+import { DeviceMockupSection } from '../components/landing/DeviceMockupSection';
 import { PhotosMapsReviewsSection } from '../components/landing/PhotosMapsReviewsSection';
 import { LivingHeritageShowcaseSection } from '../components/landing/LivingHeritageShowcaseSection';
 import { TagUsSection } from '../components/landing/TagUsSection';
@@ -10,6 +11,7 @@ import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
+import { ProjectVideoModal } from '../components/modals/ProjectVideoModal';
 import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import { api } from '../lib/api';
 import { Experience } from '../types';
@@ -29,6 +31,7 @@ export function HomePage() {
   const [selectedCity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadInitial() {
@@ -50,7 +53,7 @@ export function HomePage() {
     loadInitial();
   }, []);
 
-  // GSAP ScrollTrigger setup for section reveals
+  // GSAP ScrollTrigger setup for stacked-card parallax slide-over & section reveals
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -65,60 +68,89 @@ export function HomePage() {
         return;
       }
 
-      const sections = gsap.utils.toArray<HTMLElement>('.reveal-section');
+      // 1. Stacked-card transitions with dedicated interaction buffer (Spain Collection standard)
+      const panels = gsap.utils.toArray<HTMLElement>('.card-stack-wrapper .stack-panel');
 
-      sections.forEach((section) => {
-        const words = section.querySelectorAll('.reveal-word');
-        const staggerItems = section.querySelectorAll('.reveal-stagger-item');
+      panels.forEach((panel, i) => {
+        const nextPanel = panels[i + 1];
+        if (!nextPanel) return;
 
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%',
-            once: true,
-          },
+        // 1. PIN THE CURRENT PANEL to give the user time to view & use it
+        ScrollTrigger.create({
+          trigger: panel,
+          start: 'top top',
+          end: '+=130vh', // Extended buffer so screen stays completely still & usable
+          pin: true,
+          pinSpacing: false, // Allows next panel to slide over it after the pause
+          anticipatePin: 1,
         });
 
-        tl.fromTo(
-          section,
-          { opacity: 0, y: 24 },
+        // 2. SLIDE UP THE NEXT PANEL ONLY AFTER THE BUFFER ENDS
+        gsap.fromTo(
+          nextPanel,
+          { yPercent: 100 },
+          {
+            yPercent: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: panel,
+              start: 'top+=90vh top', // Start sliding up only after user scrolled through viewing buffer
+              end: 'top+=150vh top',
+              scrub: 1,
+              onUpdate: (self) => {
+                // Softly fade/scale down the outgoing panel content as it gets covered
+                const content = panel.querySelector<HTMLElement>('.panel-content');
+                if (content) {
+                  gsap.to(content, {
+                    opacity: 1 - self.progress * 0.35,
+                    scale: 1 - self.progress * 0.02,
+                    overwrite: 'auto',
+                  });
+                }
+              },
+            },
+          }
+        );
+      });
+
+      // 2. Inner stagger items reveal within each section
+      const words = gsap.utils.toArray<HTMLElement>('.reveal-word');
+      const staggerItems = gsap.utils.toArray<HTMLElement>('.reveal-stagger-item');
+
+      words.forEach((word) => {
+        gsap.fromTo(
+          word,
+          { opacity: 0, y: 10 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.6,
+            duration: 0.5,
             ease: 'power2.out',
+            scrollTrigger: {
+              trigger: word,
+              start: 'top 90%',
+              once: true,
+            },
           }
         );
+      });
 
-        if (words.length > 0) {
-          tl.fromTo(
-            words,
-            { opacity: 0, y: 10 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.5,
-              stagger: 0.04,
-              ease: 'power2.out',
+      staggerItems.forEach((item) => {
+        gsap.fromTo(
+          item,
+          { opacity: 0, y: 16 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: item,
+              start: 'top 90%',
+              once: true,
             },
-            '-=0.45'
-          );
-        }
-
-        if (staggerItems.length > 0) {
-          tl.fromTo(
-            staggerItems,
-            { opacity: 0, y: 16 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.5,
-              stagger: 0.08,
-              ease: 'power2.out',
-            },
-            '-=0.3'
-          );
-        }
+          }
+        );
       });
     }, containerRef);
 
@@ -143,18 +175,37 @@ export function HomePage() {
       : experiences.filter((e) => e.category === activeCategory);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#FAF7F2] text-[#12213B] space-y-16 sm:space-y-24 pb-24 overflow-hidden">
-      {/* 1. LOKIVA EDITORIAL HERO & INTERACTIVE DEVICE FRAMES */}
-      <LokivaLandingHero />
+    <main ref={containerRef} className="relative w-full min-h-screen bg-[#FAF7F2] text-[#12213B] overflow-x-clip">
+      {/* 1. PINNED HERO + SHOWREEL (PANEL 0 - Spain Collection scroll architecture, GSAP pin) */}
+      <HeroScrollExperience onWatchFilm={() => setIsVideoModalOpen(true)} />
 
-      {/* 2. PHOTOS, MAPS + REVIEWS (MINDTRIP IMAGE 1 INSPIRED SHOWCASE) */}
-      <PhotosMapsReviewsSection />
+      {/* 2. CARD-STACKED TRANSITION GROUP (ONLY between Video and Discover. Experience. Preserve.) */}
+      <div className="card-stack-wrapper relative w-full">
+        {/* Section A: Curated Cultural Journeys Showcase */}
+        <section className="stack-panel relative z-10 bg-[#E8E2D9] min-h-screen flex flex-col justify-start overflow-hidden">
+          <div className="panel-content w-full max-w-7xl mx-auto pt-4 sm:pt-6 pb-16 px-4">
+            <DeviceMockupSection />
+          </div>
+        </section>
 
-      {/* 3. LIVING HERITAGE SHOWCASE (MINDTRIP IMAGE 2 INSPIRED WARM AESTHETIC & FLOATING CARDS) */}
-      <LivingHeritageShowcaseSection />
+        {/* Section B: Photos, Maps + Reviews */}
+        <section className="stack-panel relative z-20 bg-[#FAF7F2] min-h-screen rounded-t-[32px] sm:rounded-t-[44px] shadow-[0_-20px_50px_rgba(18,33,59,0.12)] border-t border-black/5 flex flex-col justify-start overflow-hidden">
+          <div className="panel-content w-full max-w-7xl mx-auto pt-10 sm:pt-14 pb-16">
+            <PhotosMapsReviewsSection />
+          </div>
+        </section>
 
-      {/* 4. CURATED EXPERIENCES CATALOG (Preserved Verified Image URLs) */}
-      <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Section C: Discover. Experience. Preserve. (Living Heritage Showcase - FINAL Stacked Section) */}
+        <section className="stack-panel relative z-30 bg-[#FAF8F5] min-h-screen rounded-t-[32px] sm:rounded-t-[44px] shadow-[0_-20px_50px_rgba(18,33,59,0.12)] border-t border-black/5 flex flex-col justify-start overflow-hidden">
+          <div className="panel-content w-full max-w-7xl mx-auto pt-10 sm:pt-14 pb-16">
+            <LivingHeritageShowcaseSection />
+          </div>
+        </section>
+      </div>
+
+      {/* 3. STANDARD NATURAL DOCUMENT SCROLLING (NO animations, NO pins, 100% natural CSS flow) */}
+      {/* 4. CURATED EXPERIENCES CATALOG */}
+      <section className="relative z-30 bg-[#FAF7F2] py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
@@ -177,8 +228,8 @@ export function HomePage() {
           </Link>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none [-webkit-overflow-scrolling:touch]">
+        {/* Categories Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -213,16 +264,26 @@ export function HomePage() {
       </section>
 
       {/* 5. LOKIVA MOMENTS */}
-      <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
       </section>
 
-      {/* 6. TAG US ON YOUR NEXT TRIP (COMMUNITY TRAVEL MOMENTS & SOCIAL HUB) */}
-      <TagUsSection />
+      {/* 6. TAG US ON YOUR NEXT TRIP */}
+      <section className="relative z-30 bg-[#FAF7F2] py-16 sm:py-24">
+        <TagUsSection />
+      </section>
 
-      {/* 7. FREQUENTLY ASKED QUESTIONS (ABOVE FOOTER) */}
-      <FaqSection />
-    </div>
+      {/* 7. FREQUENTLY ASKED QUESTIONS */}
+      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24 pb-24">
+        <FaqSection />
+      </section>
+
+      {/* Shared Video Player Modal */}
+      <ProjectVideoModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+      />
+    </main>
   );
 }
 

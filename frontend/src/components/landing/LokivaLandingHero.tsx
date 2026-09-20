@@ -25,13 +25,25 @@ import {
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
 import { DayPlanResponse } from '../../types';
 
-export function LokivaLandingHero() {
+interface LokivaLandingHeroProps {
+  onOpenOnboarding?: () => void;
+}
+
+export function LokivaLandingHero({ onOpenOnboarding }: LokivaLandingHeroProps = {}) {
   const navigate = useNavigate();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [solvedPlan, setSolvedPlan] = useState<{
     answers: TripContextAnswers;
     plan: DayPlanResponse;
   } | null>(null);
+
+  const handleOpenOnboarding = () => {
+    if (onOpenOnboarding) {
+      onOpenOnboarding();
+    } else {
+      setIsOnboardingOpen(true);
+    }
+  };
 
   // prefers-reduced-motion check
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -45,7 +57,7 @@ export function LokivaLandingHero() {
   };
 
   return (
-    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-8 sm:pb-12 text-[#12213B] overflow-hidden">
+    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6 text-[#12213B] overflow-hidden flex flex-col justify-center" style={{ minHeight: '62vh' }}>
       {/* Onboarding Full-Screen Takeover Modal */}
       <TripOnboardingTakeover
         isOpen={isOnboardingOpen}
@@ -159,7 +171,7 @@ export function LokivaLandingHero() {
 
             <button
               type="button"
-              onClick={() => setIsOnboardingOpen(true)}
+              onClick={handleOpenOnboarding}
               className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#FFC067] hover:bg-[#F5B24E] text-[#12213B] font-heading text-sm sm:text-base font-extrabold tracking-wide transition-all duration-200 shadow-lg shadow-[#FFC067]/35 hover:shadow-xl hover:shadow-[#FFC067]/45 border border-[#E5A84B]/60 flex items-center gap-3 active:scale-98 cursor-pointer group"
             >
               <span>{solvedPlan ? 'Adjust Your Micro-Circuit' : 'Plan Instant Micro-Itinerary'}</span>
@@ -275,6 +287,7 @@ export function LokivaLandingHero() {
           )}
         </AnimatePresence>
       </div>
+
     </section>
   );
 }

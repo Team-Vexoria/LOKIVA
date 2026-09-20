@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOKIVA: Autonomous Cultural Experience Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&family=Raleway:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8pt;
+        color: #5B6B8C;
+      }
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFFFF;
+      color: #12213B;
+      font-family: 'Nunito', sans-serif;
+      font-size: 10pt;
+      line-height: 1.55;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      color: #12213B;
+      margin-top: 0;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    h1 {
+      font-family: 'Josefin Sans', sans-serif;
+      font-size: 24pt;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 4pt;
+    }
+    h2 {
+      font-family: 'Raleway', sans-serif;
+      font-size: 14pt;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-top: 18pt;
+      margin-bottom: 8pt;
+      border-bottom: 1.5pt solid #E5DFD5;
+      padding-bottom: 4pt;
+      color: #12213B;
+    }
+    h3 {
+      font-family: 'Raleway', sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      margin-top: 12pt;
+      margin-bottom: 4pt;
+      color: #C1443B;
+    }
+    p {
+      margin-top: 0;
+      margin-bottom: 8pt;
+    }
+    code, .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5pt;
+      background: #F4EFE6;
+      padding: 1.5pt 3pt;
+      border-radius: 3pt;
+      color: #12213B;
+    }
+
+    /* Header Banner */
+    .header-box {
+      background: linear-gradient(135deg, #FFF9F0 0%, #FAF7F2 100%);
+      border: 1.5pt solid #E5DFD5;
+      border-left: 5pt solid #C1443B;
+      border-radius: 8pt;
+      padding: 16pt 18pt;
+      margin-bottom: 16pt;
+    }
+    .badge {
+      display: inline-block;
+      font-family: 'Raleway', sans-serif;
+      font-size: 8pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #C1443B;
+      background: #FFF2EE;
+      border: 1pt solid #FFC067;
+      padding: 2.5pt 7pt;
+      border-radius: 20pt;
+      margin-bottom: 8pt;
+    }
+    .tagline {
+      font-family: 'Nunito', sans-serif;
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #5B6B8C;
+      margin-bottom: 0;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background-color: #FAF8F5;
+      border: 1pt solid #E5DFD5;
+      border-radius: 6pt;
+      padding: 10pt 12pt;
+      margin-bottom: 10pt;
+      page-break-inside: avoid;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10pt;
+      page-break-inside: avoid;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8pt;
+      page-break-inside: avoid;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin-top: 6pt;
+      margin-bottom: 12pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1pt solid #E5DFD5;
+      padding: 6pt 8pt;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #F5EFE6;
+      color: #12213B;
+      font-family: 'Raleway', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:nth-child(even) {
+      background-color: #FAF8F5;
+    }
+
+    /* Script Callouts */
+    .script-act {
+      border-left: 3pt solid #FFC067;
+      background-color: #FFFDF9;
+      border-top: 1pt solid #E5DFD5;
+      border-right: 1pt solid #E5DFD5;
+      border-bottom: 1pt solid #E5DFD5;
+      border-radius: 0 6pt 6pt 0;
+      padding: 8pt 10pt;
+      margin-bottom: 8pt;
+      page-break-inside: avoid;
+    }
+    .script-title {
+      font-family: 'Raleway', sans-serif;
+      font-weight: 800;
+      color: #12213B;
+      font-size: 9.5pt;
+      margin-bottom: 2pt;
+    }
+    .script-visual {
+      font-size: 8.5pt;
+      color: #5B6B8C;
+      font-style: italic;
+      margin-bottom: 4pt;
+    }
+    .script-narrator {
+      font-size: 9pt;
+      color: #12213B;
+      font-weight: 600;
+    }
+
+    .page-break {
+      page-break-after: always;
+    }
+    .highlight {
+      color: #C1443B;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER BANNER -->
+  <div class="header-box">
+    <div class="badge">Google NotebookLM Reference Document</div>
+    <h1>LOKIVA: Autonomous Cultural Experience Engine</h1>
+    <p class="tagline">Intelligent Pan-India Heritage Discovery and Two-Sided Artisan Marketplace</p>
+  </div>
+
+  <!-- SECTION 1 -->
+  <h2>1. Executive Summary and The High-Concept Hook</h2>
+  <p>
+    <strong>What is LOKIVA?</strong> LOKIVA is an autonomous cultural itinerary engine and two-sided artisan marketplace that connects travelers with real, living Indian heritage. While commercial travel platforms focus almost exclusively on selling hotel beds and flight seats, LOKIVA solves the actual experience on the ground.
+  </p>
+  <p>
+    Using Google Gemini 1.5 multimodal AI and mathematical spatio-temporal constraint solvers, LOKIVA takes a traveler's exact remaining hours (such as a 4-hour Varanasi layover or a 3-hour evening gap in Jaipur), strict budget limit, accessibility requirements, and traveler persona, and instantly synthesizes a feasible, minute-by-minute cultural micro-circuit.
+  </p>
+  <p>
+    Simultaneously, LOKIVA empowers generational Indian artisans, temple guilds, and master craftspeople through a vernacular voice studio, allowing rural artisans who cannot speak English or manage complex digital forms to list authentic workshops and receive direct traveler bookings via simulated instant UPI checkout.
+  </p>
+
+  <!-- SECTION 2 -->
+  <h2>2. The Problem: The Indian Cultural Travel Paradox</h2>
+  <div class="card">
+    <h3 style="margin-top:0;">The Trillion-Dollar Cultural Heritage Blindspot</h3>
+    <p>
+      India possesses one of the oldest living cultural ecosystems in the world: over 3,000 distinctive living craft traditions, 450+ Geographical Indication (GI) tagged artisan specialties, and more than 100,000 historic monuments, temples, and sacred stepwells.
+    </p>
+    <p style="margin-bottom:0;">
+      Yet, when travelers visit India or explore their own country, <strong>over 88% of tourism spending flows into commercial hotel aggregators, standard bus tours, and generic tourist traps</strong>.
+    </p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h3 style="margin-top:0;">1. Time-Constraint Failure</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Travelers with 2 to 5 hours before a train or flight have no reliable way to plan a realistic excursion. Existing tools rank isolated venues without computing real traffic bottlenecks or opening hours.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">2. The Digital Divide</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Master Rogan artists in Kutch or handloom weavers in Varanasi do not manage English web forms or credit card gateways. Rural craftspeople have zero marketing budget and remain invisible.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">3. AI Hallucination Plague</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Generic travel chatbots hallucinate closed venues, non-existent hours, and broken photo links. Travelers cannot trust automated itineraries that fail when applied in the real world.
+      </p>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SECTION 3 -->
+  <h2>3. The 11 Context Signals Checked on Every Solve</h2>
+  <p>
+    Unlike conventional platforms that sort destinations by raw star ratings, LOKIVA evaluates 11 real-world variables simultaneously before rendering any plan:
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Signal</th>
+        <th>How LOKIVA Solves It</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Available Time Window</strong></td>
+        <td>Enforces a mathematical hard stop before train departure, flight boarding, or hotel checkout.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Ground Transit Isochrones</strong></td>
+        <td>Computes real pedestrian, auto-rickshaw, and street buffer transit times instead of straight-line distances.</td>
+      </tr>
+      <tr>
+        <td><strong>3. Hard Budget Ceiling</strong></td>
+        <td>Maintains a strict upper ceiling where the complete itinerary cost never exceeds the user's defined wallet limit.</td>
+      </tr>
+      <tr>
+        <td><strong>4. Mobility and Accessibility</strong></td>
+        <td>Verifies step-free access and wheelchair viability for elderly travelers and families.</td>
+      </tr>
+      <tr>
+        <td><strong>5. Verified Operating Slots</strong></td>
+        <td>Ensures destinations are confirmed open during the exact window of arrival.</td>
+      </tr>
+      <tr>
+        <td><strong>6. Cultural Etiquette Rules</strong></td>
+        <td>Flags dress codes, footwear removal rules, and photography bans in advance.</td>
+      </tr>
+      <tr>
+        <td><strong>7. Pacing and Fatigue Limits</strong></td>
+        <td>Applies walking distance thresholds based on party composition (seniors, children, solo explorers).</td>
+      </tr>
+      <tr>
+        <td><strong>8. Dietary Integrity</strong></td>
+        <td>Includes verified dining recommendations for pure vegetarian, Jain, and regional culinary traditions.</td>
+      </tr>
+      <tr>
+        <td><strong>9. Live Weather Resilience</strong></td>
+        <td>Prepares indoor atelier alternatives ready to activate if sudden rain occurs.</td>
+      </tr>
+      <tr>
+        <td><strong>10. Transparent Explainability</strong></td>
+        <td>Provides an honest "Why this fits your constraints" justification for every selected stop.</td>
+      </tr>
+      <tr>
+        <td><strong>11. Offline Resilience</strong></td>
+        <td>Caches active itinerary data via IndexedDB and Service Workers for venues where mobile reception drops.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 4 -->
+  <h2>4. Key Platform Features and Modules</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="margin-top:0;">Interactive Onboarding Engine</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Full-screen takeover modal with an 8-step dotted progress trail. Captures city, time gap, party type, walking tolerance, dietary preferences, and budget in under 60 seconds.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Artisan Vernacular Voice Studio</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Rural craftspeople speak in their local dialect (Hindi, Gujarati, Tamil, Bengali). Multimodal AI extracts craft history, pricing, and timing to generate a structured listing automatically.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Simulated Instant UPI Checkout</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        Travelers reserve workshops instantly using realistic UPI QR interfaces (GPay, PhonePe, Paytm). Direct payments ensure 100% of traveler spend reaches local artisans.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">1-Click Live Adaptation Loop</h3>
+      <p style="font-size: 8.5pt; margin-bottom:0;">
+        If sudden monsoon rain hits or a venue closes unexpectedly, travelers click one button to dynamically re-solve their route, replacing outdoor stops with sheltered indoor workshops.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Pan-India Ground-Truth Catalog</h3>
+    <p style="font-size: 9pt; margin-bottom:0;">
+      Covering all 36 Indian States and Union Territories with over 1,000 human-verified cultural landmarks, stepwells, craft guilds, and culinary institutions. Features permanent high-resolution imagery and zero dummy placeholders.
+    </p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SECTION 5 -->
+  <h2>5. Technical Architecture and Stack</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Layer</th>
+        <th style="width: 30%;">Technologies</th>
+        <th>Core Responsibilities</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Frontend Web</strong></td>
+        <td>React 18.3, TypeScript 5.0, Vite</td>
+        <td>High-performance single-page app, type safety, modular client architecture.</td>
+      </tr>
+      <tr>
+        <td><strong>Design and Motion</strong></td>
+        <td>Tailwind CSS 3.4, Framer Motion, GSAP</td>
+        <td>Sandstone Ivory design system, micro-interactions, scroll triggers.</td>
+      </tr>
+      <tr>
+        <td><strong>Generative AI</strong></td>
+        <td>Google Gemini 1.5 Pro and Flash</td>
+        <td>Natural language intent extraction, conversational AI concierge, voice studio.</td>
+      </tr>
+      <tr>
+        <td><strong>Spatial Routing</strong></td>
+        <td>Haversine Algorithm, Transit Matrices</td>
+        <td>Deterministic route sequencing, distance optimization, time buffer calculation.</td>
+      </tr>
+      <tr>
+        <td><strong>Backend Services</strong></td>
+        <td>Node.js Express, Python FastAPI</td>
+        <td>REST API orchestration, constraint solver engine, session handling.</td>
+      </tr>
+      <tr>
+        <td><strong>Storage and Offline</strong></td>
+        <td>Firestore, Firebase Auth, IndexedDB</td>
+        <td>User profiles, real-time itinerary persistence, offline PWA access.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 6 -->
+  <h2>6. Competitive Differentiation Matrix</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Commercial Aggregators</th>
+        <th>Generic AI Chatbots</th>
+        <th>LOKIVA Engine</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Primary Focus</strong></td>
+        <td>Hotel and flight commission bookings</td>
+        <td>Text summary answers</td>
+        <td><strong>Feasible on-the-ground cultural circuits</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Time Constraint</strong></td>
+        <td>None (static lists)</td>
+        <td>Unreliable time estimates</td>
+        <td><strong>Strict mathematical feasibility solve</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Data Accuracy</strong></td>
+        <td>Crowdsourced, frequent outdated info</td>
+        <td>Prone to hallucinations and broken URLs</td>
+        <td><strong>100% human-verified ground-truth catalog</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Artisan Access</strong></td>
+        <td>English digital portals only</td>
+        <td>No marketplace connection</td>
+        <td><strong>Vernacular voice listing studio for rural guilds</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Disruption Handling</strong></td>
+        <td>Manual cancellations</td>
+        <td>Start over from scratch</td>
+        <td><strong>1-Click Live Adaptation Loop</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 7 -->
+  <h2>7. Cinematic Video Script Blueprint for Google NotebookLM</h2>
+  <p style="font-size: 8.5pt; color: #5B6B8C; margin-bottom: 6pt;">
+    Use this 4-act narrative blueprint to generate a video voiceover, explainer reel, or podcast episode.
+  </p>
+
+  <div class="script-act">
+    <div class="script-title">Act I: The Paradox (0:00 to 0:45)</div>
+    <div class="script-visual">Visual: Sweeping drone shots of ancient stepwells and handloom weavers, transitioning to crowded hotel lobbies and stranded airport tourists.</div>
+    <div class="script-narrator">
+      "India holds over 3,000 living craft traditions and 100,000 sacred architectural wonders. Yet, over 88% of travel spending is locked inside generic hotel aggregators. Travelers with three or four spare hours find themselves stranded in airport lounges or caught in gridlock traffic, while generational master artisans remain completely invisible."
+    </div>
+  </div>
+
+  <div class="script-act">
+    <div class="script-title">Act II: The Engine (0:45 to 1:45)</div>
+    <div class="script-visual">Visual: The LOKIVA interface opens smoothly. A traveler inputs four hours in Jaipur with family. The 11-signal constraint solver calculates routes in real time.</div>
+    <div class="script-narrator">
+      "Meet LOKIVA: the autonomous cultural experience engine. Instead of selling hotel beds, LOKIVA packages your exact constraints: your remaining hours, your strict budget, and your mobility needs: into feasible, minute-by-minute cultural micro-circuits that actually work in real life."
+    </div>
+  </div>
+
+  <div class="script-act">
+    <div class="script-title">Act III: The Artisan Bridge (1:45 to 2:30)</div>
+    <div class="script-visual">Visual: An artisan speaks in Gujarati; Gemini AI formats the listing. A traveler completes simulated UPI checkout and receives a digital QR admission pass.</div>
+    <div class="script-narrator">
+      "LOKIVA is also a two-sided marketplace. Master artisans speak in their native tongue, and our AI co-pilot creates verified listings in seconds, directing 100% of traveler spend to local hands. And if rain hits? One click adapts your entire route to sheltered indoor heritage."
+    </div>
+  </div>
+
+  <div class="script-act">
+    <div class="script-title">Act IV: Call to Action (2:30 to 3:00)</div>
+    <div class="script-visual">Visual: The pan-India 36-state discovery map illuminates, finishing on the Sandstone Ivory LOKIVA brand display.</div>
+    <div class="script-narrator">
+      "Real Indian cultural experiences, packed around your exact constraints. Welcome to conscious heritage discovery. Welcome to LOKIVA."
+    </div>
+  </div>
+
+</body>
+</html>
