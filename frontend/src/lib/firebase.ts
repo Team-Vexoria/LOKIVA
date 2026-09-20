@@ -41,7 +41,7 @@ if (typeof window !== 'undefined') {
     // Vite only exposes VITE_-prefixed vars. A NEXT_PUBLIC_-prefixed .env.local
     // leaves this silently empty, so say so loudly instead.
     console.warn(
-      '[LOKIVA] Firebase is not configured. Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in frontend/.env.local (VITE_ prefix is required — NEXT_PUBLIC_ is ignored by Vite), then restart the dev server.'
+      '[LOKIVA] Firebase is not configured. Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in frontend/.env.local (VITE_ prefix is required, NEXT_PUBLIC_ is ignored by Vite), then restart the dev server.'
     );
   }
 }

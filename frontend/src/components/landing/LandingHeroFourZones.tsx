@@ -475,7 +475,7 @@ export function LandingHeroFourZones() {
       <div className="absolute left-1/2 top-10 bottom-10 w-px bg-[#5B6B8C]/15 pointer-events-none -translate-x-1/2 z-0 hidden lg:block" />
 
       {/* ==================================================================== */}
-      {/* PANEL 1 — THE MOMENT                                                 */}
+      {/* PANEL 1: THE MOMENT                                                  */}
       {/* ==================================================================== */}
       <motion.section
         initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
@@ -530,7 +530,7 @@ export function LandingHeroFourZones() {
       </motion.section>
 
       {/* ==================================================================== */}
-      {/* PANEL 2 — THE REQUEST (CONFIGURATOR CARD)                            */}
+      {/* PANEL 2: THE REQUEST (CONFIGURATOR CARD)                             */}
       {/* ==================================================================== */}
       <motion.section
         initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -762,7 +762,7 @@ export function LandingHeroFourZones() {
       </motion.section>
 
       {/* ==================================================================== */}
-      {/* PANEL 3 — CAN IT ACTUALLY WORK? (CONSTRAINT-CHECKING SEQUENCE)       */}
+      {/* PANEL 3: CAN IT ACTUALLY WORK? (CONSTRAINT-CHECKING SEQUENCE)        */}
       {/* ==================================================================== */}
       <motion.section
         initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
@@ -776,7 +776,7 @@ export function LandingHeroFourZones() {
             3. CAN IT ACTUALLY WORK?
           </span>
           <p className="text-xs sm:text-sm text-[#5B6B8C] font-sans">
-            We check everything together — not one thing at a time.
+            We check everything together, not one thing at a time.
           </p>
         </div>
 
@@ -815,7 +815,7 @@ export function LandingHeroFourZones() {
       </motion.section>
 
       {/* ==================================================================== */}
-      {/* PANEL 4 — REALISTIC PLAN CREATED (LIVE ITINERARY PREVIEW)            */}
+      {/* PANEL 4: REALISTIC PLAN CREATED (LIVE ITINERARY PREVIEW)             */}
       {/* ==================================================================== */}
       <motion.section
         initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -829,7 +829,7 @@ export function LandingHeroFourZones() {
             4. REALISTIC PLAN CREATED
           </span>
           <p className="text-xs sm:text-sm text-[#5B6B8C] font-sans">
-            Everything fits — perfectly.
+            Everything fits, perfectly.
           </p>
         </div>
 

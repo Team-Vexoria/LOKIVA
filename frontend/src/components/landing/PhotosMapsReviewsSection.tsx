@@ -86,7 +86,7 @@ export function PhotosMapsReviewsSection() {
               </div>
 
               <div
-                className="absolute top-68 left-56 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-[#C1443B] text-[#C1443B] flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-110 transition-transform ring-2 ring-[#C1443B]/30"
+                className="absolute top-68 left-56 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-[#FFC067] text-[#FFC067] flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-110 transition-transform ring-2 ring-[#FFC067]/30"
                 title="Curated Monument"
               >
                 📍
@@ -108,7 +108,7 @@ export function PhotosMapsReviewsSection() {
               <div className="absolute left-3 sm:left-6 top-10 sm:top-14 z-20 w-52 sm:w-60 bg-white rounded-2xl p-2 sm:p-2.5 border border-[#E0D7CB] shadow-2xl transform -rotate-1 hover:rotate-0 transition-transform duration-300">
                 {/* 3D Floating Heart Badge (Mindtrip Signature) */}
                 <div
-                  className="absolute -top-3.5 -right-3.5 w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E63946] to-[#FF6B6B] shadow-lg flex items-center justify-center text-white animate-bounce pointer-events-none"
+                  className="absolute -top-3.5 -right-3.5 w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFC067] to-[#FF9800] shadow-lg flex items-center justify-center text-white animate-bounce pointer-events-none"
                   style={{ animationDuration: '2.8s' }}
                 >
                   <Heart className="w-5 h-5 fill-white" />
@@ -133,7 +133,7 @@ export function PhotosMapsReviewsSection() {
                   <button
                     type="button"
                     onClick={() => navigate('/explore?city=Agra')}
-                    className="w-full py-1 rounded-lg bg-[#FAF4ED] hover:bg-[#F2ECE0] text-[#C1443B] text-[10px] font-heading font-bold border border-[#E8DCCB] transition cursor-pointer"
+                    className="w-full py-1 rounded-lg bg-[#FFF8EE] hover:bg-[#FFEECB] text-[#B45309] text-[10px] font-heading font-bold border border-[#FFC067]/60 transition cursor-pointer"
                   >
                     See Itinerary
                   </button>
@@ -150,8 +150,8 @@ export function PhotosMapsReviewsSection() {
                   />
                   {/* Heart & Checkmark Badge */}
                   <div className="absolute top-2 right-2 flex items-center gap-1">
-                    <span className="w-5 h-5 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center text-[10px] text-[#C1443B]">
-                      <Heart className="w-3 h-3 fill-[#C1443B]" />
+                    <span className="w-5 h-5 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center text-[10px] text-[#FFC067]">
+                      <Heart className="w-3 h-3 fill-[#FFC067]" />
                     </span>
                     <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px]">
                       <Check className="w-3 h-3 stroke-[3]" />
@@ -223,11 +223,11 @@ export function PhotosMapsReviewsSection() {
 
                   <div className="space-y-1">
                     <div className="flex items-center gap-1 text-[10px] font-heading font-bold text-ink">
-                      <ThumbsDown className="w-3 h-3 text-[#C1443B]" />
+                      <ThumbsDown className="w-3 h-3 text-[#FFC067]" />
                       <span>Cons</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-[#FAF0ED] overflow-hidden">
-                      <div className="w-[18%] h-full bg-[#C1443B] rounded-full" />
+                    <div className="w-full h-2 rounded-full bg-[#FFF4E5] overflow-hidden">
+                      <div className="w-[18%] h-full bg-[#FFC067] rounded-full" />
                     </div>
                   </div>
                 </div>

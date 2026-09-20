@@ -185,7 +185,7 @@ export function LokivaMomentsSection({ experiences, selectedCity, className = ''
           </h2>
 
           <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-            See India through local eyes — street encounters, living craft workshops, and generational traditions.
+            See India through local eyes: street encounters, living craft workshops, and generational traditions.
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-# LOKIVA — Setup
+# LOKIVA: Setup
 
 Everything you need to get the full stack (web + solver-api + realtime-api) running locally, plus deployment notes for demo day.
 
@@ -11,9 +11,9 @@ Everything you need to get the full stack (web + solver-api + realtime-api) runn
 | Node.js | 20.x LTS | Frontend + realtime-api |
 | npm | 10.x | Repo uses npm workspaces |
 | Python | 3.11+ | solver-api |
-| pip / venv | — | Isolate solver-api's dependencies |
+| pip / venv |: | Isolate solver-api's dependencies |
 | Firebase CLI | latest | `npm install -g firebase-tools` |
-| Git | any recent | — |
+| Git | any recent |: |
 
 Check versions before starting:
 ```bash
@@ -31,7 +31,7 @@ cd lokiva
 # Frontend + realtime-api (npm workspaces)
 npm install --workspaces
 
-# solver-api — isolated Python environment
+# solver-api: isolated Python environment
 cd services/solver-api
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -43,7 +43,7 @@ cd ../..
 
 ## 3. Environment variables
 
-Copy the example file and fill it in — nothing runs without these.
+Copy the example file and fill it in: nothing runs without these.
 
 ```bash
 cp .env.example .env
@@ -60,10 +60,10 @@ FIREBASE_STORAGE_BUCKET=
 FIREBASE_MESSAGING_SENDER_ID=
 FIREBASE_APP_ID=
 
-# Maps / Directions — used for real travel time, not straight-line distance
+# Maps / Directions: used for real travel time, not straight-line distance
 MAPS_API_KEY=
 
-# LLM provider — free-text parsing, listing generation, explanation fallback
+# LLM provider: free-text parsing, listing generation, explanation fallback
 LLM_API_KEY=
 LLM_MODEL=                        # e.g. the model string for whichever provider you're using
 
@@ -75,12 +75,12 @@ SOLVER_API_URL=http://localhost:8000
 REALTIME_API_PORT=4000
 REALTIME_API_URL=http://localhost:4000
 
-# Frontend (Vite — must be prefixed VITE_ to be exposed to the client)
+# Frontend (Vite: must be prefixed VITE_ to be exposed to the client)
 VITE_SOLVER_API_URL=http://localhost:8000
 VITE_REALTIME_API_URL=http://localhost:4000
 ```
 
-Get the Firebase values from **Project Settings → General → Your apps** in the Firebase console. Get a Maps API key from Google Cloud Console with the Directions API and Places API enabled — both are used, not just one.
+Get the Firebase values from **Project Settings → General → Your apps** in the Firebase console. Get a Maps API key from Google Cloud Console with the Directions API and Places API enabled: both are used, not just one.
 
 Never commit `.env`. It's already in `.gitignore`; double-check before your first commit if you cloned before that was set up.
 
@@ -96,7 +96,7 @@ source .venv/bin/activate
 python scripts/seed_experiences.py
 ```
 
-This populates Firestore with India-relevant sample listings across categories (food, culture, adventure, family) with full fields — price, duration, hours, accessibility tags — so the packer has something real to work against from day one. Don't build UI against mock JSON in the frontend once this exists; point everything at the real seeded data.
+This populates Firestore with India-relevant sample listings across categories (food, culture, adventure, family) with full fields: price, duration, hours, accessibility tags: so the packer has something real to work against from day one. Don't build UI against mock JSON in the frontend once this exists; point everything at the real seeded data.
 
 ---
 
@@ -125,7 +125,7 @@ cd services/solver-api && source .venv/bin/activate && uvicorn main:app --reload
 curl http://localhost:8000/health      # solver-api
 curl http://localhost:4000/health      # realtime-api
 ```
-Both should return `{"status": "ok"}`. If either doesn't, check the env vars for that service first — most local failures trace back to a missing key, not a code issue.
+Both should return `{"status": "ok"}`. If either doesn't, check the env vars for that service first: most local failures trace back to a missing key, not a code issue.
 
 ---
 
@@ -134,10 +134,10 @@ Both should return `{"status": "ok"}`. If either doesn't, check the env vars for
 | Symptom | Likely cause |
 |---|---|
 | Frontend loads but map is blank | `VITE_MAPS_API_KEY` missing or Places/Directions API not enabled on that key in Google Cloud Console |
-| Solver returns `infeasible` for every request | Seed script wasn't run, or ran against the wrong Firestore project — check `FIREBASE_PROJECT_ID` matches the console |
-| Re-plan doesn't trigger in the UI | `realtime-api` socket connection failing — check `VITE_REALTIME_API_URL` matches the port `realtime-api` actually started on |
-| `pip install` fails on solver-api | Python version below 3.11 — some solver dependencies need the newer typing features |
-| Provider AI co-pilot returns empty listings | `LLM_API_KEY` invalid or rate-limited — check the provider's dashboard, not just the key format |
+| Solver returns `infeasible` for every request | Seed script wasn't run, or ran against the wrong Firestore project: check `FIREBASE_PROJECT_ID` matches the console |
+| Re-plan doesn't trigger in the UI | `realtime-api` socket connection failing: check `VITE_REALTIME_API_URL` matches the port `realtime-api` actually started on |
+| `pip install` fails on solver-api | Python version below 3.11: some solver dependencies need the newer typing features |
+| Provider AI co-pilot returns empty listings | `LLM_API_KEY` invalid or rate-limited: check the provider's dashboard, not just the key format |
 
 ---
 
@@ -149,6 +149,6 @@ Both should return `{"status": "ok"}`. If either doesn't, check the env vars for
 
 **realtime-api** → same platform as solver-api for simplicity. Start command: `node index.js` (or `npm start` from that workspace). Make sure the deployed `VITE_REALTIME_API_URL` in the frontend's Vercel env points at this service's live URL, not `localhost`.
 
-**Before you walk into the room:** run the full demo scenario (Sharma family — 2 hrs, ₹1,500, Bandra, wheelchair access, "it just started raining") against the *deployed* URLs, not localhost. A backend that works locally and silently fails on Render because of a missing prod env var is the single most common last-minute failure — check this the night before, not five minutes before your slot.
+**Before you walk into the room:** run the full demo scenario (Sharma family: 2 hrs, ₹1,500, Bandra, wheelchair access, "it just started raining") against the *deployed* URLs, not localhost. A backend that works locally and silently fails on Render because of a missing prod env var is the single most common last-minute failure: check this the night before, not five minutes before your slot.
 
 **Backup.** Per the pre-submission checklist in `architecture.md`, have a screen recording of the full demo ready regardless of how confident you are in the live deploy.

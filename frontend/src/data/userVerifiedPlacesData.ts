@@ -595,7 +595,7 @@ export const ALMORA_POPULAR_DESTINATIONS: Experience[] = [
     id: 1404,
     title: 'Zero Point • Binsar Wildlife Sanctuary',
     tagline: 'Highest vantage point in Binsar with 300-km sweeping vistas of Kedarnath, Trishul, and Nanda Devi',
-    description: 'Nestled within dense oak and rhododendron forests of Binsar Wildlife Sanctuary at 7,900 feet, Zero Point offers the grandest panoramic spectacle in Uttarakhand — a majestic 300-kilometer arc of Himalayan giants including Chaukhamba, Trishul, Nanda Devi, and Panchachuli.',
+    description: 'Nestled within dense oak and rhododendron forests of Binsar Wildlife Sanctuary at 7,900 feet, Zero Point offers the grandest panoramic spectacle in Uttarakhand, a majestic 300-kilometer arc of Himalayan giants including Chaukhamba, Trishul, Nanda Devi, and Panchachuli.',
     category: 'Nature & Wildlife',
     city: 'Almora',
     state: 'Uttarakhand',

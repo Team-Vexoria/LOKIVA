@@ -1,4 +1,4 @@
-# LOKIVA — Database Schema & Data Models
+# LOKIVA: Database Schema & Data Models
 
 LOKIVA uses SQLAlchemy ORM supporting SQLite (default local zero-setup) and PostgreSQL + PostGIS + pgvector.
 

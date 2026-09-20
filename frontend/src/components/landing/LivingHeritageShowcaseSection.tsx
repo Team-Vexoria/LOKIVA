@@ -32,16 +32,16 @@ export function LivingHeritageShowcaseSection() {
 
   return (
     <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 select-none">
-      <div className="relative rounded-[36px] sm:rounded-[44px] overflow-hidden bg-gradient-to-br from-[#F5D8CE] via-[#FCE6DD] to-[#F8DACF] border-2 border-[#E8C5B8] p-8 sm:p-12 lg:p-16 shadow-sm">
-        {/* Soft Background Cloud & Step Silhouettes (Matching Image 2) */}
-        <div className="absolute -left-16 -bottom-16 w-80 h-80 rounded-full bg-white/40 blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 bottom-0 w-96 h-40 bg-gradient-to-t from-white/30 to-transparent blur-2xl pointer-events-none" />
+      <div className="relative rounded-[36px] sm:rounded-[44px] overflow-hidden bg-gradient-to-br from-[#FFF5E6] via-[#FFF9F2] to-[#FFF1DE] border-2 border-[#FFC067]/50 p-8 sm:p-12 lg:p-16 shadow-sm">
+        {/* Soft Background Cloud & Step Silhouettes */}
+        <div className="absolute -left-16 -bottom-16 w-80 h-80 rounded-full bg-white/60 blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 w-96 h-40 bg-gradient-to-t from-white/50 to-transparent blur-2xl pointer-events-none" />
 
         {/* 3D Stepped Pedestal Illustration in background */}
         <div className="absolute left-12 sm:left-24 bottom-0 pointer-events-none opacity-40 hidden sm:block">
-          <div className="w-32 h-6 bg-[#EBBCAE] rounded-t-sm" />
-          <div className="w-44 h-6 bg-[#E5B2A3] rounded-t-sm -ml-6" />
-          <div className="w-56 h-6 bg-[#DFA999] rounded-t-sm -ml-6" />
+          <div className="w-32 h-6 bg-[#FFC067]/40 rounded-t-sm" />
+          <div className="w-44 h-6 bg-[#FFC067]/70 rounded-t-sm -ml-6" />
+          <div className="w-56 h-6 bg-[#FFC067] rounded-t-sm -ml-6" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
@@ -55,7 +55,7 @@ export function LivingHeritageShowcaseSection() {
               Preserve.
             </h2>
 
-            <p className="text-sm sm:text-base text-[#4D3830] font-sans font-medium leading-relaxed max-w-md pt-1">
+            <p className="text-sm sm:text-base text-[#3D3325] font-sans font-medium leading-relaxed max-w-md pt-1">
               Love traveling and experiencing authentic living culture? Explore centuries-old artisan guilds, sacred stepwells, and unscripted heritage circuits.
             </p>
 
@@ -63,7 +63,7 @@ export function LivingHeritageShowcaseSection() {
               <button
                 type="button"
                 onClick={() => navigate('/explore')}
-                className="px-8 py-4 rounded-full bg-[#12213B] hover:bg-black text-white font-heading font-bold text-sm tracking-wide transition-all shadow-xl hover:shadow-2xl flex items-center gap-3 cursor-pointer active:scale-98 group"
+                className="px-8 py-4 rounded-full bg-[#12213B] hover:bg-[#FFC067] hover:text-[#12213B] text-white font-heading font-extrabold text-sm tracking-wide transition-all shadow-xl hover:shadow-2xl flex items-center gap-3 cursor-pointer active:scale-98 group"
               >
                 <span>Explore Living Catalog</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -85,7 +85,7 @@ export function LivingHeritageShowcaseSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
                 <div className="absolute bottom-3 inset-x-3 text-left text-white space-y-0.5">
-                  <span className="text-[9px] font-mono text-[#F0A63B] font-bold block truncate">
+                  <span className="text-[9px] font-mono text-[#FFC067] font-bold block truncate">
                     {card.location}
                   </span>
                   <h4 className="font-heading font-bold text-xs sm:text-sm text-white leading-tight line-clamp-1">

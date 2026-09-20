@@ -456,14 +456,14 @@ npm run dev
 ## 🎤 11. Hackathon Finale Pitch Script & 3-Minute Live Demo
 
 ### Minute 0:00 – 0:45 | The Hook & The Problem
-> *"Good morning, respected judges. India possesses a \$45 Billion experiential heritage economy—yet 88% of travel spending is locked inside generic hotel aggregators and commercial bus tours.*  
+> *"Good morning, respected judges. India possesses a \$45 Billion experiential heritage economy-yet 88% of travel spending is locked inside generic hotel aggregators and commercial bus tours.*  
 > *Right now, if you land in Varanasi with 3 hours before your evening flight, or visit Jaipur with your 75-year-old grandmother who needs step-free access, existing platforms give you nothing except a crowded monument ticket.*  
 > *Meanwhile, the 400-year-old silk handloom weaver two streets away has zero marketing budget, cannot speak English, and remains completely invisible. This is the cultural discovery paradox LOKIVA solves."*
 
 ### Minute 0:45 – 1:45 | The Core Innovations (Live Demo)
 > *(Action: Display Editorial Landing Page with Desktop and iPhone 16 Pro frames)*  
 > *"LOKIVA is powered by three unified breakthroughs:*  
-> *First: Our **Dynamic Spatio-Temporal Constraint Solver** powered by Gemini 1.5. Watch as I enter '3 hours remaining, ₹500 budget, Wheelchair-friendly'. In 400 milliseconds, LOKIVA calculates a minute-by-minute itinerary that factors in haversine walking friction, opening hours, and sacred etiquette—with zero hallucinations.*  
+> *First: Our **Dynamic Spatio-Temporal Constraint Solver** powered by Gemini 1.5. Watch as I enter '3 hours remaining, ₹500 budget, Wheelchair-friendly'. In 400 milliseconds, LOKIVA calculates a minute-by-minute itinerary that factors in haversine walking friction, opening hours, and sacred etiquette-with zero hallucinations.*  
 > *(Action: Open Artisan Console and trigger Vernacular Audio)*  
 > *Second: Our **Artisan Vernacular Voice Bridge**. A master potter in Khurja speaks raw Hindi into our voice studio. Gemini 1.5 transcribes the dialect, synthesizes a world-class listing, and enables instant WhatsApp connect.*  
 > *(Action: Click Book Workshop and launch UPI Simulation)*  
@@ -476,7 +476,7 @@ npm run dev
 
 ### Minute 2:30 – 3:00 | Business Viability & Closing
 > *"LOKIVA monetizes through a modest 7% marketplace commission on artisan masterclasses, premium cultural micro-pass bundles, and state tourism board integrations.*  
-> *LOKIVA does not just modernize tourism—it preserves living heritage and brings direct economic prosperity to India's rural creators. Thank you, and we welcome your questions."*
+> *LOKIVA does not just modernize tourism-it preserves living heritage and brings direct economic prosperity to India's rural creators. Thank you, and we welcome your questions."*
 
 ---
 

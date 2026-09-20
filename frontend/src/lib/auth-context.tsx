@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /** Trade a verified Firebase ID token for a backend session JWT. The server
-   *  derives identity from the token itself — we never send an email. */
+   *  derives identity from the token itself: we never send an email. */
   const exchangeFirebaseToken = async (idToken: string, role: Role = 'traveler', customName?: string) => {
     const res = await fetch(`${API_BASE}/auth/firebase-login`, {
       method: 'POST',

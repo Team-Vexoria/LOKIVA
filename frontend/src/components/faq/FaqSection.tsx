@@ -19,7 +19,7 @@ const CORE_FAQS: FaqItem[] = [
     badge: 'Core Engine',
     question: 'What is LOKIVA and how does the constraint solver work?',
     answer:
-      'LOKIVA is an intelligent local discovery engine that packages realistic itineraries around your available hours, location, and budget ceiling. It evaluates 11 real-world signals simultaneously — including live auto traffic isochrones, venue opening hours, and walking fatigue.',
+      'LOKIVA is an intelligent local discovery engine that packages realistic itineraries around your available hours, location, and budget ceiling. It evaluates 11 real-world signals simultaneously, including live auto traffic isochrones, venue opening hours, and walking fatigue.',
     tags: ['11-Signal Solver', 'Real Travel Buffers', 'Hard Budget Ceiling'],
   },
   {
@@ -37,7 +37,7 @@ const CORE_FAQS: FaqItem[] = [
     badge: 'Live Re-Plan',
     question: 'What happens if rain hits or an experience becomes unavailable?',
     answer:
-      'LOKIVA includes a 1-click Live Adaptation Loop. If monsoon rain hits or a venue closes unexpectedly, the engine dynamically re-solves your plan — swapping outdoor stops for sheltered indoor artisan ateliers while preserving your timings.',
+      'LOKIVA includes a 1-click Live Adaptation Loop. If monsoon rain hits or a venue closes unexpectedly, the engine dynamically re-solves your plan, swapping outdoor stops for sheltered indoor artisan ateliers while preserving your timings.',
     tags: ['1-Click Weather Re-Solve', 'Sheltered Indoor Swaps', 'Timings Preserved'],
   },
   {

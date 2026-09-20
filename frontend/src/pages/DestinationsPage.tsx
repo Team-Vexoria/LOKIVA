@@ -465,7 +465,7 @@ export function DestinationsPage() {
             </h1>
 
             <p className="text-xs sm:text-base text-dusk-600 font-sans leading-relaxed max-w-2xl">
-              Journey through 36 living states and territories — hand-stamped craft guilds, mountain high passes, sacred river steps, and coastal spice ports.
+              Journey through 36 living states and territories: hand-stamped craft guilds, mountain high passes, sacred river steps, and coastal spice ports.
             </p>
 
             {/* Quick Regional Stats Bar */}

@@ -15,7 +15,6 @@ import { api } from '../lib/api';
 import { Experience } from '../types';
 import {
   ArrowRight,
-  CheckCircle2,
 } from 'lucide-react';
 
 import { USER_LANDING_PLACES } from '../data/userVerifiedPlacesData';
@@ -158,7 +157,7 @@ export function HomePage() {
       <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-mono font-black uppercase tracking-wider text-[#C1443B]">
+            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
               VERIFIED GROUND-TRUTH CATALOG
             </span>
             <h2 className="text-2xl sm:text-4xl font-display font-black text-ink tracking-tight">
@@ -186,8 +185,8 @@ export function HomePage() {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-2 rounded-lg text-xs font-mono font-bold whitespace-nowrap transition cursor-pointer ${
                 activeCategory === cat
-                  ? 'bg-[#12213B] text-white shadow-sm'
-                  : 'bg-white text-dusk-700 hover:text-ink border-2 border-[#DDD7CC]'
+                  ? 'bg-[#FFC067] text-[#12213B] font-extrabold shadow-sm shadow-[#FFC067]/35 border border-[#E5A84B]/60'
+                  : 'bg-white text-dusk-700 hover:text-ink border-2 border-[#DDD7CC] hover:border-[#FFC067]'
               }`}
             >
               {cat}
@@ -218,55 +217,11 @@ export function HomePage() {
         <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
       </section>
 
-      {/* 6. FREQUENTLY ASKED QUESTIONS */}
-      <FaqSection />
-
-      {/* 7. THE 11-SIGNAL CONTEXT ENGINE MANIFESTO */}
-      <section className="reveal-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border-2 border-[#D8CFC0] p-6 sm:p-10 lg:p-14 space-y-6 sm:space-y-8 shadow-sm">
-          <div className="max-w-2xl space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C1443B]" />
-              <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                Algorithmic Guarantees
-              </span>
-            </div>
-            <h3 className="text-2xl sm:text-4xl font-display font-black text-ink tracking-tight pt-1">
-              <SplitWords text="The 11 Context Signals Checked on Every Solve" />
-            </h3>
-            <p className="text-xs sm:text-sm text-dusk-700 leading-relaxed font-medium">
-              Every competitor ranks single items in isolation. LOKIVA evaluates all 11 signals simultaneously to guarantee your cultural plan works in real life.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs font-mono">
-            {[
-              { label: 'Time Window', desc: 'Exact hours before train or flight' },
-              { label: 'Real Travel Time', desc: 'Pedestrian and auto-rickshaw buffers' },
-              { label: 'Hard Budget Ceiling', desc: 'Strict ceiling, not an average sort' },
-              { label: 'Hard Accessibility', desc: 'Step-free and wheelchair verified' },
-              { label: 'Live Opening Hours', desc: 'Vetted slot fits inside your gap' },
-              { label: 'Cultural Etiquette', desc: 'Dress codes and footwear rules' },
-              { label: 'Explainability', desc: 'Honest "why this fits" sentence' },
-              { label: 'Offline Resilience', desc: 'Functions when venue Wi-Fi drops' },
-            ].map((sig, idx) => (
-              <div
-                key={idx}
-                className="reveal-stagger-item p-4 bg-[#FAF8F5] rounded-xl border border-[#E5DFD5] space-y-1"
-              >
-                <div className="flex items-center gap-1.5 text-ink font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{sig.label}</span>
-                </div>
-                <p className="text-[11px] text-dusk-600 leading-snug font-sans font-medium">{sig.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 8. TAG US ON YOUR NEXT TRIP (COMMUNITY TRAVEL MOMENTS & SOCIAL HUB) */}
+      {/* 6. TAG US ON YOUR NEXT TRIP (COMMUNITY TRAVEL MOMENTS & SOCIAL HUB) */}
       <TagUsSection />
+
+      {/* 7. FREQUENTLY ASKED QUESTIONS (ABOVE FOOTER) */}
+      <FaqSection />
     </div>
   );
 }

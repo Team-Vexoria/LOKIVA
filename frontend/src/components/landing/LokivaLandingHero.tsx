@@ -24,7 +24,6 @@ import {
 } from '../ui/HandDrawnAnnotations';
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
 import { DayPlanResponse } from '../../types';
-import { DeviceMockupSection } from './DeviceMockupSection';
 
 export function LokivaLandingHero() {
   const navigate = useNavigate();
@@ -116,7 +115,7 @@ export function LokivaLandingHero() {
             <br />
             <span className="relative inline-block mt-1">
               <span>Packed Around Your </span>
-              <span className="relative inline-block text-[#C1443B]">
+              <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C1443B] via-[#E25C34] to-[#F59E0B]">
                 Exact Constraints.
                 <SquiggleUnderline className="absolute -bottom-2 sm:-bottom-3 left-0 w-full h-4 sm:h-5" />
               </span>
@@ -138,7 +137,7 @@ export function LokivaLandingHero() {
         >
           <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
           <span>Curated Across</span>
-          <span className="font-mono text-[#12213B] font-extrabold text-sm">36 / 36</span>
+          <span className="font-mono text-[#12213B] font-extrabold text-sm">36</span>
           <span>States & Union Territories</span>
         </motion.div>
 
@@ -152,28 +151,28 @@ export function LokivaLandingHero() {
           <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
             {/* Hand-drawn arrow curving toward button */}
             <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
-              <span className="font-display italic text-xs font-semibold text-[#5B6B8C] transform -rotate-6 whitespace-nowrap">
+              <span className="font-display italic text-xs font-bold text-[#C1443B] transform -rotate-6 whitespace-nowrap">
                 Takes 60s
               </span>
-              <HandDrawnArrow className="w-11 h-6 -mr-1" />
+              <HandDrawnArrow className="w-11 h-6 -mr-1 text-[#C1443B]" />
             </div>
 
             <button
               type="button"
               onClick={() => setIsOnboardingOpen(true)}
-              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#C1443B] hover:bg-[#A8372F] text-white font-heading text-sm sm:text-base font-bold tracking-wide transition-all duration-200 shadow-lg shadow-[#C1443B]/25 hover:shadow-xl hover:shadow-[#C1443B]/35 border border-[#9E2E27]/40 flex items-center gap-3 active:scale-98 cursor-pointer group"
+              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl bg-[#FFC067] hover:bg-[#F5B24E] text-[#12213B] font-heading text-sm sm:text-base font-extrabold tracking-wide transition-all duration-200 shadow-lg shadow-[#FFC067]/35 hover:shadow-xl hover:shadow-[#FFC067]/45 border border-[#E5A84B]/60 flex items-center gap-3 active:scale-98 cursor-pointer group"
             >
               <span>{solvedPlan ? 'Adjust Your Micro-Circuit' : 'Plan Instant Micro-Itinerary'}</span>
-              <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-[#12213B] group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => navigate('/explore')}
-            className="w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-[#FAF8F5] text-ink font-heading text-sm font-bold tracking-wide border border-[#DDD7CC] transition shadow-xs flex items-center justify-center gap-2 hover:border-ink cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-2xl bg-white hover:bg-[#FFF9EE] text-ink font-heading text-sm font-bold tracking-wide border border-[#DDD7CC] hover:border-[#FFC067] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer group"
           >
-            <Compass className="w-4 h-4 text-teal-600" />
+            <Compass className="w-4 h-4 text-[#C1443B] group-hover:scale-110 transition-transform" />
             <span>Explore 36 States</span>
           </button>
         </motion.div>
@@ -276,9 +275,6 @@ export function LokivaLandingHero() {
           )}
         </AnimatePresence>
       </div>
-
-      {/* High-Resolution Layered Device Showcase (macOS Safari + iPhone 16 Pro) */}
-      <DeviceMockupSection />
     </section>
   );
 }

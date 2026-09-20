@@ -111,7 +111,7 @@ export function Navbar() {
                 {isActive(to) && (
                   <motion.span
                     layoutId="activeNavIndicator"
-                    className="absolute -bottom-0.5 left-2 right-2 h-0.5 bg-marigold rounded-full"
+                    className="absolute -bottom-0.5 left-2 right-2 h-0.5 bg-[#FFC067] rounded-full"
                   />
                 )}
               </Link>

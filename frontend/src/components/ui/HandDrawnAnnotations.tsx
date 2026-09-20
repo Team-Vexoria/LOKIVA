@@ -1,8 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// Organic hand-drawn marker underline in warm Marigold (#F0A63B)
-export function SquiggleUnderline({ className = '' }: { className?: string }) {
+// Organic hand-drawn marker underline in warm Amber and Saffron
+export function SquiggleUnderline({
+  className = '',
+  stroke = '#FFC067',
+  secondaryStroke = '#E25C34',
+}: {
+  className?: string;
+  stroke?: string;
+  secondaryStroke?: string;
+}) {
   return (
     <svg
       viewBox="0 0 280 24"
@@ -13,7 +21,7 @@ export function SquiggleUnderline({ className = '' }: { className?: string }) {
     >
       <motion.path
         d="M 3 14 C 45 4, 85 20, 130 11 C 175 3, 215 18, 255 10 C 265 8, 275 12, 277 13"
-        stroke="#F0A63B"
+        stroke={stroke}
         strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -23,7 +31,7 @@ export function SquiggleUnderline({ className = '' }: { className?: string }) {
       />
       <motion.path
         d="M 12 18 C 55 11, 100 21, 148 15 C 195 9, 235 19, 270 14"
-        stroke="#F4BA44"
+        stroke={secondaryStroke}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -49,7 +57,7 @@ export function HandDrawnArrow({
       viewBox="0 0 56 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`text-[#F0A63B] pointer-events-none overflow-visible ${className}`}
+      className={`text-[#C1443B] pointer-events-none overflow-visible ${className}`}
     >
       {/* Curved stroke swooping toward target button */}
       <path
@@ -84,7 +92,7 @@ export function HandDrawnCircle({ className = '' }: { className?: string }) {
     >
       <motion.path
         d="M 8 26 C 6 10, 40 4, 80 5 C 110 6, 118 18, 114 34 C 110 46, 75 48, 30 46 C 12 45, 4 34, 14 18"
-        stroke="#F0A63B"
+        stroke="#FFC067"
         strokeWidth="2"
         strokeLinecap="round"
         initial={{ pathLength: 0 }}
@@ -104,19 +112,19 @@ export function HandDrawnSparkle({ className = '' }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`text-[#F0A63B] pointer-events-none ${className}`}
+      className={`text-[#C1443B] pointer-events-none ${className}`}
     >
       <path
-        d="M 12 2 Q 13 9 20 12 Q 13 15 12 22 Q 11 15 4 12 Q 11 9 12 2 Z"
+        d="M 12 2 L 13.5 9.5 L 21 11 L 13.5 12.5 L 12 20 L 10.5 12.5 L 3 11 L 10.5 9.5 Z"
         fill="currentColor"
       />
     </svg>
   );
 }
 
-// Hand-drawn sketchy stamp badge (organic single-stroke outline, no generic dashed pill)
+// Hand-drawn sketchy stamp badge (organic tilted rhombus outline)
 export function StampBadge({
-  text = 'VERIFIED FEASIBLE',
+  text = 'PAN-INDIA CULTURAL DISCOVERY ENGINE',
   className = '',
 }: {
   text?: string;
@@ -124,7 +132,7 @@ export function StampBadge({
 }) {
   return (
     <div
-      className={`relative inline-flex items-center gap-1.5 px-3.5 py-1 text-[#1F7A6C] font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest transform -rotate-1 select-none ${className}`}
+      className={`relative inline-flex items-center gap-1.5 px-3.5 py-1 text-[#C1443B] font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest transform -rotate-1 select-none ${className}`}
     >
       {/* Hand-drawn sketchy outline with organic wobble and imperfect corners */}
       <svg
@@ -136,7 +144,7 @@ export function StampBadge({
       >
         <path
           d="M 6 4 C 65 2, 175 3, 234 5 C 236 13, 235 23, 233 30 C 175 32, 65 31, 6 29 C 4 21, 5 11, 6 4 Z"
-          stroke="#1F7A6C"
+          stroke="#C1443B"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -144,13 +152,13 @@ export function StampBadge({
         />
         <path
           d="M 12 31 C 80 30, 160 32, 230 29"
-          stroke="#1F7A6C"
-          strokeWidth="1"
+          stroke="#FFC067"
+          strokeWidth="1.2"
           strokeLinecap="round"
-          className="opacity-45"
+          className="opacity-70"
         />
       </svg>
-      <span className="text-xs text-[#F0A63B] relative z-10">✦</span>
+      <span className="text-xs text-[#FFC067] relative z-10">✦</span>
       <span className="relative z-10">{text}</span>
     </div>
   );

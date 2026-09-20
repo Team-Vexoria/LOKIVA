@@ -878,7 +878,7 @@ DAILY EXECUTION SPRINT TIMELINE
 ### [0:45 – 1:45] The 3 Core Innovations (Live Demo)
 - **Action:** Point to the large projector showing the **Editorial Landing Page** with live macOS and iPhone 16 Pro device mockups.
 - **Speaker:** *"LOKIVA is built on three production breakthroughs:*  
-  1. *First: Our **Dynamic Spatio-Temporal Constraint Solver** powered by Gemini 1.5. Watch as I enter '3 hours remaining, ₹500 budget, Wheelchair-friendly'. In 400 milliseconds, LOKIVA calculates a minute-by-minute itinerary factoring in haversine friction, opening schedules, and sacred etiquette—with zero hallucinations.*  
+  1. *First: Our **Dynamic Spatio-Temporal Constraint Solver** powered by Gemini 1.5. Watch as I enter '3 hours remaining, ₹500 budget, Wheelchair-friendly'. In 400 milliseconds, LOKIVA calculates a minute-by-minute itinerary factoring in haversine friction, opening schedules, and sacred etiquette-with zero hallucinations.*  
   2. *Second: Our **Artisan Vernacular Voice Bridge**. A master potter in Khurja speaks raw Hindi into our voice studio. Gemini 1.5 transcribes the dialect, synthesizes a world-class listing, and enables direct WhatsApp connection.*  
   3. *Third: **Transactional Realism**. We generate an instant dynamic UPI QR for PhonePe/GPay, and issue this verifiable cryptographic digital admission pass."*
 
@@ -889,7 +889,7 @@ DAILY EXECUTION SPRINT TIMELINE
 
 ### [2:30 – 3:00] Business Model & Closing
 - **Speaker:** *"LOKIVA monetizes through a modest 7% commission on artisan masterclasses, premium micro-pass bundles, and state tourism board integrations.  
-  LOKIVA does not just modernize tourism—it preserves living Indian heritage and brings direct economic prosperity to grassroots creators. Thank you, and we welcome your questions."*
+  LOKIVA does not just modernize tourism-it preserves living Indian heritage and brings direct economic prosperity to grassroots creators. Thank you, and we welcome your questions."*
 
 ---
 

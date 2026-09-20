@@ -50,7 +50,7 @@ export function DayCardTimeline({
             <span className="px-2.5 py-0.5 bg-ink text-paper rounded-md">
               DAY {day.dayNumber}
             </span>
-            <span>—</span>
+            <span className="text-dusk-400">·</span>
             <span>{day.date}</span>
             <span className="text-dusk-400">|</span>
             <span>{day.dayOfWeek}</span>
