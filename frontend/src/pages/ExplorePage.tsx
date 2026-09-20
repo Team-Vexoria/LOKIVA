@@ -21,28 +21,15 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { USER_CURATED_PLACES } from '../data/userVerifiedPlacesData';
-
-const ENCLAVES = [
-  { name: 'Varanasi', label: 'Varanasi' },
-  { name: 'Jaipur', label: 'Jaipur' },
-  { name: 'Mumbai', label: 'Mumbai' },
-  { name: 'Delhi', label: 'Delhi' },
-  { name: 'Amritsar', label: 'Amritsar' },
-  { name: 'Agra', label: 'Agra' },
-  { name: 'Hyderabad', label: 'Hyderabad' },
-  { name: 'Udaipur', label: 'Udaipur' },
-  { name: 'Almora', label: 'Almora' },
-];
+import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST } from '../data/places';
 
 const THEMATIC_PERSPECTIVES = [
   { id: '', label: 'All Traditions' },
-  { id: 'Art & Craft', label: 'Artisans & Guilds' },
-  { id: 'Food & Culinary', label: 'Culinary Heritage' },
-  { id: 'Heritage & History', label: 'Sacred Sites & Stepwells' },
-  { id: 'Music & Dance', label: 'Music & Folklore' },
-  { id: 'Nature & Wildlife', label: 'Wilderness & Terroir' },
-  { id: 'Wellness & Spiritual', label: 'Spiritual & Contemplative' },
-  { id: 'Local Markets', label: 'Bazaars & Flea Walks' },
+  { id: 'Food & Culinary', label: 'Street Food & Iconic Eateries' },
+  { id: 'Art & Craft', label: 'Artisan Guilds & Workshops' },
+  { id: 'Local Walks', label: 'Local Walks & Bazaars' },
+  { id: 'Nature & Wildlife', label: 'Nature & Wilderness' },
+  { id: 'Heritage & History', label: 'Living Heritage & Culture' },
 ];
 
 export function ExplorePage() {
@@ -57,6 +44,8 @@ export function ExplorePage() {
   const [experiences, setExperiences] = useState<Experience[]>(USER_CURATED_PLACES);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [locationInput, setLocationInput] = useState(initialLocation);
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [maxPrice, setMaxPrice] = useState(initialBudget);
   const [wheelchairOnly, setWheelchairOnly] = useState(initialWheelchair);
@@ -193,19 +182,46 @@ export function ExplorePage() {
     setLowWalkingOnly(walking);
   }, [searchParams]);
 
+  const currentCitiesList = React.useMemo(() => {
+    if (!selectedState) return [];
+    const found = INDIAN_STATES_AND_CITIES.find((s) => s.state === selectedState);
+    return found ? found.cities : [];
+  }, [selectedState]);
+
+  const handleStateSelect = (stateName: string) => {
+    setSelectedState(stateName);
+    setSelectedCity('');
+    setLocationInput(stateName);
+    fetchExperiences(stateName, searchQuery, selectedCategory);
+  };
+
+  const handleCitySelect = (cityName: string) => {
+    setSelectedCity(cityName);
+    setLocationInput(cityName);
+    fetchExperiences(cityName, searchQuery, selectedCategory);
+  };
+
+  const handleSelectPopularCity = (city: string) => {
+    const stateObj = INDIAN_STATES_AND_CITIES.find((s) => s.cities.includes(city));
+    if (stateObj) {
+      setSelectedState(stateObj.state);
+      setSelectedCity(city);
+    } else {
+      setSelectedCity(city);
+    }
+    setLocationInput(city);
+    fetchExperiences(city, searchQuery, selectedCategory);
+  };
+
   // Form submit: immediate instant query (no debounce wait)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchExperiences(locationInput, searchQuery, selectedCategory);
   };
 
-  // Instant enclave shortcut click
-  const handleSelectEnclave = (enclaveName: string) => {
-    setLocationInput(enclaveName);
-    fetchExperiences(enclaveName, searchQuery, selectedCategory);
-  };
-
   const clearAllFilters = () => {
+    setSelectedState('');
+    setSelectedCity('');
     setWheelchairOnly(false);
     setLowWalkingOnly(false);
     setRainSafeOnly(false);
@@ -218,6 +234,7 @@ export function ExplorePage() {
 
   // Curator's Spotlight: Pick the first experience
   const spotlightExperience = experiences.length > 0 ? experiences[0] : null;
+  const activeCity = selectedCity || (POPULAR_CITIES_LIST.find((c) => c.toLowerCase() === locationInput.toLowerCase()) || (locationInput.length > 2 ? locationInput : ''));
 
   return (
     <div className="relative min-h-screen bg-paper text-ink selection:bg-marigold selection:text-ink pt-16 sm:pt-18 pb-16 overflow-hidden">
@@ -266,187 +283,190 @@ export function ExplorePage() {
 
       {/* 1. EDITORIAL MASTHEAD (Seamlessly integrated with bg-paper) */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-4 sm:pt-2 sm:pb-5">
-        <div className="max-w-2xl space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-clay font-bold">
-            <Compass className="w-3.5 h-3.5" />
-            <span>Lokiva Cultural Atlas & Field Guide</span>
+        <div className="max-w-3xl space-y-2.5">
+          <div className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-[#C1443B] font-bold">
+            <Compass className="w-3.5 h-3.5 text-[#C1443B]" />
+            <span>National Heritage & Cultural Registry (5,000+ Verified Places)</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-display font-bold text-ink tracking-tight leading-tight">
-            Explore Living Traditions
+            Explore Curated Cultural Catalog
           </h1>
           <p className="text-sm sm:text-base text-dusk font-normal leading-relaxed">
-            A curated field archive of artisan guilds, heritage sanctuaries, oral lineages, and culinary masters across India.
+            Discover street food havens, master artisan guilds, sacred steps, and historic walks across all 36 States & Union Territories of India.
           </p>
         </div>
       </div>
 
       {/* 2. UNIFIED DISCOVERY BAR (Natural flow, NOT sticky, seamless paper card) */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-0 mb-5">
-        <div className="bg-paper-100/90 border border-paper-300 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
-          {/* Main Search Inputs Row */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5"
-          >
-            {/* Location Query */}
-            <div className="relative flex-1">
-              <MapPin className="w-4 h-4 text-clay absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
-                placeholder="Region, town, or heritage enclave (e.g. Kochi, Jaipur, Almora)..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-paper-300 focus:border-ink rounded-xl text-xs sm:text-sm text-ink placeholder-dusk-400 focus:outline-none transition font-sans shadow-2xs"
-              />
-            </div>
-
-            {/* Keyword Query */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-dusk-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Art form, weaving guild, temple walk, culinary tour..."
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-paper-300 focus:border-ink rounded-xl text-xs sm:text-sm text-ink placeholder-dusk-400 focus:outline-none transition font-sans shadow-2xs"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                className="flex-1 md:flex-none px-4 py-2.5 bg-ink hover:bg-ink-700 text-paper rounded-xl font-medium text-xs sm:text-sm transition flex items-center justify-center gap-2 whitespace-nowrap shadow-2xs cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-marigold" />
-                <span>Search</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-medium flex items-center gap-1.5 transition cursor-pointer ${
-                  activeFiltersCount > 0 || isFilterOpen
-                    ? 'bg-ink-50 border-ink text-ink shadow-2xs'
-                    : 'bg-white hover:bg-paper-200 border-paper-300 text-dusk shadow-2xs'
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Refine</span>
-                {activeFiltersCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-clay text-white text-[10px] font-mono flex items-center justify-center">
-                    {activeFiltersCount}
-                  </span>
-                )}
-                {isFilterOpen ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Quick-Jump Enclaves Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch] text-xs">
-            <span className="text-dusk font-mono uppercase text-[10px] tracking-wider whitespace-nowrap">
-              Featured Enclaves:
-            </span>
-            {ENCLAVES.map((enc) => {
-              const isSelected =
-                locationInput.toLowerCase() === enc.name.toLowerCase() ||
-                locationInput.toLowerCase() === enc.label.toLowerCase();
-              return (
-                <button
-                  key={enc.name}
-                  onClick={() => handleSelectEnclave(enc.name)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono whitespace-nowrap transition cursor-pointer ${
-                    isSelected
-                      ? 'bg-ink text-white font-medium shadow-2xs'
-                      : 'bg-white text-dusk-700 hover:bg-paper-200 border border-paper-300 shadow-2xs'
-                  }`}
+        <div className="bg-[#FAF7F2] border border-[#E5DFD5] rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+          {/* Two-tier Cascading State & City Selectors */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            {/* State Selector */}
+            <div className="md:col-span-4 relative">
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-dusk font-bold mb-1">
+                State / Territory ({INDIAN_STATES_AND_CITIES.length} Available)
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedState}
+                  onChange={(e) => handleStateSelect(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E5DFD5] focus:border-ink rounded-xl text-xs sm:text-sm text-ink font-sans focus:outline-none transition cursor-pointer appearance-none shadow-xs"
                 >
-                  {enc.label}
-                </button>
-              );
-            })}
-            {locationInput && (
-              <button
-                onClick={() => {
-                  setLocationInput('');
-                  fetchExperiences('', searchQuery, selectedCategory);
-                }}
-                className="text-clay hover:underline text-[11px] font-mono whitespace-nowrap ml-1 cursor-pointer"
-              >
-                Clear Location
-              </button>
-            )}
-          </div>
-
-          {/* Collapsible Refinement Drawer */}
-          {isFilterOpen && (
-            <div className="pt-3 border-t border-paper-300/80 space-y-3 animate-fadeIn">
-              <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
-                <div className="flex flex-wrap items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-ink hover:text-teal transition">
-                    <input
-                      type="checkbox"
-                      checked={wheelchairOnly}
-                      onChange={(e) => setWheelchairOnly(e.target.checked)}
-                      className="rounded text-teal focus:ring-teal"
-                    />
-                    <span className="font-medium">Step-Free Wheelchair Access</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-ink hover:text-teal transition">
-                    <input
-                      type="checkbox"
-                      checked={lowWalkingOnly}
-                      onChange={(e) => setLowWalkingOnly(e.target.checked)}
-                      className="rounded text-teal focus:ring-teal"
-                    />
-                    <span className="font-medium">Low Walking / Seated Immersion</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-ink hover:text-teal transition">
-                    <input
-                      type="checkbox"
-                      checked={rainSafeOnly}
-                      onChange={(e) => setRainSafeOnly(e.target.checked)}
-                      className="rounded text-teal focus:ring-teal"
-                    />
-                    <span className="font-medium">100% Rain Safe / Covered</span>
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-3 ml-auto">
-                  <span className="text-dusk">Budget Ceiling:</span>
-                  <span className="font-bold text-ink font-mono">₹{maxPrice}</span>
-                  <input
-                    type="range"
-                    min="300"
-                    max="5000"
-                    step="100"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
-                    className="w-28 accent-ink cursor-pointer"
-                  />
-                  {activeFiltersCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={clearAllFilters}
-                      className="flex items-center gap-1 text-clay hover:underline ml-2 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Reset</span>
-                    </button>
-                  )}
-                </div>
+                  <option value="">All 36 States & UTs</option>
+                  {INDIAN_STATES_AND_CITIES.map((s) => (
+                    <option key={s.code} value={s.state}>
+                      {s.state} ({s.cities.length} cities){s.isPopular ? ' ★' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-dusk absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
+
+            {/* City / District Selector */}
+            <div className="md:col-span-4 relative">
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-dusk font-bold mb-1">
+                City / District {selectedState ? `(${currentCitiesList.length} in ${selectedState})` : '(Select a State or Pick Below)'}
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedCity}
+                  onChange={(e) => handleCitySelect(e.target.value)}
+                  disabled={!selectedState}
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#E5DFD5] focus:border-ink rounded-xl text-xs sm:text-sm text-ink font-sans focus:outline-none transition cursor-pointer appearance-none shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">{selectedState ? `All Cities in ${selectedState}` : 'Pick a State first'}</option>
+                  {currentCitiesList.map((c) => (
+                    <option key={c} value={c}>
+                      {c}{POPULAR_CITIES_LIST.includes(c) ? ' ★ (Popular)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-dusk absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Search Keyword Input */}
+            <div className="md:col-span-4 relative">
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-dusk font-bold mb-1">
+                Instant Search
+              </label>
+              <div className="relative">
+                <Search className="w-4 h-4 text-dusk absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Street food, weaving guild, walk, fort..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-[#E5DFD5] focus:border-ink rounded-xl text-xs sm:text-sm text-ink placeholder-dusk-400 focus:outline-none transition font-sans shadow-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick-Jump Popular Cities Bar (24 User-Designated Cities) */}
+          <div className="pt-2 border-t border-[#E5DFD5]/80 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase text-[11px] tracking-wider text-[#C1443B] font-bold">
+                24 Iconic Cultural Hubs:
+              </span>
+              {(locationInput || selectedState || selectedCity) && (
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs font-mono text-[#C1443B] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset Location</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
+              {POPULAR_CITIES_LIST.map((cityName) => {
+                const isSelected =
+                  locationInput.toLowerCase() === cityName.toLowerCase() ||
+                  selectedCity.toLowerCase() === cityName.toLowerCase();
+                return (
+                  <button
+                    key={cityName}
+                    onClick={() => handleSelectPopularCity(cityName)}
+                    className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-ink text-white font-semibold shadow-xs'
+                        : 'bg-white text-ink hover:bg-[#F2ECE4] border border-[#E5DFD5] shadow-2xs'
+                    }`}
+                  >
+                    {cityName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Context Banner with Direct Itinerary Solver Navigation */}
+          {activeCity && (
+            <div className="bg-white border border-[#E5DFD5] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#C1443B]" />
+                <span className="text-xs sm:text-sm font-heading font-bold text-ink">
+                  Exploring {activeCity} {selectedState ? `(${selectedState})` : ''}
+                </span>
+                <span className="text-xs font-mono text-dusk">
+                  · {experiences.length} verified spots
+                </span>
+              </div>
+              <Link
+                to={`/itinerary?city=${encodeURIComponent(activeCity)}`}
+                className="px-3.5 py-1.5 bg-[#C1443B] hover:bg-[#A83830] text-white text-xs font-heading font-bold rounded-lg transition shadow-xs flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Build Dynamic Itinerary for {activeCity}</span>
+              </Link>
+            </div>
           )}
+
+          {/* Filter Toggles Row */}
+          <div className="pt-2 border-t border-[#E5DFD5]/80 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-ink">
+                <input
+                  type="checkbox"
+                  checked={wheelchairOnly}
+                  onChange={(e) => setWheelchairOnly(e.target.checked)}
+                  className="rounded text-[#C1443B] focus:ring-[#C1443B]"
+                />
+                <span>Step-Free Wheelchair Access</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none text-ink">
+                <input
+                  type="checkbox"
+                  checked={lowWalkingOnly}
+                  onChange={(e) => setLowWalkingOnly(e.target.checked)}
+                  className="rounded text-[#C1443B] focus:ring-[#C1443B]"
+                />
+                <span>Quick Visit (&le; 60 mins)</span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-dusk">Max Contribution:</span>
+              <span className="font-bold text-ink font-mono">₹{maxPrice}</span>
+              <input
+                type="range"
+                min="300"
+                max="5000"
+                step="100"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
+                className="w-24 accent-ink cursor-pointer"
+              />
+            </div>
+          </div>
         </div>
       </div>
+
 
       {/* Optional Feedback Note Strip */}
       {feedbackNote && (
@@ -557,11 +577,21 @@ export function ExplorePage() {
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 pb-4 border-b border-paper-300">
             <div>
               <h3 className="text-2xl font-display font-bold text-ink tracking-tight">
-                Field Catalog
+                {activeCity ? `${activeCity} Cultural Catalog` : selectedState ? `${selectedState} Cultural Catalog` : 'National Cultural Catalog'}
               </h3>
               <p className="text-xs text-dusk font-mono mt-0.5">
-                Verified encounters across traditional guilds and heritage enclaves
+                Showing {experiences.length} verified cultural encounters across traditions, crafts, and street food
               </p>
+            </div>
+
+            {/* Custom Image Slots Tip */}
+            <div className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl p-3 text-xs font-sans text-ink flex items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#C1443B] shrink-0" />
+                <span className="text-xs text-dusk">
+                  <strong className="text-ink font-heading">Direct Image Customization:</strong> Every place in <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5DFD5] text-[11px] font-mono">frontend/src/data/places/</code> has a <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5DFD5] text-[11px] font-mono">image_url: 'PASTE_IMAGE_LINK_HERE'</code> slot where you can paste your custom image links directly.
+                </span>
+              </div>
             </div>
 
             {/* Active Constraints Summary */}

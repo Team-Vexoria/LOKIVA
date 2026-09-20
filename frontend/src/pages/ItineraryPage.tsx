@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ItineraryTripDetails,
   ItineraryDay,
@@ -17,7 +18,21 @@ import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView
 import { ShareItineraryModal } from '../components/itinerary/ShareItineraryModal';
 import { EditTripModal } from '../components/itinerary/EditTripModal';
 import { AddActivityModal } from '../components/itinerary/AddActivityModal';
-import { Plus } from 'lucide-react';
+import { generateDynamicTripPlan } from '../lib/itinerarySolver';
+import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST } from '../data/places';
+import {
+  Plus,
+  Sparkles,
+  Compass,
+  MapPin,
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  Check,
+  Calendar,
+  Layers,
+} from 'lucide-react';
 
 // Generate dynamic current dates for the multi-day journey
 const getDatesInfo = () => {
@@ -61,7 +76,7 @@ const DEFAULT_TRIP_DETAILS: ItineraryTripDetails = {
 
 const DEFAULT_PRACTICAL_INFO: ItineraryPracticalInfo = {
   weatherSummary: 'Sunny & Coastal Breeze',
-  temperature: '28°C – 32°C',
+  temperature: '28°C - 32°C',
   packingList: [
     'Breathable light cottons',
     'Comfortable walking shoes',
@@ -400,6 +415,51 @@ export function ItineraryPage() {
 
   const [practicalInfo, setPracticalInfo] = useState<ItineraryPracticalInfo>(DEFAULT_PRACTICAL_INFO);
 
+  // Spatio-Temporal Constraint Solver state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [solverState, setSolverState] = useState('');
+  const [solverCity, setSolverCity] = useState(tripDetails.destination || 'Mumbai');
+  const [solverDays, setSolverDays] = useState(3);
+  const [solverPace, setSolverPace] = useState<'relaxed' | 'balanced' | 'packed'>('balanced');
+  const [solverFocus, setSolverFocus] = useState('');
+  const [solverBudget, setSolverBudget] = useState(tripDetails.totalBudgetLimit || 25000);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleRunSolver = (cityOverride?: string) => {
+    setIsGenerating(true);
+    const targetCity = cityOverride || solverCity || 'Mumbai';
+    setTimeout(() => {
+      const plan = generateDynamicTripPlan({
+        city: targetCity,
+        state: solverState || undefined,
+        daysCount: solverDays,
+        pace: solverPace,
+        focusCategory: solverFocus,
+        budgetLimit: solverBudget,
+        travelers: tripDetails.travelers || 2,
+      });
+
+      setTripDetails(plan.tripDetails);
+      setDays(plan.days);
+      setPracticalInfo(plan.practicalInfo);
+      setIsGenerating(false);
+      setIsGeneratorOpen(false);
+    }, 250);
+  };
+
+  useEffect(() => {
+    const paramCity = searchParams.get('city');
+    if (paramCity && paramCity.toLowerCase() !== tripDetails.destination.toLowerCase()) {
+      setSolverCity(paramCity);
+      const stateObj = INDIAN_STATES_AND_CITIES.find((s) => s.cities.includes(paramCity));
+      if (stateObj) {
+        setSolverState(stateObj.state);
+      }
+      handleRunSolver(paramCity);
+    }
+  }, [searchParams]);
+
   // Modals state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEditTripModalOpen, setIsEditTripModalOpen] = useState(false);
@@ -521,6 +581,192 @@ export function ItineraryPage() {
   return (
     <main className="min-h-screen bg-paper text-ink py-6 sm:py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Dynamic Spatio-Temporal Constraint Solver Card */}
+        <div className="bg-[#FAF7F2] border border-[#E5DFD5] rounded-2xl p-5 sm:p-6 shadow-sm space-y-4 no-print">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#C1443B]" />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#C1443B]">
+                  Spatio-Temporal Constraint Solver
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-ink">
+                Plan Dynamic Journey in {tripDetails.destination}
+              </h2>
+              <p className="text-xs sm:text-sm text-dusk font-normal">
+                Clusters verified local experiences, artisan workshops, and food spots to minimize transit and avoid zigzagging.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsGeneratorOpen(!isGeneratorOpen)}
+              className="px-4 py-2.5 bg-ink hover:bg-ink-700 text-white rounded-xl text-xs sm:text-sm font-heading font-bold transition flex items-center gap-2 shrink-0 cursor-pointer shadow-xs"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-[#C1443B]" />
+              <span>{isGeneratorOpen ? 'Hide Route Solver' : 'Customize Destination & Route'}</span>
+              {isGeneratorOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Quick Popular Cities Carousel */}
+          <div className="pt-2 border-t border-[#E5DFD5]/80 space-y-2">
+            <span className="text-[11px] font-mono text-dusk uppercase tracking-wider block">
+              Quick Pick Iconic Destinations:
+            </span>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
+              {POPULAR_CITIES_LIST.map((cityName) => {
+                const isActive = tripDetails.destination.toLowerCase() === cityName.toLowerCase();
+                return (
+                  <button
+                    key={cityName}
+                    type="button"
+                    onClick={() => {
+                      setSolverCity(cityName);
+                      const sObj = INDIAN_STATES_AND_CITIES.find((s) => s.cities.includes(cityName));
+                      if (sObj) setSolverState(sObj.state);
+                      handleRunSolver(cityName);
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-heading font-medium whitespace-nowrap transition cursor-pointer ${
+                      isActive
+                        ? 'bg-ink text-white font-semibold shadow-xs'
+                        : 'bg-white text-ink hover:bg-[#F2ECE4] border border-[#E5DFD5] shadow-2xs'
+                    }`}
+                  >
+                    {cityName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Collapsible Full Solver Parameters */}
+          {isGeneratorOpen && (
+            <div className="pt-4 border-t border-[#E5DFD5] grid grid-cols-1 md:grid-cols-12 gap-4">
+              {/* State */}
+              <div className="md:col-span-3 space-y-1">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-dusk font-bold">
+                  State / Territory
+                </label>
+                <select
+                  value={solverState}
+                  onChange={(e) => {
+                    setSolverState(e.target.value);
+                    const s = INDIAN_STATES_AND_CITIES.find((it) => it.state === e.target.value);
+                    if (s && s.cities.length > 0) {
+                      setSolverCity(s.cities[0]);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-[#E5DFD5] rounded-xl text-xs font-sans text-ink cursor-pointer focus:outline-none focus:border-ink shadow-xs"
+                >
+                  <option value="">All 36 States & UTs</option>
+                  {INDIAN_STATES_AND_CITIES.map((s) => (
+                    <option key={s.code} value={s.state}>
+                      {s.state} ({s.cities.length} cities)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* City */}
+              <div className="md:col-span-3 space-y-1">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-dusk font-bold">
+                  Destination City
+                </label>
+                <select
+                  value={solverCity}
+                  onChange={(e) => setSolverCity(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#E5DFD5] rounded-xl text-xs font-sans text-ink cursor-pointer focus:outline-none focus:border-ink shadow-xs"
+                >
+                  {solverState ? (
+                    INDIAN_STATES_AND_CITIES.find((s) => s.state === solverState)?.cities.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))
+                  ) : (
+                    POPULAR_CITIES_LIST.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Duration */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-dusk font-bold">
+                  Days Count
+                </label>
+                <div className="flex rounded-xl border border-[#E5DFD5] overflow-hidden bg-white shadow-xs">
+                  {[1, 2, 3].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setSolverDays(num)}
+                      className={`flex-1 py-2 text-xs font-heading font-bold transition cursor-pointer ${
+                        solverDays === num ? 'bg-ink text-white' : 'text-dusk hover:bg-paper-100'
+                      }`}
+                    >
+                      {num} {num === 1 ? 'Day' : 'Days'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pace */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-dusk font-bold">
+                  Travel Pace
+                </label>
+                <select
+                  value={solverPace}
+                  onChange={(e) => setSolverPace(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-white border border-[#E5DFD5] rounded-xl text-xs font-sans text-ink cursor-pointer focus:outline-none focus:border-ink shadow-xs"
+                >
+                  <option value="relaxed">Relaxed (3 stops/day)</option>
+                  <option value="balanced">Balanced (4 stops/day)</option>
+                  <option value="packed">Packed (5 stops/day)</option>
+                </select>
+              </div>
+
+              {/* Focus Vertical */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-dusk font-bold">
+                  Cultural Focus
+                </label>
+                <select
+                  value={solverFocus}
+                  onChange={(e) => setSolverFocus(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#E5DFD5] rounded-xl text-xs font-sans text-ink cursor-pointer focus:outline-none focus:border-ink shadow-xs"
+                >
+                  <option value="">All Traditions (Balanced)</option>
+                  <option value="Food & Culinary">Street Food & Iconic Eateries</option>
+                  <option value="Art & Craft">Artisan Guilds & Workshops</option>
+                  <option value="Local Walks">Local Walks & Bazaars</option>
+                  <option value="Nature & Wildlife">Nature & Wilderness</option>
+                  <option value="Heritage & History">Sacred Shrines & Heritage</option>
+                </select>
+              </div>
+
+              {/* Run Solver CTA */}
+              <div className="md:col-span-12 pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleRunSolver()}
+                  disabled={isGenerating}
+                  className="px-6 py-2.5 bg-[#C1443B] hover:bg-[#A83830] text-white text-xs font-heading font-bold rounded-xl transition shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{isGenerating ? 'Optimizing Spatial Route...' : `Generate ${solverCity} Itinerary`}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Top Header Card */}
         <TripHeaderOverview
           tripDetails={tripDetails}

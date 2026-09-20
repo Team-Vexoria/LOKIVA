@@ -1,4 +1,5 @@
 import { Experience } from '../types';
+import { ALL_LOKIVA_PLACES } from './places';
 
 export const AGRA_POPULAR_DESTINATIONS: Experience[] = [
   {
@@ -247,8 +248,8 @@ export const GOA_POPULAR_DESTINATIONS: Experience[] = [
     rating: 4.81,
     review_count: 1240,
     approx_duration_mins: 120,
-    image_url: 'https://s7ap1.scene7.com/is/image/incredibleindia/anjuna-beach-goa-goa-anjuna-beach--goa-5-attr-hero?qlt=82&ts=1742182218152',
-    image_urls: ['https://s7ap1.scene7.com/is/image/incredibleindia/anjuna-beach-goa-goa-anjuna-beach--goa-5-attr-hero?qlt=82&ts=1742182218152'],
+    image_url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=80',
+    image_urls: ['https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=80'],
     is_active: true,
     is_family_friendly: true,
     wheelchair_accessible: false,
@@ -2208,6 +2209,7 @@ export const RAJASTHAN_POPULAR_DESTINATIONS: Experience[] = [
 ];
 
 export const USER_CURATED_PLACES: Experience[] = [
+  ...ALL_LOKIVA_PLACES,
   ...AGRA_POPULAR_DESTINATIONS,
   ...GOA_POPULAR_DESTINATIONS,
   ...SHIMLA_POPULAR_DESTINATIONS,

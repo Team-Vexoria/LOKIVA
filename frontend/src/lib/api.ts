@@ -38,6 +38,10 @@ export const API_BASE =
 export function resolveImageUrl(url?: string | null): string {
   if (!url) return '';
 
+  if (url === 'PASTE_IMAGE_LINK_HERE' || url.includes('PASTE_IMAGE')) {
+    return 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80';
+  }
+
   // If it's a Google image redirect URL, extract the underlying imgurl parameter
   if (url.includes('google.com/imgres') && url.includes('imgurl=')) {
     try {
