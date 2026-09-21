@@ -34,7 +34,9 @@ const THEMATIC_PERSPECTIVES = [
 
 export function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialLocation = searchParams.get('location') || searchParams.get('city') || '';
+  const initialState = searchParams.get('state') || '';
+  const initialCity = searchParams.get('city') || '';
+  const initialLocation = searchParams.get('location') || initialCity || initialState || '';
   const initialSearch = searchParams.get('search') || searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || '';
   const initialBudget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
@@ -42,10 +44,11 @@ export function ExplorePage() {
   const initialWalking = searchParams.get('walking') === 'true';
 
   const [experiences, setExperiences] = useState<Experience[]>(USER_CURATED_PLACES);
+  const [visibleCount, setVisibleCount] = useState(36);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [locationInput, setLocationInput] = useState(initialLocation);
-  const [selectedState, setSelectedState] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedState, setSelectedState] = useState(initialState);
+  const [selectedCity, setSelectedCity] = useState(initialCity);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [maxPrice, setMaxPrice] = useState(initialBudget);
   const [wheelchairOnly, setWheelchairOnly] = useState(initialWheelchair);
@@ -65,30 +68,67 @@ export function ExplorePage() {
 
   // Fast, instant experience filter strictly displaying verified curated places
   const fetchExperiences = useCallback(
-    async (loc = locationInput, query = searchQuery, cat = selectedCategory) => {
+    async (
+      loc = locationInput,
+      query = searchQuery,
+      cat = selectedCategory,
+      stateFilter = selectedState,
+      cityFilter = selectedCity
+    ) => {
       setIsLoading(true);
       try {
         let results = [...USER_CURATED_PLACES];
 
-        if (loc && loc.trim()) {
+        // 1. Precise City Filter if explicitly selected
+        if (cityFilter && cityFilter.trim()) {
+          const sc = cityFilter.toLowerCase().trim();
+          results = results.filter((p) => (p.city || '').toLowerCase().includes(sc));
+        }
+        // 2. Precise State Filter if explicitly selected
+        else if (stateFilter && stateFilter.trim()) {
+          const ss = stateFilter.toLowerCase().trim();
+          results = results.filter((p) => (p.state || '').toLowerCase().includes(ss));
+        }
+        // 3. Freeform Location input
+        else if (loc && loc.trim()) {
           const l = loc.toLowerCase().trim();
-          results = results.filter((p) =>
-            p.city.toLowerCase().includes(l) || (p.state && p.state.toLowerCase().includes(l))
+          results = results.filter(
+            (p) =>
+              (p.city || '').toLowerCase().includes(l) ||
+              (p.state || '').toLowerCase().includes(l) ||
+              (p.area_name || '').toLowerCase().includes(l)
           );
         }
 
+        // 4. Flexible Category Filtering
         if (cat && cat.trim()) {
           const c = cat.toLowerCase().trim();
-          results = results.filter((p) => (p.category || '').toLowerCase().includes(c));
+          results = results.filter((p) => {
+            const placeCat = (p.category || '').toLowerCase();
+            if (placeCat.includes(c) || c.includes(placeCat)) return true;
+            if (c.includes('food') && (placeCat.includes('culinary') || placeCat.includes('food') || placeCat.includes('dining') || placeCat.includes('tea'))) return true;
+            if (c.includes('art') && (placeCat.includes('craft') || placeCat.includes('art') || placeCat.includes('guild') || placeCat.includes('textile') || placeCat.includes('pottery'))) return true;
+            if (c.includes('walk') && (placeCat.includes('walk') || placeCat.includes('bazaar') || placeCat.includes('local') || placeCat.includes('market'))) return true;
+            if (c.includes('nature') && (placeCat.includes('wildlife') || placeCat.includes('nature') || placeCat.includes('wilderness') || placeCat.includes('safari') || placeCat.includes('lake') || placeCat.includes('river'))) return true;
+            if (c.includes('heritage') && (placeCat.includes('history') || placeCat.includes('heritage') || placeCat.includes('culture') || placeCat.includes('monument') || placeCat.includes('fort') || placeCat.includes('palace'))) return true;
+            if (c.includes('spiritual') && (placeCat.includes('spiritual') || placeCat.includes('temple') || placeCat.includes('wellness') || placeCat.includes('ghat'))) return true;
+            return false;
+          });
         }
 
+        // 5. Deep Query Search across all textual attributes
         if (query && query.trim()) {
           const q = query.toLowerCase().trim();
-          results = results.filter((p) =>
-            p.title.toLowerCase().includes(q) ||
-            (p.tagline && p.tagline.toLowerCase().includes(q)) ||
-            p.city.toLowerCase().includes(q) ||
-            (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)))
+          results = results.filter(
+            (p) =>
+              (p.title || '').toLowerCase().includes(q) ||
+              (p.tagline || '').toLowerCase().includes(q) ||
+              (p.description || '').toLowerCase().includes(q) ||
+              (p.city || '').toLowerCase().includes(q) ||
+              (p.state || '').toLowerCase().includes(q) ||
+              (p.area_name || '').toLowerCase().includes(q) ||
+              (p.category || '').toLowerCase().includes(q) ||
+              (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)))
           );
         }
 
@@ -107,7 +147,8 @@ export function ExplorePage() {
         // Try getting live ratings from backend if available, but strictly preserve curated places
         try {
           const remoteData = await api.getExperiences({
-            city: loc.trim() || undefined,
+            city: cityFilter || loc.trim() || undefined,
+            state: stateFilter || undefined,
             category: cat || undefined,
             search: query.trim() || undefined,
           });
@@ -125,6 +166,7 @@ export function ExplorePage() {
 
         const deduped = deduplicateExperienceList(results);
         setExperiences(deduped);
+        setVisibleCount(36);
 
         if (loc.trim() && deduped.length === 0) {
           setFeedbackNote(`No curated experiences found in "${loc.trim()}". Showing all verified heritage sites.`);
@@ -139,6 +181,8 @@ export function ExplorePage() {
       locationInput,
       searchQuery,
       selectedCategory,
+      selectedState,
+      selectedCity,
       maxPrice,
       wheelchairOnly,
       lowWalkingOnly,
@@ -150,7 +194,7 @@ export function ExplorePage() {
   // Debounced instant search effect (200ms) for typing
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchExperiences(locationInput, searchQuery, selectedCategory);
+      fetchExperiences(locationInput, searchQuery, selectedCategory, selectedState, selectedCity);
     }, 200);
 
     return () => clearTimeout(timer);
@@ -158,6 +202,8 @@ export function ExplorePage() {
     locationInput,
     searchQuery,
     selectedCategory,
+    selectedState,
+    selectedCity,
     maxPrice,
     wheelchairOnly,
     lowWalkingOnly,
@@ -167,24 +213,29 @@ export function ExplorePage() {
 
   // Synchronize state when URL search parameters change dynamically
   useEffect(() => {
-    const loc = searchParams.get('location') || searchParams.get('city') || '';
+    const stateParam = searchParams.get('state') || '';
+    const cityParam = searchParams.get('city') || '';
+    const loc = searchParams.get('location') || cityParam || stateParam || '';
     const q = searchParams.get('search') || searchParams.get('q') || '';
     const cat = searchParams.get('category') || '';
     const budget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
     const wheelchair = searchParams.get('wheelchair') === 'true';
     const walking = searchParams.get('walking') === 'true';
 
+    if (stateParam) setSelectedState(stateParam);
+    if (cityParam) setSelectedCity(cityParam);
     setLocationInput(loc);
     setSearchQuery(q);
     setSelectedCategory(cat);
     setMaxPrice(budget);
     setWheelchairOnly(wheelchair);
     setLowWalkingOnly(walking);
+    fetchExperiences(loc, q, cat, stateParam, cityParam);
   }, [searchParams]);
 
   const currentCitiesList = React.useMemo(() => {
     if (!selectedState) return [];
-    const found = INDIAN_STATES_AND_CITIES.find((s) => s.state === selectedState);
+    const found = INDIAN_STATES_AND_CITIES.find((s) => s.state.toLowerCase() === selectedState.toLowerCase());
     return found ? found.cities : [];
   }, [selectedState]);
 
@@ -192,31 +243,32 @@ export function ExplorePage() {
     setSelectedState(stateName);
     setSelectedCity('');
     setLocationInput(stateName);
-    fetchExperiences(stateName, searchQuery, selectedCategory);
+    fetchExperiences(stateName, searchQuery, selectedCategory, stateName, '');
   };
 
   const handleCitySelect = (cityName: string) => {
     setSelectedCity(cityName);
     setLocationInput(cityName);
-    fetchExperiences(cityName, searchQuery, selectedCategory);
+    fetchExperiences(cityName, searchQuery, selectedCategory, selectedState, cityName);
   };
 
   const handleSelectPopularCity = (city: string) => {
     const stateObj = INDIAN_STATES_AND_CITIES.find((s) => s.cities.includes(city));
-    if (stateObj) {
-      setSelectedState(stateObj.state);
+    const stateName = stateObj ? stateObj.state : '';
+    if (stateName) {
+      setSelectedState(stateName);
       setSelectedCity(city);
     } else {
       setSelectedCity(city);
     }
     setLocationInput(city);
-    fetchExperiences(city, searchQuery, selectedCategory);
+    fetchExperiences(city, searchQuery, selectedCategory, stateName, city);
   };
 
   // Form submit: immediate instant query (no debounce wait)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchExperiences(locationInput, searchQuery, selectedCategory);
+    fetchExperiences(locationInput, searchQuery, selectedCategory, selectedState, selectedCity);
   };
 
   const clearAllFilters = () => {
@@ -230,6 +282,7 @@ export function ExplorePage() {
     setSearchQuery('');
     setLocationInput('');
     setFeedbackNote(null);
+    fetchExperiences('', '', '', '', '');
   };
 
   // Curator's Spotlight: Pick the first experience
@@ -654,10 +707,27 @@ export function ExplorePage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {experiences.map((exp) => (
-                <ExperienceCard key={exp.id} experience={exp} />
-              ))}
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {experiences.slice(0, visibleCount).map((exp) => (
+                  <ExperienceCard key={exp.id} experience={exp} />
+                ))}
+              </div>
+
+              {experiences.length > visibleCount && (
+                <div className="pt-6 text-center">
+                  <button
+                    onClick={() => setVisibleCount((prev) => prev + 36)}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ink hover:bg-ink-700 text-white font-heading font-bold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span>Load More Cultural Encounters ({experiences.length - visibleCount} Remaining)</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <p className="text-[11px] font-mono text-dusk mt-2">
+                    Displaying {Math.min(visibleCount, experiences.length)} of {experiences.length} verified places
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </section>

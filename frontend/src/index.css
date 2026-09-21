@@ -267,3 +267,16 @@ input[type=range].custom-slider:active::-moz-range-thumb {
   }
 }
 
+/* Stacked Card Hardware Compositing Layer */
+.stack-panel {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.panel-content {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+

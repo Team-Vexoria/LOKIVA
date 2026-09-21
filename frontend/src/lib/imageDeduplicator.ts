@@ -120,8 +120,15 @@ export function getUniqueImageForExperience(
     (experience.image_urls && experience.image_urls.length > 0 ? experience.image_urls[0] : null) ||
     (experience.images && experience.images.length > 0 ? experience.images[0] : null);
 
-  // 1. If rawImage is valid and not a placeholder, always respect and use it
-  if (rawImage && !rawImage.includes('placeholder') && !rawImage.includes('source.unsplash.com')) {
+  // 1. If rawImage is valid and not a placeholder or unassigned link, always respect and use it
+  if (
+    rawImage &&
+    typeof rawImage === 'string' &&
+    rawImage.startsWith('http') &&
+    !rawImage.includes('PASTE_IMAGE') &&
+    !rawImage.includes('placeholder') &&
+    !rawImage.includes('source.unsplash.com')
+  ) {
     seenUrls.add(rawImage);
     return rawImage;
   }
@@ -129,7 +136,14 @@ export function getUniqueImageForExperience(
   // 2. Check secondary image URLs attached to the experience
   if (experience.image_urls && experience.image_urls.length > 1) {
     for (const u of experience.image_urls) {
-      if (u && !u.includes('placeholder')) {
+      if (
+        u &&
+        typeof u === 'string' &&
+        u.startsWith('http') &&
+        !u.includes('PASTE_IMAGE') &&
+        !u.includes('placeholder') &&
+        !u.includes('source.unsplash.com')
+      ) {
         seenUrls.add(u);
         return u;
       }
@@ -171,15 +185,15 @@ export function getUniqueImageForExperience(
 }
 
 /**
- * Deduplicates an entire array of experiences so that NO TWO cards on screen ever
- * share the same experience ID, title, or image URL.
+ * Deduplicates an array of experiences so that NO duplicate place ID
+ * or identical title and city combination exists in the view.
  */
 export function deduplicateExperienceList(experiences: Experience[]): Experience[] {
   if (!Array.isArray(experiences) || experiences.length === 0) return experiences;
 
-  // 1. Deduplicate by unique ID and normalized Title so no destination is repeated
+  // 1. Deduplicate by unique ID and exact Title + City
   const seenIds = new Set<string | number>();
-  const seenTitles = new Set<string>();
+  const seenPlaceKeys = new Set<string>();
   const uniqueExperiences = experiences.filter((exp) => {
     if (!exp) return false;
 
@@ -189,14 +203,13 @@ export function deduplicateExperienceList(experiences: Experience[]): Experience
       seenIds.add(exp.id);
     }
 
-    // Check normalized title uniqueness
-    const normTitle = (exp.title || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .slice(0, 25);
-    if (normTitle) {
-      if (seenTitles.has(normTitle)) return false;
-      seenTitles.add(normTitle);
+    // Check normalized title + city uniqueness
+    const titleNorm = (exp.title || '').toLowerCase().trim();
+    const cityNorm = (exp.city || '').toLowerCase().trim();
+    const normKey = `${titleNorm}::${cityNorm}`;
+    if (titleNorm) {
+      if (seenPlaceKeys.has(normKey)) return false;
+      seenPlaceKeys.add(normKey);
     }
 
     return true;

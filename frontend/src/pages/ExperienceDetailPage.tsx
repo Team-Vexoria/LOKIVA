@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, resolveImageUrl } from '../lib/api';
 import { Experience, Review } from '../types';
+import { USER_CURATED_PLACES } from '../data/userVerifiedPlacesData';
 import {
   MapPin,
   Clock,
@@ -28,15 +29,21 @@ export function ExperienceDetailPage() {
   useEffect(() => {
     async function loadExperience() {
       if (!id) return;
+      const parsedId = parseInt(id, 10);
+      const localExp = USER_CURATED_PLACES.find((p) => p.id === parsedId || String(p.id) === id);
+      if (localExp) {
+        setExperience(localExp);
+        setIsLoading(false);
+      }
       try {
         const [exp, revs] = await Promise.all([
-          api.getExperienceById(parseInt(id, 10)),
-          api.getReviews(parseInt(id, 10)),
+          api.getExperienceById(parsedId).catch(() => null),
+          api.getReviews(parsedId).catch(() => []),
         ]);
-        setExperience(exp);
-        setReviews(revs);
+        if (exp) setExperience(exp);
+        if (revs && revs.length > 0) setReviews(revs);
       } catch (err) {
-        console.error('Failed to load experience:', err);
+        console.error('Failed to load remote experience:', err);
       } finally {
         setIsLoading(false);
       }

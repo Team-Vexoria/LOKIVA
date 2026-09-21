@@ -5,7 +5,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { HeroScrollExperience } from '../components/landing/HeroScrollExperience';
 import { DeviceMockupSection } from '../components/landing/DeviceMockupSection';
 import { PhotosMapsReviewsSection } from '../components/landing/PhotosMapsReviewsSection';
-import { LivingHeritageShowcaseSection } from '../components/landing/LivingHeritageShowcaseSection';
 import { TagUsSection } from '../components/landing/TagUsSection';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
@@ -53,58 +52,55 @@ export function HomePage() {
     loadInitial();
   }, []);
 
-  // GSAP ScrollTrigger setup for stacked-card parallax slide-over & section reveals
+  // 1. Stacked-card parallax slide-over with dedicated interaction buffers
   useEffect(() => {
     if (!containerRef.current) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
-      if (prefersReducedMotion) {
-        gsap.set('.reveal-section, .reveal-word, .reveal-stagger-item', {
-          opacity: 1,
-          y: 0,
-        });
-        return;
-      }
-
-      // 1. Stacked-card transitions with dedicated interaction buffer (Spain Collection standard)
       const panels = gsap.utils.toArray<HTMLElement>('.card-stack-wrapper .stack-panel');
 
       panels.forEach((panel, i) => {
         const nextPanel = panels[i + 1];
+
+        // CRITICAL: If this is the last card ("Photos, Maps + Reviews"),
+        // DO NOT pin it and DO NOT create any scroll triggers on it.
         if (!nextPanel) return;
 
-        // 1. PIN THE CURRENT PANEL to give the user time to view & use it
+        // 1. PIN THE CURRENT PANEL WITHOUT GHOST SPACING
         ScrollTrigger.create({
           trigger: panel,
           start: 'top top',
-          end: '+=130vh', // Extended buffer so screen stays completely still & usable
+          end: '+=100vh',
           pin: true,
-          pinSpacing: false, // Allows next panel to slide over it after the pause
+          pinSpacing: false, // Prevents giant empty blank spaces below
           anticipatePin: 1,
+          fastScrollEnd: true,
         });
 
-        // 2. SLIDE UP THE NEXT PANEL ONLY AFTER THE BUFFER ENDS
+        // 2. SLIDE UP THE NEXT PANEL ON GPU COMPOSITING LAYER
         gsap.fromTo(
           nextPanel,
-          { yPercent: 100 },
+          { yPercent: 100, force3D: true },
           {
             yPercent: 0,
             ease: 'none',
+            force3D: true,
             scrollTrigger: {
               trigger: panel,
-              start: 'top+=90vh top', // Start sliding up only after user scrolled through viewing buffer
-              end: 'top+=150vh top',
-              scrub: 1,
+              start: 'top+=60vh top',
+              end: 'top+=140vh top',
+              scrub: 0.8, // Smooth rAF interpolation to eliminate lag
               onUpdate: (self) => {
-                // Softly fade/scale down the outgoing panel content as it gets covered
-                const content = panel.querySelector<HTMLElement>('.panel-content');
-                if (content) {
-                  gsap.to(content, {
+                const inner = panel.querySelector<HTMLElement>('.panel-content');
+                if (inner) {
+                  gsap.to(inner, {
                     opacity: 1 - self.progress * 0.35,
                     scale: 1 - self.progress * 0.02,
                     overwrite: 'auto',
+                    duration: 0.1,
                   });
                 }
               },
@@ -113,10 +109,27 @@ export function HomePage() {
         );
       });
 
-      // 2. Inner stagger items reveal within each section
-      const words = gsap.utils.toArray<HTMLElement>('.reveal-word');
-      const staggerItems = gsap.utils.toArray<HTMLElement>('.reveal-stagger-item');
+      // Recalculate layout once DOM is fully rendered
+      ScrollTrigger.refresh();
+    }, containerRef);
 
+    return () => {
+      ctx.revert();
+    };
+  }, []);
+
+  // 2. Performance-optimized reveals and card grid batching
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      gsap.set('.reveal-word, .reveal-stagger-item', { opacity: 1, y: 0 });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      const words = gsap.utils.toArray<HTMLElement>('.reveal-word');
       words.forEach((word) => {
         gsap.fromTo(
           word,
@@ -124,42 +137,38 @@ export function HomePage() {
           {
             opacity: 1,
             y: 0,
-            duration: 0.5,
+            duration: 0.4,
             ease: 'power2.out',
             scrollTrigger: {
               trigger: word,
-              start: 'top 90%',
+              start: 'top 92%',
               once: true,
             },
           }
         );
       });
 
-      staggerItems.forEach((item) => {
-        gsap.fromTo(
-          item,
-          { opacity: 0, y: 16 },
-          {
+      // High-performance batching for experience card items to eliminate layout thrashing
+      ScrollTrigger.batch('.reveal-stagger-item', {
+        start: 'top 90%',
+        once: true,
+        onEnter: (batch) => {
+          gsap.to(batch, {
             opacity: 1,
             y: 0,
-            duration: 0.5,
+            stagger: 0.06,
+            duration: 0.4,
             ease: 'power2.out',
-            scrollTrigger: {
-              trigger: item,
-              start: 'top 90%',
-              once: true,
-            },
-          }
-        );
+            overwrite: 'auto',
+          });
+        },
       });
     }, containerRef);
-
-    ScrollTrigger.refresh();
 
     return () => {
       ctx.revert();
     };
-  }, [isLoading, experiences, activeCategory]);
+  }, [isLoading, activeCategory]);
 
   const categories = [
     'All',
@@ -179,7 +188,7 @@ export function HomePage() {
       {/* 1. PINNED HERO + SHOWREEL (PANEL 0 - Spain Collection scroll architecture, GSAP pin) */}
       <HeroScrollExperience onWatchFilm={() => setIsVideoModalOpen(true)} />
 
-      {/* 2. CARD-STACKED TRANSITION GROUP (ONLY between Video and Discover. Experience. Preserve.) */}
+      {/* 2. CARD-STACKED TRANSITION GROUP (Between Showcase and Everything you need) */}
       <div className="card-stack-wrapper relative w-full">
         {/* Section A: Curated Cultural Journeys Showcase */}
         <section className="stack-panel relative z-10 bg-[#E8E2D9] min-h-screen flex flex-col justify-start overflow-hidden">
@@ -188,24 +197,17 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Section B: Photos, Maps + Reviews */}
+        {/* Section B: Photos, Maps + Reviews (FINAL Stacked Section) */}
         <section className="stack-panel relative z-20 bg-[#FAF7F2] min-h-screen rounded-t-[32px] sm:rounded-t-[44px] shadow-[0_-20px_50px_rgba(18,33,59,0.12)] border-t border-black/5 flex flex-col justify-start overflow-hidden">
-          <div className="panel-content w-full max-w-7xl mx-auto pt-10 sm:pt-14 pb-16">
+          <div className="panel-content w-full max-w-7xl mx-auto pt-10 sm:pt-14 pb-12 sm:pb-16">
             <PhotosMapsReviewsSection />
-          </div>
-        </section>
-
-        {/* Section C: Discover. Experience. Preserve. (Living Heritage Showcase - FINAL Stacked Section) */}
-        <section className="stack-panel relative z-30 bg-[#FAF8F5] min-h-screen rounded-t-[32px] sm:rounded-t-[44px] shadow-[0_-20px_50px_rgba(18,33,59,0.12)] border-t border-black/5 flex flex-col justify-start overflow-hidden">
-          <div className="panel-content w-full max-w-7xl mx-auto pt-10 sm:pt-14 pb-16">
-            <LivingHeritageShowcaseSection />
           </div>
         </section>
       </div>
 
       {/* 3. STANDARD NATURAL DOCUMENT SCROLLING (NO animations, NO pins, 100% natural CSS flow) */}
-      {/* 4. CURATED EXPERIENCES CATALOG */}
-      <section className="relative z-30 bg-[#FAF7F2] py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* 4. CURATED EXPERIENCES CATALOG: sits flush against Section B with 0px phantom margins */}
+      <section className="relative z-20 bg-[#FAF7F2] pt-8 sm:pt-12 pb-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">

@@ -16,7 +16,7 @@ export const POPULAR_CITIES_PLACES: Experience[] = [
     approx_duration_mins: 60,
     duration_mins: 60,
     image_url: 'PASTE_IMAGE_LINK_HERE',
-    image_urls: ["https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80"],
+    image_urls: ["https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrsao2OLhmgPLub1WXC1oJip_rr4vIgkqskgxlJhzLz3U62C8MwpuFaSs&s=10"],
     is_active: true,
     is_family_friendly: true,
     wheelchair_accessible: true,

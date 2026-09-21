@@ -30,6 +30,7 @@ import {
   PUSHKAR_POPULAR_DESTINATIONS,
   RAJASTHAN_POPULAR_DESTINATIONS,
 } from '../data/userVerifiedPlacesData';
+import { getPlacesByCity, getPlacesByState } from '../data/places';
 import {
   MapPin,
   ArrowLeft,
@@ -348,7 +349,9 @@ export function DestinationDetailPage() {
               });
             }
 
-            setExperiences(deduplicateExperienceList(expList || []));
+            const localCityPlaces = getPlacesByCity(decodedCity);
+            const finalPlaces = (expList && expList.length > 0) ? expList : localCityPlaces;
+            setExperiences(deduplicateExperienceList(finalPlaces));
           }
         } else {
           // 2. STATE VIEW: /destination/:state (e.g. /destination/Goa or /destination/Ladakh)
@@ -359,7 +362,8 @@ export function DestinationDetailPage() {
 
           setStateCities(citiesInState || []);
 
-          let combinedExperiences = stateExpList || [];
+          const localStatePlaces = getPlacesByState(decodedState);
+          let combinedExperiences = (stateExpList && stateExpList.length > 0) ? stateExpList : localStatePlaces;
           if (decodedState.toLowerCase() === 'goa') {
             combinedExperiences = GOA_POPULAR_DESTINATIONS;
             setCityData({
