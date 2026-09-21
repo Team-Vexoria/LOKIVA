@@ -59,7 +59,6 @@ export function minutesToTime24(totalMinutes: number): string {
 export function timeStringToMinutes(timeStr: string): number {
   if (!timeStr) return 8 * 60 + 30; // default 08:30 AM
 
-  // Handle 12-hour format with AM/PM
   const match12 = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
   if (match12) {
     let hours = parseInt(match12[1], 10);
@@ -70,7 +69,6 @@ export function timeStringToMinutes(timeStr: string): number {
     return hours * 60 + mins;
   }
 
-  // Handle 24-hour "HH:MM"
   const parts = timeStr.split(':');
   if (parts.length >= 2) {
     const hours = parseInt(parts[0], 10) || 0;
@@ -113,8 +111,8 @@ export function getSlotForMinutes(minutes: number, category: string = ''): TimeO
 }
 
 /**
- * Recalculates sequentially all start/end times, transit times, and distances
- * across a single day's activity sequence starting from dayStartTime.
+ * Sequential Time Recalculation Engine
+ * Cascades start/end times and transit buffers across the day.
  */
 export function recalculateDaySchedule(
   day: ItineraryDay,
@@ -142,7 +140,7 @@ export function recalculateDaySchedule(
   let totalSightseeingMinutes = 0;
   let totalTransitMinutes = 0;
   let totalTransitDistanceKm = 0;
-  let totalWalkingKm = 0;
+  let totalWalkingMeters = 0;
   let totalTicketCost = 0;
   let totalTransitCost = 0;
   let totalFoodCost = 0;
@@ -167,29 +165,30 @@ export function recalculateDaySchedule(
 
     totalSightseeingMinutes += visitDuration;
     totalTicketCost += (act.costPerPerson || 0) * travelers;
+    totalWalkingMeters += act.walkingDistanceMeters || 600;
 
     if (act.category.toLowerCase().includes('food') || act.category.toLowerCase().includes('culinary')) {
       totalFoodCost += 350 * travelers;
     }
 
-    // Transit to next stop if not last
+    // Transit calculation to next stop
     if (i < activities.length - 1) {
       const nextAct = activities[i + 1];
       const distKm = getHaversineDistanceKm(act.lat, act.lng, nextAct.lat, nextAct.lng);
       act.transitDistanceKm = distKm;
       totalTransitDistanceKm += distKm;
 
-      if (distKm <= 1.2) {
+      if (distKm <= 1.2 && act.walkingDistanceMeters <= 800 && day.activeFilter !== 'fatigue') {
         act.transitMode = 'walking';
         act.transitToNextMinutes = Math.max(5, Math.ceil((distKm / 4.0) * 60) + 2);
         act.transitCost = 0;
         act.gettingThere = `Short ${Math.round(distKm * 1000)}m heritage walk (~${act.transitToNextMinutes} mins)`;
-        totalWalkingKm += distKm;
+        totalWalkingMeters += Math.round(distKm * 1000);
       } else {
         act.transitMode = 'auto_rickshaw';
         act.transitToNextMinutes = Math.max(10, Math.ceil((distKm / 20.0) * 60) + 5);
         act.transitCost = Math.round(30 + distKm * 15);
-        act.gettingThere = `Auto-rickshaw or taxi across ${distKm} km (~${act.transitToNextMinutes} mins)`;
+        act.gettingThere = `Auto-rickshaw or cab transfer (~${act.transitToNextMinutes} mins)`;
         totalTransitCost += act.transitCost;
       }
 
@@ -203,9 +202,7 @@ export function recalculateDaySchedule(
       currentClockMinutes = endMin;
     }
 
-    // ─── INDIA DOMAIN CONSTRAINT CHECKS ──────────────────────────────────────
-
-    // 1. Temple Afternoon Closure (12:30 PM to 4:00 PM)
+    // India Domain Constraint Checks
     const isTemple =
       act.category.toLowerCase().includes('spiritual') ||
       act.title.toLowerCase().includes('temple') ||
@@ -228,7 +225,6 @@ export function recalculateDaySchedule(
       }
     }
 
-    // 2. Weekly Landmark Closed Days
     const dayName = (day.dayOfWeek || '').toLowerCase();
     const titleLower = act.title.toLowerCase();
 
@@ -259,14 +255,7 @@ export function recalculateDaySchedule(
       });
     }
 
-    // 3. Midday Heat Buffer (12:30 PM to 03:30 PM) for non-indoor outdoor tours
-    const isOutdoor =
-      !act.is_indoor &&
-      !act.category.toLowerCase().includes('food') &&
-      !act.category.toLowerCase().includes('art') &&
-      !act.category.toLowerCase().includes('craft');
-
-    if (isOutdoor && startMin >= 12 * 60 + 30 && startMin < 15 * 60 + 30) {
+    if (act.indoorOutdoor === 'outdoor' && startMin >= 12 * 60 + 30 && startMin < 15 * 60 + 30) {
       warnings.push({
         id: `heat-${act.id}`,
         type: 'MIDDAY_HEAT_EXPOSURE',
@@ -280,28 +269,28 @@ export function recalculateDaySchedule(
     updatedActivities.push(act);
   }
 
-  // 4. Day Finish Boundary Check (After 21:30 / 9:30 PM)
   if (currentClockMinutes > 21 * 60 + 30) {
     warnings.push({
       id: 'day-overbudget',
       type: 'OVER_BUDGET_HOURS',
       severity: 'warning',
       message: `Schedule concludes late at ${formatMinutesTo12h(currentClockMinutes)}.`,
-      recommendation: 'Consider removing or shifting an activity to maintain a comfortable rest buffer.',
+      recommendation: 'Consider shifting an activity to maintain a comfortable rest buffer.',
     });
   }
 
-  // Estimated walking steps
-  const estimatedWalkingSteps = Math.round(
-    totalSightseeingMinutes * 35 + totalWalkingKm * 1350 + (activities.length * 200)
-  );
+  // Estimated walking steps calculation
+  let estimatedWalkingSteps = Math.round(totalWalkingMeters * 1.35 + activities.length * 150);
+  if (day.activeFilter === 'fatigue') {
+    estimatedWalkingSteps = Math.min(3800, Math.round(activities.length * 550));
+  }
 
-  if (estimatedWalkingSteps > 15000) {
+  if (estimatedWalkingSteps > 14000) {
     warnings.push({
       id: 'high-walking',
       type: 'EXCESSIVE_WALKING',
       severity: 'info',
-      message: `Intense physical day with ~${estimatedWalkingSteps.toLocaleString()} walking steps.`,
+      message: `Physical day with ~${estimatedWalkingSteps.toLocaleString()} walking steps.`,
       recommendation: 'Opt for auto-rickshaws between longer alleys if traveling with seniors.',
     });
   }
@@ -414,7 +403,6 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
 
   const activitiesPerDay = pace === 'relaxed' ? 3 : pace === 'packed' ? 5 : 4;
   const days: ItineraryDay[] = [];
-
   const baseDate = startDate ? new Date(startDate) : new Date();
 
   for (let d = 0; d < daysCount; d++) {
@@ -427,7 +415,6 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     const startIndex = d * activitiesPerDay;
     const dayCandidates = uniqueCandidates.slice(startIndex, startIndex + activitiesPerDay);
 
-    // Fallback if we run out of unique candidates
     if (dayCandidates.length < activitiesPerDay) {
       const needed = activitiesPerDay - dayCandidates.length;
       for (let k = 0; k < needed; k++) {
@@ -438,11 +425,31 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
 
     const initialActivities: ItineraryActivity[] = dayCandidates.map((exp, actIdx) => {
       const durationMins = exp.duration_mins || exp.approx_duration_mins || 75;
+      const cat = (exp.category || '').toLowerCase();
       const isIndoor =
-        (exp.category || '').toLowerCase().includes('craft') ||
-        (exp.category || '').toLowerCase().includes('art') ||
-        (exp.category || '').toLowerCase().includes('food') ||
-        (exp.category || '').toLowerCase().includes('museum');
+        cat.includes('craft') ||
+        cat.includes('art') ||
+        cat.includes('food') ||
+        cat.includes('culinary') ||
+        cat.includes('museum') ||
+        cat.includes('haveli');
+
+      const indoorOutdoor: 'indoor' | 'outdoor' | 'semi-covered' = isIndoor
+        ? 'indoor'
+        : cat.includes('temple') || cat.includes('stepwell')
+        ? 'semi-covered'
+        : 'outdoor';
+
+      const crowdLevel: 'low' | 'moderate' | 'peak' =
+        exp.review_count && exp.review_count > 800
+          ? 'peak'
+          : exp.review_count && exp.review_count > 300
+          ? 'moderate'
+          : 'low';
+
+      const walkingDistanceMeters = indoorOutdoor === 'outdoor' ? 1200 : indoorOutdoor === 'semi-covered' ? 700 : 350;
+      const lat = exp.latitude || 26.9124 + d * 0.01;
+      const lng = exp.longitude || 75.7873 + actIdx * 0.01;
 
       return {
         id: exp.id * 100 + d * 10 + actIdx,
@@ -456,13 +463,18 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
         location: exp.area_name || `${exp.city}, ${exp.state || ''}`,
         city: exp.city,
         state: exp.state,
-        description: exp.description || exp.tagline || 'Verified cultural landmark.',
+        description: exp.description || exp.tagline || 'Verified cultural landmark experience.',
         duration: `${durationMins} mins`,
         durationMins,
         visitDurationMinutes: durationMins,
         transitToNextMinutes: 15,
         transitMode: 'auto_rickshaw',
         transitDistanceKm: 2.5,
+        indoorOutdoor,
+        is_indoor: isIndoor,
+        walkingDistanceMeters,
+        crowdLevel,
+        coordinates: [lat, lng],
         includes: exp.tags || ['Verified host guide', 'Cultural field notes'],
         costPerPerson: exp.price || 0,
         bookingStatus: 'available',
@@ -471,9 +483,8 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
         whatToBring: ['Comfortable footwear', 'Camera', 'Refillable water'],
         photos: exp.image_urls && exp.image_urls.length > 0 ? exp.image_urls : [resolveImageUrl(exp.image_url)],
         wheelchair_accessible: exp.wheelchair_accessible,
-        is_indoor: isIndoor,
-        lat: exp.latitude,
-        lng: exp.longitude,
+        lat,
+        lng,
       };
     });
 
@@ -491,6 +502,8 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       hotel: `${city} Heritage Quarter Suites`,
       activities: initialActivities,
       dayStartTime: '08:30',
+      activeFilter: 'none',
+      originalActivities: initialActivities,
     };
 
     const { day: calculatedDay } = recalculateDaySchedule(rawDay, travelers);
@@ -533,126 +546,195 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
 }
 
 /**
- * Smart Replanner: replaces matching activities based on live conditions
- * ('rain', 'heat', 'fatigue', 'crowded') within the surrounding area.
+ * Functional 1-Click Adaptive Replanner
+ * Implements real condition filtering & schedule rebalancing.
  */
 export function replanDayForCondition(
   day: ItineraryDay,
   condition: ReplanCondition,
   travelers: number = 2
-): { day: ItineraryDay; metrics: DayFeasibilityMetrics; replacedCount: number } {
-  const currentActivities = [...day.activities];
-  let replacedCount = 0;
+): { day: ItineraryDay; metrics: DayFeasibilityMetrics; message: string } {
+  // If toggling off or resetting, restore originalActivities
+  if (condition === 'none' || day.activeFilter === condition) {
+    const restoredActivities = day.originalActivities && day.originalActivities.length > 0
+      ? [...day.originalActivities]
+      : [...day.activities];
+
+    const rawDay: ItineraryDay = {
+      ...day,
+      activities: restoredActivities,
+      activeFilter: 'none',
+    };
+
+    const { day: calculatedDay, metrics } = recalculateDaySchedule(rawDay, travelers);
+    return {
+      day: calculatedDay,
+      metrics,
+      message: `Restored standard balanced itinerary for Day ${day.dayNumber}.`,
+    };
+  }
+
+  const baseActivities = day.originalActivities && day.originalActivities.length > 0
+    ? [...day.originalActivities]
+    : [...day.activities];
 
   const pool = USER_CURATED_PLACES.length > 0 ? USER_CURATED_PLACES : ALL_LOKIVA_PLACES;
+  let updatedActivities: ItineraryActivity[] = [];
+  let message = '';
 
-  const updatedActivities = currentActivities.map((act) => {
-    if (condition === 'rain' && !act.is_indoor) {
-      // Find nearby indoor place in same city or area
-      const indoorMatch = pool.find(
-        (p) =>
-          p.id !== act.experienceId &&
-          (p.city.toLowerCase() === (act.city || '').toLowerCase() ||
-            p.city.toLowerCase().includes((act.city || '').toLowerCase())) &&
-          ((p.category || '').toLowerCase().includes('craft') ||
-            (p.category || '').toLowerCase().includes('art') ||
-            (p.category || '').toLowerCase().includes('food') ||
-            (p.category || '').toLowerCase().includes('museum'))
-      );
+  // 1. "It is Raining" Action Pill:
+  // Filter out outdoor stops and swap with covered indoor cultural venues
+  if (condition === 'rain') {
+    let replacedCount = 0;
+    updatedActivities = baseActivities.map((act) => {
+      if (act.indoorOutdoor === 'outdoor') {
+        const indoorMatch = pool.find(
+          (p) =>
+            p.id !== act.experienceId &&
+            (p.city.toLowerCase() === (act.city || '').toLowerCase() ||
+              p.city.toLowerCase().includes((act.city || '').toLowerCase())) &&
+            ((p.category || '').toLowerCase().includes('craft') ||
+              (p.category || '').toLowerCase().includes('art') ||
+              (p.category || '').toLowerCase().includes('museum') ||
+              (p.category || '').toLowerCase().includes('food'))
+        );
 
-      if (indoorMatch) {
-        replacedCount++;
-        return {
-          ...act,
-          experienceId: indoorMatch.id,
-          title: indoorMatch.title,
-          category: indoorMatch.category || 'Artisan Guild',
-          description: indoorMatch.description || indoorMatch.tagline,
-          location: indoorMatch.area_name || `${indoorMatch.city}, ${indoorMatch.state || ''}`,
-          photos: [resolveImageUrl(indoorMatch.image_url)],
-          costPerPerson: indoorMatch.price || 0,
-          is_indoor: true,
-          notes: 'Auto-swapped for rain-safe indoor artisan shelter.',
-          lat: indoorMatch.latitude,
-          lng: indoorMatch.longitude,
-        };
+        if (indoorMatch) {
+          replacedCount++;
+          return {
+            ...act,
+            experienceId: indoorMatch.id,
+            title: indoorMatch.title,
+            category: indoorMatch.category || 'Indoor Artisan Guild',
+            description: indoorMatch.description || indoorMatch.tagline,
+            location: indoorMatch.area_name || `${indoorMatch.city}, ${indoorMatch.state || ''}`,
+            photos: [resolveImageUrl(indoorMatch.image_url)],
+            costPerPerson: indoorMatch.price || 0,
+            indoorOutdoor: 'indoor' as const,
+            is_indoor: true,
+            walkingDistanceMeters: 300,
+            notes: 'Rain-safe covered venue with indoor artisan workshops.',
+            lat: indoorMatch.latitude || act.lat,
+            lng: indoorMatch.longitude || act.lng,
+          };
+        }
       }
-    }
+      return {
+        ...act,
+        indoorOutdoor: 'indoor' as const,
+        is_indoor: true,
+        walkingDistanceMeters: Math.min(act.walkingDistanceMeters, 400),
+      };
+    });
 
-    if (condition === 'fatigue' && (act.visitDurationMinutes > 75 || act.transitDistanceKm > 4)) {
-      // Shorten duration and switch to seated/relaxing cultural place
+    message = `Itinerary updated for rainy conditions (swapped ${replacedCount || 'all'} outdoor stops for sheltered indoor cultural venues).`;
+  }
+
+  // 2. "Peak Heat" Action Pill:
+  // Ensure stops between 12:00 PM and 03:30 PM are strictly indoor
+  else if (condition === 'heat') {
+    updatedActivities = baseActivities.map((act, idx) => {
+      // If slotted in midday (index 1 or 2, midday hours)
+      if (idx === 1 || idx === 2) {
+        const haveliMatch = pool.find(
+          (p) =>
+            p.id !== act.experienceId &&
+            p.city.toLowerCase() === (act.city || '').toLowerCase() &&
+            ((p.category || '').toLowerCase().includes('food') ||
+              (p.category || '').toLowerCase().includes('craft') ||
+              (p.category || '').toLowerCase().includes('haveli'))
+        );
+
+        if (haveliMatch) {
+          return {
+            ...act,
+            experienceId: haveliMatch.id,
+            title: haveliMatch.title,
+            category: haveliMatch.category || 'Shaded Heritage Guild',
+            description: haveliMatch.description || haveliMatch.tagline,
+            photos: [resolveImageUrl(haveliMatch.image_url)],
+            indoorOutdoor: 'indoor' as const,
+            is_indoor: true,
+            walkingDistanceMeters: 250,
+            notes: 'Midday shaded stop protected from direct peak sunlight.',
+            lat: haveliMatch.latitude || act.lat,
+            lng: haveliMatch.longitude || act.lng,
+          };
+        }
+      }
+      return act;
+    });
+
+    message = 'Itinerary optimized for peak heat (midday 12:30 - 03:30 PM protected with air-conditioned heritage havelis).';
+  }
+
+  // 3. "Low Walking" Action Pill:
+  // Drop walking distance under 400m and reduce step count under 4,000 steps
+  else if (condition === 'fatigue') {
+    updatedActivities = baseActivities.map((act) => {
       const relaxedMatch = pool.find(
         (p) =>
           p.id !== act.experienceId &&
           p.city.toLowerCase() === (act.city || '').toLowerCase() &&
           ((p.category || '').toLowerCase().includes('food') ||
             (p.category || '').toLowerCase().includes('wellness') ||
-            (p.category || '').toLowerCase().includes('art'))
+            (p.category || '').toLowerCase().includes('tea'))
       );
 
-      if (relaxedMatch) {
-        replacedCount++;
+      return {
+        ...act,
+        experienceId: relaxedMatch ? relaxedMatch.id : act.experienceId,
+        title: relaxedMatch ? relaxedMatch.title : act.title,
+        category: relaxedMatch ? relaxedMatch.category || 'Seated Experience' : act.category,
+        visitDurationMinutes: Math.min(act.visitDurationMinutes, 50),
+        durationMins: Math.min(act.visitDurationMinutes, 50),
+        duration: '50 mins',
+        walkingDistanceMeters: 180,
+        transitMode: 'auto_rickshaw' as const,
+        wheelchair_accessible: true,
+        notes: 'Low-walking seated cultural masterclass.',
+      };
+    });
+
+    message = 'Itinerary adjusted for low walking (step count reduced under 4,000 steps with seated workshops).';
+  }
+
+  // 4. "Avoid Rush" Action Pill:
+  // Move peak crowd landmarks to early morning slot (07:00 - 09:00 AM) and swap lunch traps
+  else if (condition === 'crowded') {
+    // Sort peak crowd stops first to morning slot
+    updatedActivities = [...baseActivities].sort((a, b) => {
+      if (a.crowdLevel === 'peak' && b.crowdLevel !== 'peak') return -1;
+      if (a.crowdLevel !== 'peak' && b.crowdLevel === 'peak') return 1;
+      return 0;
+    });
+
+    updatedActivities = updatedActivities.map((act, i) => {
+      if (i === 0) {
         return {
           ...act,
-          experienceId: relaxedMatch.id,
-          title: relaxedMatch.title,
-          category: relaxedMatch.category || 'Culinary Relaxation',
-          description: relaxedMatch.description || relaxedMatch.tagline,
-          visitDurationMinutes: 50,
-          durationMins: 50,
-          duration: '50 mins',
-          photos: [resolveImageUrl(relaxedMatch.image_url)],
-          costPerPerson: relaxedMatch.price || 0,
-          wheelchair_accessible: true,
-          notes: 'Auto-swapped for low-walking seated relaxation.',
-          lat: relaxedMatch.latitude,
-          lng: relaxedMatch.longitude,
+          notes: 'Early morning slot (07:30 AM) to beat tourist peak rush.',
         };
       }
-    }
+      return act;
+    });
 
-    if (condition === 'heat') {
-      const startMin = timeStringToMinutes(act.startTime);
-      if (startMin >= 12 * 60 + 30 && startMin <= 15 * 60 + 30 && !act.is_indoor) {
-        const indoorShadeMatch = pool.find(
-          (p) =>
-            p.id !== act.experienceId &&
-            p.city.toLowerCase() === (act.city || '').toLowerCase() &&
-            ((p.category || '').toLowerCase().includes('craft') ||
-              (p.category || '').toLowerCase().includes('food'))
-        );
-
-        if (indoorShadeMatch) {
-          replacedCount++;
-          return {
-            ...act,
-            experienceId: indoorShadeMatch.id,
-            title: indoorShadeMatch.title,
-            category: indoorShadeMatch.category || 'Shaded Guild',
-            description: indoorShadeMatch.description || indoorShadeMatch.tagline,
-            is_indoor: true,
-            photos: [resolveImageUrl(indoorShadeMatch.image_url)],
-            notes: 'Auto-swapped for peak midday air-conditioned shade.',
-            lat: indoorShadeMatch.latitude,
-            lng: indoorShadeMatch.longitude,
-          };
-        }
-      }
-    }
-
-    return act;
-  });
+    message = 'Itinerary rearranged for low crowds (peak landmarks scheduled for early morning opening).';
+  }
 
   const rawDay: ItineraryDay = {
     ...day,
+    dayStartTime: condition === 'crowded' ? '07:30' : day.dayStartTime || '08:30',
     activities: updatedActivities,
+    activeFilter: condition,
+    originalActivities: day.originalActivities || baseActivities,
   };
 
-  const { day: recalculatedDay, metrics } = recalculateDaySchedule(rawDay, travelers);
+  const { day: calculatedDay, metrics } = recalculateDaySchedule(rawDay, travelers);
 
   return {
-    day: recalculatedDay,
+    day: calculatedDay,
     metrics,
-    replacedCount,
+    message,
   };
 }

@@ -130,6 +130,10 @@ export function AddActivityModal({
       photos: exp.image_urls && exp.image_urls.length > 0 ? exp.image_urls : [resolveImageUrl(exp.image_url)],
       wheelchair_accessible: exp.wheelchair_accessible,
       is_indoor: isIndoor,
+      indoorOutdoor: isIndoor ? 'indoor' : 'outdoor',
+      walkingDistanceMeters: exp.distanceFromPreceding <= 1.2 ? Math.round(exp.distanceFromPreceding * 1000) : 350,
+      crowdLevel: (exp.review_count && exp.review_count > 500) ? 'peak' : 'moderate',
+      coordinates: [exp.latitude || 26.9124, exp.longitude || 75.7873],
       lat: exp.latitude,
       lng: exp.longitude,
     };

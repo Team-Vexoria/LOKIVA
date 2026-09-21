@@ -4,6 +4,8 @@ export type ItineraryViewMode = 'timeline' | 'map' | 'list' | 'budget';
 
 export type TimeOfDaySlot = 'Morning' | 'Breakfast' | 'Afternoon' | 'Evening' | 'Dinner';
 
+export type ReplanCondition = 'rain' | 'heat' | 'fatigue' | 'crowded' | 'none';
+
 export type FeasibilityWarningType =
   | 'OVER_BUDGET_HOURS'
   | 'TEMPLE_AFTERNOON_CLOSURE'
@@ -59,6 +61,11 @@ export interface ItineraryActivity {
   transitToNextMinutes: number;
   transitMode: 'walking' | 'auto_rickshaw' | 'taxi';
   transitDistanceKm: number;
+  indoorOutdoor: 'indoor' | 'outdoor' | 'semi-covered';
+  is_indoor: boolean;
+  walkingDistanceMeters: number;
+  crowdLevel: 'low' | 'moderate' | 'peak';
+  coordinates: [number, number]; // [lat, lng]
   includes: string[];
   costPerPerson: number;
   bookingStatus: BookingStatus;
@@ -69,7 +76,6 @@ export interface ItineraryActivity {
   photos: string[];
   accessibility?: string;
   wheelchair_accessible?: boolean;
-  is_indoor?: boolean;
   lat?: number;
   lng?: number;
 }
@@ -83,6 +89,8 @@ export interface ItineraryDay {
   hotel: string;
   activities: ItineraryActivity[];
   dayStartTime?: string;
+  activeFilter?: ReplanCondition;
+  originalActivities?: ItineraryActivity[];
 }
 
 export interface ItineraryTripDetails {
@@ -105,5 +113,3 @@ export interface ItineraryPracticalInfo {
   transitNotes: string;
   languages: string[];
 }
-
-export type ReplanCondition = 'rain' | 'heat' | 'fatigue' | 'crowded';

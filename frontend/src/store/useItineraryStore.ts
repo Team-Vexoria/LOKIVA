@@ -15,7 +15,7 @@ import {
   GenerateTripOptions,
 } from '../lib/itinerarySolver';
 
-const STORAGE_KEY = 'lokiva_dynamic_itinerary_store_v2';
+const STORAGE_KEY = 'lokiva_dynamic_itinerary_store_v3';
 
 interface ItineraryState {
   tripDetails: ItineraryTripDetails;
@@ -44,7 +44,36 @@ interface ItineraryState {
   clearReplanMessage: () => void;
 }
 
-// Initial default trip if localStorage is empty
+function buildFreshTrip(city: string = 'Jaipur', daysCount: number = 3) {
+  const plan = generateDynamicTripPlan({
+    city,
+    state: 'Rajasthan',
+    daysCount,
+    pace: 'balanced',
+    travelers: 2,
+    budgetLimit: 25000,
+  });
+
+  const metricsMap: Record<number, DayFeasibilityMetrics> = {};
+  plan.days.forEach((d) => {
+    const { metrics } = recalculateDaySchedule(d, 2);
+    metricsMap[d.dayNumber] = metrics;
+  });
+
+  return {
+    tripDetails: plan.tripDetails,
+    days: plan.days,
+    selectedDay: 1,
+    activeStopId: null,
+    hoveredStopId: null,
+    viewMode: 'timeline' as ItineraryViewMode,
+    feasibilityMetrics: metricsMap,
+    practicalInfo: plan.practicalInfo,
+    isGenerating: false,
+    lastReplanMessage: null,
+  };
+}
+
 function createInitialState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -55,36 +84,9 @@ function createInitialState() {
       }
     }
   } catch {
-    // Ignore parse error and fall back to default
+    // fallback
   }
-
-  const defaultPlan = generateDynamicTripPlan({
-    city: 'Jaipur',
-    state: 'Rajasthan',
-    daysCount: 3,
-    pace: 'balanced',
-    travelers: 2,
-    budgetLimit: 25000,
-  });
-
-  const metricsMap: Record<number, DayFeasibilityMetrics> = {};
-  defaultPlan.days.forEach((d) => {
-    const { metrics } = recalculateDaySchedule(d, 2);
-    metricsMap[d.dayNumber] = metrics;
-  });
-
-  return {
-    tripDetails: defaultPlan.tripDetails,
-    days: defaultPlan.days,
-    selectedDay: 1,
-    activeStopId: null,
-    hoveredStopId: null,
-    viewMode: 'timeline' as ItineraryViewMode,
-    feasibilityMetrics: metricsMap,
-    practicalInfo: defaultPlan.practicalInfo,
-    isGenerating: false,
-    lastReplanMessage: null,
-  };
+  return buildFreshTrip('Jaipur', 3);
 }
 
 const initialState = createInitialState();
@@ -303,7 +305,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
     if (dayIndex === -1) return;
 
     const currentDay = days[dayIndex];
-    const { day: replannedDay, metrics, replacedCount } = replanDayForCondition(
+    const { day: replannedDay, metrics, message } = replanDayForCondition(
       currentDay,
       condition,
       tripDetails.travelers || 2
@@ -317,21 +319,10 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
       [dayNumber]: metrics,
     };
 
-    let msg = `Replanned Day ${dayNumber}: `;
-    if (condition === 'rain') {
-      msg += `Swapped ${replacedCount} outdoor stops with sheltered artisan guilds and indoor museums.`;
-    } else if (condition === 'heat') {
-      msg += `Protected midday slots with shaded workshops and air-conditioned heritage dining.`;
-    } else if (condition === 'fatigue') {
-      msg += `Optimized itinerary with low-walking seated cultural experiences.`;
-    } else {
-      msg += `Rearranged timing to avoid peak tourist congestion.`;
-    }
-
     set({
       days: newDays,
       feasibilityMetrics: newMetrics,
-      lastReplanMessage: msg,
+      lastReplanMessage: message,
     });
 
     try {

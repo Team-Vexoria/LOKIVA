@@ -356,6 +356,7 @@ export function ItineraryPage() {
                 <FeasibilityPanel
                   metrics={activeMetrics}
                   dayNumber={activeDay.dayNumber}
+                  activeFilter={activeDay.activeFilter || 'none'}
                   onReplan={(condition) => replanDay(activeDay.dayNumber, condition)}
                 />
               )}
