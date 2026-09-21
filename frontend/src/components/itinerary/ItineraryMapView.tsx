@@ -1,43 +1,181 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, Clock, Coins, Bookmark, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, Clock, Coins, Bookmark, CheckCircle2, Footprints, Car, Sparkles } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../../types/itinerary';
+import L from 'leaflet';
 
 interface ItineraryMapViewProps {
   days: ItineraryDay[];
+  selectedDayNumber?: number;
+  activeStopId?: number | null;
+  hoveredStopId?: number | null;
+  onSelectStop?: (stopId: number) => void;
 }
 
-export function ItineraryMapView({ days }: ItineraryMapViewProps) {
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | 'all'>('all');
-  const [activeActivity, setActiveActivity] = useState<ItineraryActivity | null>(null);
+export function ItineraryMapView({
+  days,
+  selectedDayNumber,
+  activeStopId,
+  hoveredStopId,
+  onSelectStop,
+}: ItineraryMapViewProps) {
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | 'all'>(
+    selectedDayNumber !== undefined ? selectedDayNumber - 1 : 0
+  );
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<Record<number, L.Marker>>({});
+  const polylineRef = useRef<L.Polyline | null>(null);
+
+  useEffect(() => {
+    if (selectedDayNumber !== undefined) {
+      setSelectedDayIndex(selectedDayNumber - 1);
+    }
+  }, [selectedDayNumber]);
 
   const displayedDays =
-    selectedDayIndex === 'all' ? days : [days[selectedDayIndex as number]];
+    selectedDayIndex === 'all'
+      ? days
+      : days[selectedDayIndex as number]
+      ? [days[selectedDayIndex as number]]
+      : days;
 
   const allDisplayedActivities = displayedDays.flatMap((d) =>
-    d.activities.map((act) => ({ ...act, dayNumber: d.dayNumber }))
+    d.activities.map((act) => ({ ...act, dayNum: d.dayNumber }))
   );
 
+  // Initialize and update Leaflet Map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (!mapInstanceRef.current) {
+      // Create Leaflet map instance
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        scrollWheelZoom: false,
+      }).setView([20.5937, 78.9629], 5);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 19,
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+    }
+
+    const map = mapInstanceRef.current;
+
+    // Clear previous markers & polylines
+    Object.values(markersRef.current).forEach((m) => m.remove());
+    markersRef.current = {};
+    if (polylineRef.current) {
+      polylineRef.current.remove();
+      polylineRef.current = null;
+    }
+
+    const validCoordStops = allDisplayedActivities.filter(
+      (a) => a.lat !== undefined && a.lng !== undefined && !isNaN(a.lat) && !isNaN(a.lng)
+    );
+
+    if (validCoordStops.length > 0) {
+      const latLngs: [number, number][] = [];
+
+      validCoordStops.forEach((stop, idx) => {
+        const lat = stop.lat!;
+        const lng = stop.lng!;
+        latLngs.push([lat, lng]);
+
+        const isActive = activeStopId === stop.id || hoveredStopId === stop.id;
+
+        // Custom numbered terracotta/ink pin
+        const pinHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer transition-transform duration-300 ${
+            isActive ? 'scale-125 z-50' : 'hover:scale-110'
+          }">
+            <div class="w-8 h-8 rounded-full ${
+              isActive ? 'bg-[#C1443B] ring-4 ring-[#FFC067]' : 'bg-[#12213B]'
+            } text-[#FAF7F2] font-mono font-bold text-xs flex items-center justify-center shadow-lg border border-white">
+              ${idx + 1}
+            </div>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: pinHtml,
+          className: 'custom-itinerary-pin',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+
+        const marker = L.marker([lat, lng], { icon })
+          .addTo(map)
+          .bindPopup(`
+            <div class="p-2 font-sans space-y-1 text-ink min-w-[180px]">
+              <span class="text-[10px] font-mono text-[#C1443B] font-bold uppercase block">Stop ${idx + 1} · ${stop.timeRange}</span>
+              <strong class="text-xs font-heading font-bold block">${stop.title}</strong>
+              <p class="text-[11px] text-dusk">${stop.location}</p>
+              <div class="text-[10px] font-mono text-ink pt-1 border-t border-[#E5DFD5]">
+                ${stop.costPerPerson === 0 ? 'Free Open Heritage' : '₹' + stop.costPerPerson + ' / person'}
+              </div>
+            </div>
+          `);
+
+        marker.on('click', () => {
+          onSelectStop?.(stop.id);
+          const el = document.getElementById(`itinerary-stop-${stop.id}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        markersRef.current[stop.id] = marker;
+      });
+
+      // Draw connecting route polyline
+      if (latLngs.length > 1) {
+        polylineRef.current = L.polyline(latLngs, {
+          color: '#C1443B',
+          weight: 4,
+          opacity: 0.85,
+          dashArray: '8, 8',
+        }).addTo(map);
+      }
+
+      map.fitBounds(L.latLngBounds(latLngs), { padding: [40, 40], maxZoom: 15 });
+    }
+
+    return () => {
+      // Map cleanup if component unmounts
+    };
+  }, [allDisplayedActivities.length, selectedDayIndex, activeStopId, hoveredStopId]);
+
+  // Center on active stop when changed
+  useEffect(() => {
+    if (activeStopId && markersRef.current[activeStopId] && mapInstanceRef.current) {
+      const marker = markersRef.current[activeStopId];
+      mapInstanceRef.current.panTo(marker.getLatLng(), { animate: true, duration: 0.5 });
+      marker.openPopup();
+    }
+  }, [activeStopId]);
+
   return (
-    <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 space-y-6 shadow-sm">
-      {/* Map Header & Day Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-paper-200">
+    <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-5 sm:p-6 space-y-5 shadow-sm">
+      {/* Map Header & Day Filter Chips */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E5DFD5]">
         <div>
           <h2 className="text-xl sm:text-2xl font-display font-bold text-ink">
-            Itinerary Route & Geographic Map
+            Interactive Route & Geographic Map
           </h2>
-          <p className="text-xs text-dusk-600 font-sans">
-            Visual sequence of stops plotted with estimated auto-rickshaw transit buffers.
+          <p className="text-xs text-dusk font-sans">
+            Live numbered route polyline synchronized with your daily timeline stops.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setSelectedDayIndex('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
               selectedDayIndex === 'all'
-                ? 'bg-ink text-paper shadow-2xs'
-                : 'bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white text-ink hover:bg-[#FAF8F5] border border-[#E5DFD5]'
             }`}
           >
             All Days
@@ -49,8 +187,8 @@ export function ItineraryMapView({ days }: ItineraryMapViewProps) {
               onClick={() => setSelectedDayIndex(idx)}
               className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
                 selectedDayIndex === idx
-                  ? 'bg-ink text-paper shadow-2xs'
-                  : 'bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                  ? 'bg-[#12213B] text-white shadow-2xs'
+                  : 'bg-white text-ink hover:bg-[#FAF8F5] border border-[#E5DFD5]'
               }`}
             >
               Day {day.dayNumber}
@@ -59,143 +197,21 @@ export function ItineraryMapView({ days }: ItineraryMapViewProps) {
         </div>
       </div>
 
-      {/* Interactive Schematic Route Canvas */}
-      <div className="relative w-full h-96 sm:h-[420px] bg-[#EEF1EE] rounded-2xl border border-paper-400 overflow-hidden p-6 flex flex-col justify-between">
-        {/* Subtle Map Grid Background Pattern */}
-        <div
-          className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, #12213B 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
+      {/* Leaflet Map Canvas */}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-80 sm:h-[400px] rounded-2xl border border-[#E5DFD5] overflow-hidden shadow-inner z-10"
+      />
 
-        {/* SVG Route Connector Line */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <polyline
-            points={allDisplayedActivities
-              .map((_, i) => {
-                const step = 100 / (allDisplayedActivities.length + 1);
-                const x = (i + 1) * step;
-                const y = 30 + (i % 2 === 0 ? 30 : 15);
-                return `${x}%,${y}%`;
-              })
-              .join(' ')}
-            fill="none"
-            stroke="#D85A38"
-            strokeWidth="3"
-            strokeDasharray="6,6"
-            className="animate-pulse"
-          />
-        </svg>
-
-        {/* Plotted Stops Pins */}
-        <div className="relative z-10 w-full h-full flex items-center justify-between px-4 sm:px-12">
-          {allDisplayedActivities.map((act, idx) => {
-            const isSelected = activeActivity?.id === act.id;
-            const isEven = idx % 2 === 0;
-
-            return (
-              <div
-                key={act.id}
-                className="relative flex flex-col items-center cursor-pointer group"
-                style={{ transform: `translateY(${isEven ? '40px' : '-40px'})` }}
-                onClick={() => setActiveActivity(act)}
-              >
-                {/* Pin Circle */}
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-xs shadow-md transition-transform duration-200 group-hover:scale-115 ${
-                    isSelected
-                      ? 'bg-marigold text-ink ring-4 ring-marigold/30'
-                      : 'bg-ink text-paper'
-                  }`}
-                >
-                  {idx + 1}
-                </div>
-
-                {/* Pin Label */}
-                <div className="mt-2 text-center max-w-[110px]">
-                  <span className="text-[11px] font-mono font-bold text-ink block truncate">
-                    {act.title}
-                  </span>
-                  <span className="text-[10px] font-mono text-dusk-600 block">
-                    Day {act.dayNumber} · {act.timeRange.split('-')[0]}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+      {/* Route Quick Summary Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-dusk bg-white p-3 rounded-xl border border-[#E5DFD5]">
+        <div className="flex items-center gap-2">
+          <Navigation className="w-3.5 h-3.5 text-[#C1443B]" />
+          <span>{allDisplayedActivities.length} Sequential Stops</span>
         </div>
-
-        {/* Selected Stop Details Floating Overlay Card */}
-        {activeActivity && (
-          <div className="relative z-20 self-center max-w-md w-full bg-white rounded-2xl border border-paper-400 p-4 shadow-xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-            {activeActivity.photos && activeActivity.photos.length > 0 && (
-              <img
-                src={activeActivity.photos[0]}
-                alt={activeActivity.title}
-                className="w-16 h-16 rounded-xl object-cover shrink-0 border border-paper-300"
-              />
-            )}
-            <div className="space-y-1 flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-mono font-bold text-ink truncate">
-                  {activeActivity.title}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveActivity(null)}
-                  className="text-dusk hover:text-ink text-xs font-mono cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-dusk">
-                <Clock className="w-3 h-3 text-marigold" />
-                <span>{activeActivity.timeRange}</span>
-                <span>·</span>
-                <span className="text-teal font-bold">
-                  {activeActivity.costPerPerson === 0 ? 'Free' : `₹${activeActivity.costPerPerson}`}
-                </span>
-              </div>
-              <p className="text-[11px] text-dusk-700 font-sans truncate">
-                {activeActivity.gettingThere}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Chronological Stop Sequence List */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-mono font-bold text-ink uppercase tracking-wider">
-          Geographic Stop Sequence
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {allDisplayedActivities.map((act, idx) => (
-            <div
-              key={act.id}
-              onClick={() => setActiveActivity(act)}
-              className="p-3 bg-paper-50 hover:bg-paper-100 rounded-xl border border-paper-300 flex items-start gap-3 cursor-pointer transition"
-            >
-              <span className="w-6 h-6 rounded-full bg-ink text-paper font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                {idx + 1}
-              </span>
-              <div className="space-y-0.5 min-w-0">
-                <span className="text-xs font-mono font-bold text-ink block truncate">
-                  {act.title}
-                </span>
-                <span className="text-[11px] font-sans text-dusk block truncate">
-                  {act.location}
-                </span>
-                <span className="text-[10px] font-mono text-teal block">
-                  Day {act.dayNumber} · {act.duration}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <span className="text-[11px] text-ink">
+          💡 Click any numbered marker on the map to jump directly to its timeline card.
+        </span>
       </div>
     </div>
   );

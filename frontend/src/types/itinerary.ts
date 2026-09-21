@@ -4,27 +4,72 @@ export type ItineraryViewMode = 'timeline' | 'map' | 'list' | 'budget';
 
 export type TimeOfDaySlot = 'Morning' | 'Breakfast' | 'Afternoon' | 'Evening' | 'Dinner';
 
+export type FeasibilityWarningType =
+  | 'OVER_BUDGET_HOURS'
+  | 'TEMPLE_AFTERNOON_CLOSURE'
+  | 'LANDMARK_CLOSED_DAY'
+  | 'MIDDAY_HEAT_EXPOSURE'
+  | 'TIGHT_TRANSIT_BUFFER'
+  | 'EXCESSIVE_WALKING';
+
+export interface FeasibilityWarning {
+  id: string;
+  type: FeasibilityWarningType;
+  severity: 'warning' | 'critical' | 'info';
+  message: string;
+  activityId?: number;
+  recommendation?: string;
+}
+
+export interface DayCostBreakdown {
+  ticketCost: number;
+  transitCost: number;
+  foodCost: number;
+  totalCost: number;
+}
+
+export interface DayFeasibilityMetrics {
+  paceScore: number;
+  paceLabel: 'Relaxed' | 'Optimal' | 'Packed' | 'Overburdened';
+  totalSightseeingMinutes: number;
+  totalTransitMinutes: number;
+  totalTransitDistanceKm: number;
+  estimatedWalkingSteps: number;
+  localImpactScore: number;
+  warnings: FeasibilityWarning[];
+  costBreakdown: DayCostBreakdown;
+}
+
 export interface ItineraryActivity {
   id: number;
   experienceId?: number;
   timeSlot: TimeOfDaySlot;
   timeRange: string;
+  startTime: string;
+  endTime: string;
   title: string;
   category: string;
   location: string;
+  city?: string;
+  state?: string;
   description: string;
   duration: string;
   durationMins: number;
+  visitDurationMinutes: number;
+  transitToNextMinutes: number;
+  transitMode: 'walking' | 'auto_rickshaw' | 'taxi';
+  transitDistanceKm: number;
   includes: string[];
   costPerPerson: number;
   bookingStatus: BookingStatus;
   gettingThere: string;
-  transitTimeMins: number;
   transitCost: number;
   whatToBring: string[];
   notes?: string;
   photos: string[];
   accessibility?: string;
+  wheelchair_accessible?: boolean;
+  is_indoor?: boolean;
   lat?: number;
   lng?: number;
 }
@@ -37,6 +82,7 @@ export interface ItineraryDay {
   heroImage: string;
   hotel: string;
   activities: ItineraryActivity[];
+  dayStartTime?: string;
 }
 
 export interface ItineraryTripDetails {
@@ -48,6 +94,7 @@ export interface ItineraryTripDetails {
   travelers: number;
   totalBudgetLimit: number;
   hotel: string;
+  pace?: 'relaxed' | 'balanced' | 'packed';
 }
 
 export interface ItineraryPracticalInfo {
@@ -58,3 +105,5 @@ export interface ItineraryPracticalInfo {
   transitNotes: string;
   languages: string[];
 }
+
+export type ReplanCondition = 'rain' | 'heat' | 'fatigue' | 'crowded';

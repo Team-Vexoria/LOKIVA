@@ -24,7 +24,8 @@
     "react-router-dom": "^7.1.5",
     "tailwind-merge": "^3.5.0",
     "three": "^0.185.1",
-    "topojson-client": "^3.1.0"
+    "topojson-client": "^3.1.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

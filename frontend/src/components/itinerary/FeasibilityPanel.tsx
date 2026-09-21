@@ -3,155 +3,196 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
-  Coins,
   MapPin,
   RefreshCw,
   Umbrella,
-  Activity,
+  Sun,
   ShieldCheck,
   Zap,
+  Footprints,
+  Compass,
+  Coins,
+  Flame,
 } from 'lucide-react';
-import { FeasibilityResult } from '../../types';
+import { DayFeasibilityMetrics, ReplanCondition } from '../../types/itinerary';
 
 interface FeasibilityPanelProps {
-  feasibility: FeasibilityResult | null;
-  onReplan: (reason: string) => void;
+  metrics: DayFeasibilityMetrics | null;
+  dayNumber: number;
+  onReplan: (condition: ReplanCondition) => void;
   isReplanning?: boolean;
-  selectedCount?: number;
 }
 
 export function FeasibilityPanel({
-  feasibility,
+  metrics,
+  dayNumber,
   onReplan,
   isReplanning = false,
-  selectedCount,
 }: FeasibilityPanelProps) {
-  if (!feasibility) {
+  if (!metrics) {
     return (
-      <div className="bg-white rounded-3xl border border-paper-400 p-6 text-center space-y-2 shadow-sm font-mono text-xs text-dusk">
-        <span>Calculating feasibility matrix...</span>
+      <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-5 text-center space-y-2 shadow-xs font-mono text-xs text-dusk">
+        <span>Calculating time-space feasibility matrix...</span>
       </div>
     );
   }
 
-  const isFeasible = feasibility.is_feasible;
-  const score = feasibility.score || 94;
+  const {
+    paceScore,
+    paceLabel,
+    totalSightseeingMinutes,
+    totalTransitMinutes,
+    totalTransitDistanceKm,
+    estimatedWalkingSteps,
+    localImpactScore,
+    warnings,
+    costBreakdown,
+  } = metrics;
+
+  const totalTimeHours = Math.round(((totalSightseeingMinutes + totalTransitMinutes) / 60) * 10) / 10;
 
   return (
-    <div className="bg-white rounded-3xl border border-paper-400 p-6 space-y-6 shadow-lg text-ink">
-      {/* Top Status & Score Gauge */}
-      <div className="space-y-3 pb-4 border-b border-paper-300">
+    <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-5 sm:p-6 space-y-5 shadow-sm text-ink">
+      {/* Header Barometer */}
+      <div className="space-y-3 pb-4 border-b border-[#E5DFD5]">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-teal">
-            Constraint Solver Engine
+          <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+            AI Feasibility Solver · Day {dayNumber}
           </span>
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200">
-            {isFeasible ? '✓ Plan Feasible' : '⚠️ Soft Warning'}
+          <span
+            className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold border ${
+              paceScore >= 80
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : paceScore >= 60
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}
+          >
+            {paceScore >= 80 ? '✓ ' : '⚠️ '}
+            {paceLabel} Pace ({paceScore}/100)
           </span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-3xl font-extrabold font-mono text-teal">
-              {score}%
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5">
+            <span className="text-[10px] font-mono uppercase text-dusk block">Sightseeing</span>
+            <span className="text-sm font-bold font-mono text-ink">
+              {Math.floor(totalSightseeingMinutes / 60)}h {totalSightseeingMinutes % 60}m
             </span>
-            <span className="text-xs font-mono text-dusk block">Feasibility Confidence</span>
           </div>
 
-          <div className="text-right text-xs font-mono space-y-0.5">
-            <span className="text-ink font-bold block">
-              {feasibility.total_duration_mins || 110} mins total
+          <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5">
+            <span className="text-[10px] font-mono uppercase text-dusk block">Transit Time</span>
+            <span className="text-sm font-bold font-mono text-ink">
+              {totalTransitMinutes} mins ({totalTransitDistanceKm} km)
             </span>
-            <span className="text-dusk block">
-              ₹{feasibility.total_cost || 1100} / ₹1,500 budget
+          </div>
+
+          <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5">
+            <span className="text-[10px] font-mono uppercase text-dusk block">Step Count</span>
+            <span className="text-sm font-bold font-mono text-ink flex items-center gap-1">
+              <Footprints className="w-3.5 h-3.5 text-[#C1443B]" />
+              <span>{estimatedWalkingSteps.toLocaleString()}</span>
+            </span>
+          </div>
+
+          <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5">
+            <span className="text-[10px] font-mono uppercase text-dusk block">Local Impact</span>
+            <span className="text-sm font-bold font-mono text-emerald-700">
+              {localImpactScore}% Direct
             </span>
           </div>
         </div>
       </div>
 
-      {/* Constraints Checklist */}
-      <div className="space-y-2.5 font-mono text-xs">
-        <span className="text-[10px] uppercase font-bold text-dusk block">
-          Hard Constraint Checklist
-        </span>
+      {/* Warnings & Domain Alerts */}
+      {warnings.length > 0 && (
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-mono uppercase font-bold text-dusk block">
+            Constraint & Timing Advisories ({warnings.length})
+          </span>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2.5 bg-paper-50 rounded-xl border border-paper-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0" />
-              <span>Time Window ({feasibility.total_duration_mins || 110}m / 120m)</span>
-            </div>
-            <span className="text-teal font-bold text-[10px]">PASS</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 bg-paper-50 rounded-xl border border-paper-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0" />
-              <span>Transit Buffer (~18 mins auto)</span>
-            </div>
-            <span className="text-teal font-bold text-[10px]">SAFE</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 bg-paper-50 rounded-xl border border-paper-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0" />
-              <span>Wheelchair Step-Free</span>
-            </div>
-            <span className="text-teal font-bold text-[10px]">VERIFIED</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 bg-paper-50 rounded-xl border border-paper-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0" />
-              <span>Budget Ceiling (≤ ₹1,500)</span>
-            </div>
-            <span className="text-teal font-bold text-[10px]">₹1,100</span>
+          <div className="space-y-2">
+            {warnings.map((w) => (
+              <div
+                key={w.id}
+                className={`p-3 rounded-xl border text-xs font-sans space-y-1 ${
+                  w.severity === 'critical'
+                    ? 'bg-rose-50 border-rose-200 text-rose-950'
+                    : w.severity === 'warning'
+                    ? 'bg-amber-50 border-amber-200 text-amber-950'
+                    : 'bg-blue-50 border-blue-200 text-blue-950'
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle
+                    className={`w-4 h-4 shrink-0 mt-0.5 ${
+                      w.severity === 'critical'
+                        ? 'text-rose-600'
+                        : w.severity === 'warning'
+                        ? 'text-amber-600'
+                        : 'text-blue-600'
+                    }`}
+                  />
+                  <div>
+                    <strong className="font-heading font-bold block">{w.message}</strong>
+                    {w.recommendation && (
+                      <p className="text-[11px] opacity-90 mt-0.5 font-sans">
+                        💡 {w.recommendation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 4 One-Tap Live Disruption Simulation Buttons */}
-      <div className="space-y-2.5 pt-2 border-t border-paper-300">
-        <span className="text-[10px] uppercase font-mono font-bold text-clay block flex items-center gap-1">
-          <Activity className="w-3.5 h-3.5" />
-          Simulate Live Disruption & Re-Plan
-        </span>
+      {/* 1-Click Dynamic Smart Replanner Triggers */}
+      <div className="space-y-2.5 pt-2 border-t border-[#E5DFD5]">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-mono uppercase font-bold text-dusk">
+            1-Click Adaptive Re-Planner:
+          </span>
+          <span className="text-[10px] font-mono text-[#C1443B]">Live Auto Solver</span>
+        </div>
 
-        <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
             onClick={() => onReplan('rain')}
             disabled={isReplanning}
-            className="p-2.5 bg-clay-50 hover:bg-clay-100 text-clay border border-clay-200 rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+            className="p-2.5 bg-white hover:bg-sky-50 border border-[#E5DFD5] hover:border-sky-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            <Umbrella className="w-3.5 h-3.5" />
-            <span>Rain Alert</span>
+            <Umbrella className="w-3.5 h-3.5 text-sky-600" />
+            <span>It is Raining</span>
           </button>
 
           <button
-            onClick={() => onReplan('delay')}
+            onClick={() => onReplan('heat')}
             disabled={isReplanning}
-            className="p-2.5 bg-paper-100 hover:bg-paper-200 text-ink border border-paper-300 rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+            className="p-2.5 bg-white hover:bg-amber-50 border border-[#E5DFD5] hover:border-amber-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            <Clock className="w-3.5 h-3.5 text-marigold" />
-            <span>30m Delay</span>
+            <Sun className="w-3.5 h-3.5 text-amber-600" />
+            <span>Peak Heat</span>
           </button>
 
           <button
-            onClick={() => onReplan('budget')}
+            onClick={() => onReplan('fatigue')}
             disabled={isReplanning}
-            className="p-2.5 bg-paper-100 hover:bg-paper-200 text-ink border border-paper-300 rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+            className="p-2.5 bg-white hover:bg-emerald-50 border border-[#E5DFD5] hover:border-emerald-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            <Coins className="w-3.5 h-3.5 text-teal" />
-            <span>Cut ₹500</span>
-          </button>
-
-          <button
-            onClick={() => onReplan('tired')}
-            disabled={isReplanning}
-            className="p-2.5 bg-paper-100 hover:bg-paper-200 text-ink border border-paper-300 rounded-xl font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
-          >
-            <Zap className="w-3.5 h-3.5 text-marigold" />
+            <Footprints className="w-3.5 h-3.5 text-emerald-600" />
             <span>Low Walking</span>
+          </button>
+
+          <button
+            onClick={() => onReplan('crowded')}
+            disabled={isReplanning}
+            className="p-2.5 bg-white hover:bg-purple-50 border border-[#E5DFD5] hover:border-purple-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-purple-600" />
+            <span>Avoid Rush</span>
           </button>
         </div>
       </div>
