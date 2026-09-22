@@ -377,7 +377,8 @@ function generateDynamicLogicalPlan(answers: DiscoveryAnswers): DayPlanResponse 
       cost_label: costLabel,
       fit_reason: fitReason,
       match_notes: item.description,
-    };
+      category: item.category,
+    } as DayPlanStop & { match_notes: string; category: string };
   });
 
   const cityDisplayName = answers.destination || 'Jaipur';
@@ -418,31 +419,13 @@ export function TripOnboardingTakeover({
     };
 
     if (onPlanGenerated) {
-      const payload = {
-        destination: city,
-        time_available: `${answers.days} Days`,
-        budget: `₹${answers.budget_daily_inr}/day`,
-        group_type: answers.group_type,
-        interests: answers.interests,
-        food_preferences: 'Pure Vegetarian',
-        mobility: answers.accessibility.wheelchair
-          ? 'Wheelchair Friendly'
-          : answers.accessibility.low_walking
-          ? 'Low Walking'
-          : 'Moderate Walking',
-        vibe: answers.pace,
-      };
+      // Always use the deterministic client-side generator to guarantee
+      // the correct city, interests, and budget tier are applied.
+      // The backend may return stale or city-agnostic data.
+      const dynamicPlan = generateDynamicLogicalPlan(answers);
+      onPlanGenerated(mappedAnswers, dynamicPlan);
 
-      try {
-        const plan = await api.generateDayPlan(payload);
-        onPlanGenerated(mappedAnswers, plan);
-      } catch (err) {
-        console.warn('Backend plan error, using dynamic client generator:', err);
-        const dynamicPlan = generateDynamicLogicalPlan(answers);
-        onPlanGenerated(mappedAnswers, dynamicPlan);
-      }
-
-      // Close modal and keep user on the current page to view their solved plan
+      // Close modal and navigate to discovery map with the plan
       onClose();
       return;
     }

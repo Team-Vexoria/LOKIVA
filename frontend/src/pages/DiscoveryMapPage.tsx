@@ -244,89 +244,157 @@ export function DiscoveryMapPage() {
           />
         </div>
 
-        {/* Phase 3: Curated Plan Results (only when arriving from landing hero flow) */}
-        {injectedPlan && injectedPlan.stops && injectedPlan.stops.length > 0 && (
-          <motion.div
-            id="circuit-drawer-section"
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="pt-2 space-y-5"
-          >
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-[#E5DFD5]">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#C85A32]" />
-                  <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                    Your Curated Day Plan
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#12213B]">
-                  {injectedPlan.city} Micro-Circuit
-                </h2>
-                {injectedPlan.feasibility_summary && (
-                  <p className="text-xs text-[#5B6B8C] font-sans max-w-xl leading-relaxed">
-                    {injectedPlan.feasibility_summary}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setInjectedPlan(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-bold text-[#5B6B8C] hover:text-[#C85A32] border border-[#E5DFD5] hover:border-[#C85A32] rounded-xl transition-colors cursor-pointer self-start"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Clear
-              </button>
-            </div>
-
-            {/* Stops list */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {injectedPlan.stops.map((stop, idx) => (
-                <motion.div
-                  key={stop.name}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * idx, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative bg-white border border-[#E5DFD5] rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#C85A32]/40 transition-all"
-                >
-                  {/* Order + time */}
-                  <div className="flex items-center justify-between mb-2.5">
-                    <span className="w-6 h-6 rounded-full bg-[#FFF3E8] text-[#C85A32] text-xs font-mono font-extrabold flex items-center justify-center">
-                      {stop.order}
-                    </span>
-                    <span className="text-xs font-mono text-[#5B6B8C]">{stop.time}</span>
-                  </div>
-
-                  {/* Name */}
-                  <h3 className="font-heading font-bold text-[#12213B] text-sm leading-snug mb-1.5">
-                    {stop.name}
-                  </h3>
-
-                  {/* Duration + cost */}
-                  <div className="flex items-center gap-3 text-xs font-sans text-[#5B6B8C] mb-2">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-[#C85A32]" />
-                      {stop.duration_mins} min
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Coins className="w-3 h-3 text-[#D99B43]" />
-                      {stop.cost_label}
+        {/* Phase 3: Curated Plan Results */}
+        {injectedPlan && injectedPlan.stops && injectedPlan.stops.length > 0 && (() => {
+          const CATEGORY_IMAGES: Record<string, string> = {
+            heritage: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=80',
+            crafts: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+            food: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&q=80',
+            rituals: 'https://images.unsplash.com/photo-1561361058-c24cecae35ca?w=600&q=80',
+            monuments: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',
+            nature: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
+            markets: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=600&q=80',
+            arts: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=600&q=80',
+            offbeat: 'https://images.unsplash.com/photo-1598091383021-15ddea10925d?w=600&q=80',
+            wellness: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80',
+          };
+          const CATEGORY_LABEL: Record<string, string> = {
+            heritage: 'Living Heritage',
+            crafts: 'Artisan Guild',
+            food: 'Gastronomy',
+            rituals: 'Sacred Ritual',
+            monuments: 'Ancient Monument',
+            nature: 'Natural Enclave',
+            markets: 'Cultural Market',
+            arts: 'Performing Arts',
+            offbeat: 'Hidden Gem',
+            wellness: 'Wellness Sanctuary',
+          };
+          return (
+            <motion.div
+              id="circuit-drawer-section"
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="pt-2 space-y-6"
+            >
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 border-b border-[#E5DFD5]">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#C85A32]" />
+                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+                      Your Curated Day Plan
                     </span>
                   </div>
-
-                  {/* Fit reason */}
-                  {stop.fit_reason && (
-                    <p className="text-xs font-sans text-[#5B6B8C] leading-relaxed border-t border-[#F0EBE3] pt-2 mt-2">
-                      {stop.fit_reason}
+                  <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight">
+                    {injectedPlan.city} Micro-Circuit
+                  </h2>
+                  {injectedPlan.feasibility_summary && (
+                    <p className="text-sm text-[#5B6B8C] font-sans max-w-2xl leading-relaxed">
+                      {injectedPlan.feasibility_summary}
                     </p>
                   )}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsGuidedFlowOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#C85A32] hover:bg-[#B34D28] text-white rounded-xl text-xs font-heading font-bold transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Recalibrate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInjectedPlan(null)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-heading font-bold text-[#5B6B8C] hover:text-[#C85A32] border border-[#E5DFD5] hover:border-[#C85A32] rounded-xl transition-colors cursor-pointer bg-white"
+                  >
+                    Browse Map
+                  </button>
+                </div>
+              </div>
+
+              {/* Rich Stop Cards */}
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {injectedPlan.stops.map((stop, idx) => {
+                  const cat = (stop as any).match_notes ? (stop as any).category || 'heritage' : 'heritage';
+                  const img = CATEGORY_IMAGES[cat] || CATEGORY_IMAGES.heritage;
+                  const catLabel = CATEGORY_LABEL[cat] || 'Cultural Stop';
+                  return (
+                    <motion.div
+                      key={stop.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.07 * idx, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                      className="group relative bg-white border border-[#E5DFD5] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-[#C85A32]/30 transition-all duration-300 flex flex-col"
+                    >
+                      {/* Image with overlay */}
+                      <div className="relative h-40 w-full overflow-hidden">
+                        <img
+                          src={img}
+                          alt={stop.name}
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#12213B]/75 via-[#12213B]/20 to-transparent" />
+                        {/* Order badge */}
+                        <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#C85A32] text-white text-sm font-mono font-extrabold flex items-center justify-center shadow-lg">
+                          {stop.order}
+                        </div>
+                        {/* Category pill */}
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-xs font-heading font-bold">
+                          {catLabel}
+                        </div>
+                        {/* Time on image */}
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#FFC067]" />
+                          <span className="text-white text-xs font-mono font-bold">{stop.time}</span>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex flex-col flex-1 p-4 gap-2.5">
+                        <h3 className="font-heading font-bold text-[#12213B] text-base leading-snug">
+                          {stop.name}
+                        </h3>
+
+                        {/* Duration + Cost */}
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5 text-xs font-sans text-[#5B6B8C]">
+                            <Clock className="w-3.5 h-3.5 text-[#C85A32]" />
+                            <span className="font-mono font-bold text-[#12213B]">{stop.duration_mins}</span> min
+                          </span>
+                          <span className="flex items-center gap-1.5 text-xs font-sans text-[#5B6B8C]">
+                            <Coins className="w-3.5 h-3.5 text-[#D99B43]" />
+                            <span className="font-mono font-semibold text-[#12213B]">{stop.cost_label}</span>
+                          </span>
+                        </div>
+
+                        {/* Description / match notes */}
+                        {(stop as any).match_notes && (
+                          <p className="text-xs font-sans text-[#5B6B8C] leading-relaxed border-t border-[#F0EBE3] pt-2">
+                            {(stop as any).match_notes}
+                          </p>
+                        )}
+
+                        {/* Fit reason */}
+                        {stop.fit_reason && (
+                          <div className="mt-auto pt-2 border-t border-[#F0EBE3] flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#C85A32] flex-shrink-0 mt-0.5" />
+                            <p className="text-xs font-sans text-[#5B6B8C] leading-relaxed">
+                              {stop.fit_reason}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          );
+        })()}
 
         {/* Phase 4: Synchronized Destination Output and Circuit Drawer */}
         {!injectedPlan && (
