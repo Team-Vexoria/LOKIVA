@@ -110,6 +110,7 @@ def find_nearby_experience(req: FindExperienceRequest, db: Session = Depends(get
     Spatiotemporal solver endpoint for voice assistant.
     Finds a nearby authentic experience constrained by time, budget, and crowd preference.
     """
+    print(f"[BACKEND] /voice/find-experience received: {req.model_dump()}")
     # Step 1: Resolve anchor
     anchor = resolve_anchor(req.location_anchor, db)
     if not anchor:

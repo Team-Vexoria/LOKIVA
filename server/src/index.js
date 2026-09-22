@@ -14,6 +14,7 @@ import { reviewsRouter } from './routes/reviews.js';
 import { router as ingestionRouter } from './routes/ingestion.js';
 import { mediaRouter } from './routes/media.js';
 import { voiceRouter } from './routes/voice.js';
+import { ttsRouter } from './routes/tts.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -32,6 +33,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/destinations', destinationsRouter);
 app.use('/api/v1/experiences', experiencesRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/ai', aiRouter);
+app.use('/api/ai', aiRouter);
 app.use('/api/v1/recommendations', aiRouter);
 app.use('/api/v1/itineraries', itinerariesRouter);
 app.use('/api/v1/providers', providersRouter);
@@ -41,6 +44,9 @@ app.use('/api/v1/ingestion', ingestionRouter);
 app.use('/api/v1/media', mediaRouter);
 app.use('/api/v1/voice', voiceRouter);
 app.use('/voice', voiceRouter);
+app.use('/api/v1/voice', ttsRouter);
+app.use('/voice', ttsRouter);
+app.use('/api/voice', ttsRouter);
 
 // Root and Health Endpoints
 app.get('/', (req, res) => {

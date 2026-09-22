@@ -10,6 +10,7 @@ import {
   speakWithElevenLabsOrFallback,
   PlaybackController,
   checkHostedTTSConfigured,
+  unlockAudio,
 } from '../lib/tts';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { VOICE_SUGGESTIONS } from '../data/voiceSuggestions';
@@ -30,6 +31,7 @@ import {
   CloudSun,
   IndianRupee,
   Navigation,
+  X,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -175,9 +177,14 @@ export function AiGuidePage() {
     interimTranscript,
     startListening,
     stopListening,
+    submitListening,
+    cancelListening,
     resetTranscript,
     isSupported: voiceSupported,
   } = useVoiceInput({
+    onInterimTranscript: (liveText: string) => {
+      setInputMessage(liveText);
+    },
     onFinalTranscript: (text: string) => {
       handleSend(text, true);
     },
@@ -295,6 +302,34 @@ export function AiGuidePage() {
     }
   }, [isLoading]);
 
+  // Auto-scroll when listening or interim transcript updates
+  useEffect(() => {
+    if (isListening) {
+      const bubble = document.getElementById('live-voice-bubble');
+      if (bubble) {
+        bubble.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+  }, [isListening, interimTranscript]);
+
+  // Global one-time interaction listener to prime AudioContext across browsers
+  useEffect(() => {
+    const onFirstInteraction = () => {
+      unlockAudio();
+      window.removeEventListener('click', onFirstInteraction);
+      window.removeEventListener('keydown', onFirstInteraction);
+      window.removeEventListener('touchstart', onFirstInteraction);
+    };
+    window.addEventListener('click', onFirstInteraction);
+    window.addEventListener('keydown', onFirstInteraction);
+    window.addEventListener('touchstart', onFirstInteraction);
+    return () => {
+      window.removeEventListener('click', onFirstInteraction);
+      window.removeEventListener('keydown', onFirstInteraction);
+      window.removeEventListener('touchstart', onFirstInteraction);
+    };
+  }, []);
+
   // Auto-send initialPrompt when first authenticated
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -380,9 +415,14 @@ export function AiGuidePage() {
   const handleSend = async (customText?: string, voiceInitiated = false) => {
     if (!isAuthenticated || !user) return;
     const textToSend = (customText || inputMessage).trim();
-    if (!textToSend || isLoading) return;
+    if (!textToSend) return;
+    // Prevent double submits from typing, but never drop spoken voice input
+    if (isLoading && !customText) return;
 
-    // Stop mic if a chip or typed send is triggered while listening
+    // Arm audio context immediately on user gesture
+    unlockAudio();
+
+    // Stop mic if listening
     if (isListening) stopListening();
 
     const userMsgId = `user-${Date.now()}`;
@@ -399,25 +439,47 @@ export function AiGuidePage() {
     setIsLoading(true);
 
     try {
-      // Build voice context for the router
-      const context: UserSessionContext = {
-        currentLocationName: currentCity ? currentCity : 'Jaipur',
-        activeTripDeadlines: [],
-        currentItinerary: null,
-      };
-
-      // Step 1: Try the Gemini function-calling router for structured queries
-      const routeResult = await routeVoiceInput(textToSend, context);
-
-      let botContent = routeResult.spoken_response;
-      let spokenText = routeResult.spoken_response;
+      let botContent = '';
+      let spokenText = '';
       let recommendations: ScoredExperience[] | undefined;
       let weatherData: WeatherData | undefined;
       let experienceData: ExperienceData | undefined;
       let expenseData: ExpenseData | undefined;
+      let detectedIntent: ChatMessage['intent'] = 'none';
 
-      // Step 2: If no function matched, fall back to cultural concierge for general travel chat
-      if (routeResult.intent === 'none') {
+      // Check if this query is a structured voice tool query (weather, expense, nearby experience)
+      const isVoiceTool =
+        /(\bweather\b|\brain\b|\btemperature\b|\bforecast\b|\bclimate\b|\bfeels like\b|\bdegrees\b)/i.test(textToSend) ||
+        /(\bspent\b|\bspend\b|\bpaid\b|\bexpense\b|\brupees\b|\brs\.?\b|\bcost\b|\bbought\b|\bhow much did i spend\b|\btoday'?s total\b)/i.test(textToSend) ||
+        /(\bnearby\b|\bnear me\b|\bwithin \d+\s*min|\bfree for \d+\s*min|\bhave \d+\s*min|\bquick stop\b)/i.test(textToSend);
+
+      if (isVoiceTool) {
+        // Route to the Gemini function-calling router for tool actions
+        const context: UserSessionContext = {
+          currentLocationName: currentCity ? currentCity : 'Jaipur',
+          activeTripDeadlines: [],
+          currentItinerary: null,
+        };
+
+        const routeResult = await routeVoiceInput(textToSend, context);
+        detectedIntent = routeResult.intent;
+        botContent = routeResult.spoken_response;
+        spokenText = routeResult.spoken_response;
+
+        // Extract structured data from function call results
+        if (routeResult.intent === 'get_weather' && routeResult.data) {
+          weatherData = routeResult.data as WeatherData;
+        } else if (routeResult.intent === 'find_nearby_experience' && routeResult.data) {
+          experienceData = routeResult.data as ExperienceData;
+        } else if (routeResult.intent === 'log_expense' && routeResult.data) {
+          expenseData = routeResult.data as ExpenseData;
+          fetchTodayTotal();
+        } else if (routeResult.intent === 'get_expense_summary' && routeResult.data) {
+          expenseData = routeResult.data as ExpenseData;
+          setTodayTotal((routeResult.data as ExpenseData).total_inr ?? 0);
+        }
+      } else {
+        // Direct to cultural concierge for destination exploration, questions, and greetings
         try {
           const chatRes = await api.chatWithConcierge({
             message: textToSend,
@@ -428,37 +490,54 @@ export function AiGuidePage() {
           botContent = chatRes.reply;
           spokenText = chatRes.reply;
           recommendations = chatRes.suggested_experiences || [];
-        } catch {
-          // If cultural concierge also fails, keep voice router's response as-is
+        } catch (conciergeErr: any) {
+          console.error('[AiGuide] chatWithConcierge failed:', conciergeErr);
+          botContent = `I could not load recommendations for "${textToSend}": ${conciergeErr.message || 'Service unavailable'}. Please verify backend connection.`;
+          spokenText = 'I could not load recommendations right now. Please try again.';
         }
       }
 
-      // Extract structured data from function call results
-      if (routeResult.intent === 'get_weather' && routeResult.data) {
-        weatherData = routeResult.data as WeatherData;
+      // Strict em dash and double dash sanitation for visual chat bubble
+      const cleanBotContent = botContent
+        .replace(/[\u2014\u2015]/g, ', ')
+        .replace(/[\u2013]/g, '-')
+        .replace(/--+/g, '-')
+        .trim();
+
+      // Build speech text: strip markdown symbols, emojis, and format concisely for fast audio response
+      let cleanSpokenText = spokenText
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+        .replace(/[\u2014\u2015]/g, ', ')
+        .replace(/[\u2013]/g, '-')
+        .replace(/--+/g, '-')
+        .replace(/[*#_`~]/g, '')
+        .trim();
+
+      // If text is very long, extract primary conversational part so TTS synthesizes in under 1 second
+      if (cleanSpokenText.length > 320) {
+        const paragraphs = cleanSpokenText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+        if (paragraphs.length > 1) {
+          const first = paragraphs[0];
+          const last = paragraphs[paragraphs.length - 1];
+          cleanSpokenText = last.includes('?') && last.length < 150 ? `${first}. ${last}` : first;
+        } else {
+          const sentences = cleanSpokenText.match(/[^.!?]+[.!?]+/g);
+          if (sentences && sentences.length > 2) {
+            cleanSpokenText = sentences.slice(0, 3).join(' ');
+          }
+        }
       }
-      if (routeResult.intent === 'find_nearby_experience' && routeResult.data) {
-        experienceData = routeResult.data as ExperienceData;
-      }
-      if (routeResult.intent === 'log_expense' && routeResult.data) {
-        expenseData = routeResult.data as ExpenseData;
-        // Re-sync total from backend instead of guessing
-        fetchTodayTotal();
-      }
-      if (routeResult.intent === 'get_expense_summary' && routeResult.data) {
-        expenseData = routeResult.data as ExpenseData;
-        setTodayTotal((routeResult.data as ExpenseData).total_inr ?? 0);
-      }
+      cleanSpokenText = cleanSpokenText.replace(/[\u2014\u2015]/g, ', ').replace(/--+/g, '-').trim();
 
       const botMsgId = `bot-${Date.now()}`;
       const botMsg: ChatMessage = {
         id: botMsgId,
         role: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: botContent,
-        spokenText,
+        content: cleanBotContent,
+        spokenText: cleanSpokenText,
         recommendations,
-        intent: routeResult.intent,
+        intent: detectedIntent,
         weatherData,
         experienceData,
         expenseData,
@@ -467,9 +546,9 @@ export function AiGuidePage() {
 
       setMessages((prev) => [...prev, botMsg]);
 
-      // Auto-TTS only for voice-initiated messages
-      if (voiceInitiated && spokenText) {
-        handleSpeak(botMsgId, spokenText);
+      // STRICT REQUIREMENT: After every answer through chat or mic, deliver response in both chat and audio
+      if (cleanSpokenText) {
+        handleSpeak(botMsgId, cleanSpokenText);
       }
     } catch (err: any) {
       const rawMsg = err.message || '';
@@ -508,11 +587,11 @@ export function AiGuidePage() {
   // Render
   // ---------------------------------------------------------------------------
 
-  // Input display: show interim transcript while listening, otherwise normal value
-  const inputDisplayValue = isListening && interimTranscript ? interimTranscript : inputMessage;
+  // Input display: show live voice speech while listening, otherwise normal input value
+  const inputDisplayValue = isListening ? (interimTranscript || 'Listening to your voice...') : inputMessage;
 
   return (
-    <div className="min-h-screen bg-paper text-ink pb-52 sm:pb-64 pt-6 sm:pt-8">
+    <div className="min-h-screen bg-paper text-ink pb-72 sm:pb-88 pt-6 sm:pt-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* AI Concierge Header */}
@@ -616,18 +695,27 @@ export function AiGuidePage() {
                           {!isUser && voiceSupported && (
                             <button
                               type="button"
-                              onClick={() => handleSpeak(msg.id, msg.spokenText || msg.content)}
-                              title={isSpeakingThis ? 'Stop speaking' : 'Read aloud'}
-                              className={`p-1 rounded-lg transition-colors ${
+                              onClick={() => {
+                                unlockAudio();
+                                handleSpeak(msg.id, msg.spokenText || msg.content);
+                              }}
+                              title={isSpeakingThis ? 'Stop speaking' : 'Listen to voice'}
+                              className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
                                 isSpeakingThis
-                                  ? 'text-[#C1443B] bg-[#C1443B]/10'
-                                  : 'text-dusk hover:text-ink'
+                                  ? 'text-[#C1443B] bg-[#C1443B]/10 font-bold animate-pulse'
+                                  : 'text-dusk hover:text-ink hover:bg-paper-200'
                               } opacity-100`}
                             >
                               {isSpeakingThis ? (
-                                <VolumeX className="w-3 h-3" />
+                                <>
+                                  <VolumeX className="w-3.5 h-3.5 text-[#C1443B]" />
+                                  <span className="text-[10px] font-mono text-[#C1443B]">Stop Voice</span>
+                                </>
                               ) : (
-                                <Volume2 className="w-3 h-3" />
+                                <>
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                  <span className="text-[10px] font-mono">Listen</span>
+                                </>
                               )}
                             </button>
                           )}
@@ -771,6 +859,75 @@ export function AiGuidePage() {
               );
             })}
 
+            {/* Live In-Chat Voice Transcription Bubble while user is speaking */}
+            {isListening && (
+              <div
+                id="live-voice-bubble"
+                className="flex gap-3.5 sm:gap-4 justify-end scroll-mt-24 sm:scroll-mt-28"
+              >
+                <div className="space-y-2 max-w-2xl w-full sm:w-auto">
+                  <div className="rounded-3xl p-5 sm:p-6 shadow-md border border-[#C1443B]/40 bg-ink text-paper rounded-tr-xs space-y-3">
+                    {/* Header with pulsing mic & actions */}
+                    <div className="flex items-center justify-between gap-4 text-[10px] font-mono border-b border-paper/20 pb-2.5">
+                      <div className="flex items-center gap-2 text-[#E5A93C] font-bold">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1443B] opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C1443B]"></span>
+                        </span>
+                        <span className="uppercase tracking-widest text-[#E5A93C]">Listening... (Speak naturally)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={cancelListening}
+                          className="px-2.5 py-1 rounded-lg bg-paper/10 hover:bg-paper/20 text-paper/70 hover:text-paper text-[11px] font-sans transition cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={submitListening}
+                          disabled={!interimTranscript.trim()}
+                          className="px-3.5 py-1 rounded-lg bg-[#C1443B] hover:bg-[#A33830] text-white text-[11px] font-mono font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <span>Send Now</span>
+                          <Send className="w-3 h-3 text-marigold" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Dynamic live voice transcript */}
+                    <div className="text-xs sm:text-sm font-sans leading-relaxed min-h-[1.75rem]">
+                      {interimTranscript.trim() ? (
+                        <p className="text-paper font-medium whitespace-pre-wrap">{interimTranscript}</p>
+                      ) : (
+                        <p className="text-paper/50 italic">
+                          Listening to your voice... Speak your destination, questions, or requests now.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Waveform audio animation */}
+                    <div className="flex items-center gap-1.5 pt-1 opacity-80">
+                      <div className="w-1 h-3 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <div className="w-1 h-5 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <div className="w-1 h-2.5 bg-marigold rounded-full animate-bounce" />
+                      <div className="w-1 h-4 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.2s]" />
+                      <div className="w-1 h-3 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.1s]" />
+                      <span className="text-[10px] font-mono text-paper/60 ml-2">
+                        Live speech-to-text: pause or tap Send to submit
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Mic Avatar */}
+                <div className="w-10 h-10 rounded-2xl bg-[#C1443B] text-paper flex items-center justify-center flex-shrink-0 shadow-sm mt-1 animate-pulse">
+                  <Mic className="w-5 h-5 text-white" />
+                </div>
+              </div>
+            )}
+
             {/* Auth Gate Card */}
             {!isAuthenticated && (
               <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 shadow-md space-y-6 max-w-xl mx-auto my-6 text-center">
@@ -890,6 +1047,7 @@ export function AiGuidePage() {
                         key={city}
                         type="button"
                         onClick={() => {
+                          unlockAudio();
                           setCurrentCity(city);
                           handleSend(`I want to explore ${city}. What authentic experiences do you recommend?`, false);
                         }}
@@ -926,7 +1084,10 @@ export function AiGuidePage() {
                         <button
                           key={i}
                           type="button"
-                          onClick={() => handleSend(`Show me ${item.interest} in ${currentCity}`, false)}
+                          onClick={() => {
+                            unlockAudio();
+                            handleSend(`Show me ${item.interest} in ${currentCity}`, false);
+                          }}
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-full text-[11px] font-sans text-ink transition flex-shrink-0 shadow-xs cursor-pointer"
                         >
                           <span>{item.icon}</span>
@@ -946,7 +1107,10 @@ export function AiGuidePage() {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => handleSend(suggestion.query, false)}
+                      onClick={() => {
+                        unlockAudio();
+                        handleSend(suggestion.query, false);
+                      }}
                       disabled={isLoading}
                       className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-paper-100 border border-paper-300 hover:border-[#C1443B]/40 rounded-full text-[11px] font-sans text-ink transition flex-shrink-0 shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -956,11 +1120,76 @@ export function AiGuidePage() {
                   ))}
                 </div>
 
+                {/* Live Voice Active Card docked right above input bar */}
+                {isListening && (
+                  <div className="bg-[#FAF8F5] border-2 border-[#C1443B]/40 rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5 animate-fadeIn">
+                    <div className="flex items-center justify-between gap-3 text-xs font-mono border-b border-paper-300 pb-2">
+                      <div className="flex items-center gap-2 text-[#C1443B] font-bold">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1443B] opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C1443B]"></span>
+                        </span>
+                        <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+                          Listening to your voice
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={cancelListening}
+                          className="px-2.5 py-1 rounded-lg bg-paper-200 hover:bg-paper-300 text-ink text-xs font-sans transition cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={submitListening}
+                          disabled={!interimTranscript.trim() && !inputMessage.trim()}
+                          className="px-4 py-1 rounded-lg bg-[#C1443B] hover:bg-[#A33830] text-white text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <span>Send Voice</span>
+                          <Send className="w-3 h-3 text-marigold" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live speech real-time text */}
+                    <div className="min-h-[2rem] flex items-center">
+                      {interimTranscript.trim() || inputMessage.trim() ? (
+                        <p className="text-sm sm:text-base font-sans font-semibold text-ink leading-relaxed">
+                          "{interimTranscript || inputMessage}"
+                        </p>
+                      ) : (
+                        <p className="text-xs sm:text-sm font-sans italic text-dusk">
+                          Speak now... your words will transcribe live right here as you talk.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Waveform indicator */}
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <div className="w-1.5 h-3 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <div className="w-1.5 h-5 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <div className="w-1.5 h-2.5 bg-marigold rounded-full animate-bounce" />
+                      <div className="w-1.5 h-4.5 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.2s]" />
+                      <div className="w-1.5 h-3 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.1s]" />
+                      <span className="text-[11px] font-mono text-dusk ml-2">
+                        Live speech detected: pause or tap Send Voice when finished
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Text input form with mic button */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    handleSend();
+                    unlockAudio();
+                    if (isListening) {
+                      submitListening();
+                    } else {
+                      handleSend();
+                    }
                   }}
                   className="flex items-center gap-1.5 sm:gap-2 bg-white border border-paper-400 rounded-2xl p-1.5 sm:p-2 shadow-xl"
                 >
@@ -968,9 +1197,16 @@ export function AiGuidePage() {
                   {voiceSupported && (
                     <button
                       type="button"
-                      onClick={isListening ? stopListening : startListening}
-                      title={isListening ? 'Stop listening' : 'Start voice input'}
-                      className={`p-2 rounded-xl transition-all flex-shrink-0 ${
+                      onClick={() => {
+                        unlockAudio();
+                        if (isListening) {
+                          submitListening();
+                        } else {
+                          startListening();
+                        }
+                      }}
+                      title={isListening ? 'Send voice' : 'Start voice input'}
+                      className={`p-2 rounded-xl transition-all flex-shrink-0 cursor-pointer ${
                         isListening
                           ? 'bg-[#C1443B] text-white animate-pulse shadow-md'
                           : 'bg-paper-100 hover:bg-paper-200 text-ink border border-paper-300'
@@ -992,22 +1228,22 @@ export function AiGuidePage() {
                     readOnly={isListening}
                     placeholder={
                       isListening
-                        ? 'Listening to your voice...'
+                        ? 'Listening to your voice... Speak now'
                         : !currentCity
                         ? 'Where in India are you heading? (e.g., Jaipur, Varanasi, Goa...)'
                         : `Ask about ${currentCity} - weather, experiences, expenses...`
                     }
                     className={`flex-1 min-w-0 bg-transparent px-2.5 sm:px-3.5 py-2 text-xs sm:text-sm text-ink focus:outline-none placeholder-dusk font-sans ${
-                      isListening ? 'italic text-dusk' : ''
+                      isListening ? 'font-medium text-[#C1443B]' : ''
                     }`}
                   />
 
                   <button
                     type="submit"
-                    disabled={isLoading || (!inputMessage.trim() && !isListening)}
+                    disabled={isLoading || (!inputMessage.trim() && !isListening && !interimTranscript.trim())}
                     className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-md flex-shrink-0 cursor-pointer"
                   >
-                    <span>Solve</span>
+                    <span>{isListening ? 'Send Voice' : 'Solve'}</span>
                     <Send className="w-3.5 h-3.5 text-marigold" />
                   </button>
                 </form>

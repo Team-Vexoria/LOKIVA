@@ -52,9 +52,10 @@ async function authenticateVoiceUser(req) {
 // ============================================================================
 // 1. WEATHER ENDPOINT (Module C)
 // ============================================================================
-voiceRouter.post('/weather', async (req, res) => {
+voiceRouter.all('/weather', async (req, res) => {
+  console.log('[BACKEND] /voice/weather received:', JSON.stringify(req.body || req.query));
   try {
-    const { location } = req.body;
+    const location = req.body?.location || req.query?.location;
     if (!location) {
       return res.status(400).json({ detail: 'location is required' });
     }
@@ -77,6 +78,7 @@ voiceRouter.post('/weather', async (req, res) => {
 // Strict rule: userId strictly derived from session token, never from body.
 // ============================================================================
 voiceRouter.post('/log-expense', async (req, res) => {
+  console.log('[BACKEND] /voice/log-expense received:', JSON.stringify(req.body));
   try {
     const authUser = await authenticateVoiceUser(req);
     // If not logged in, use a session fallback user ID for demo continuity
@@ -131,6 +133,16 @@ voiceRouter.post('/expense-summary', async (req, res) => {
 // 3. INTENT ROUTER PROXY (Module A3)
 // Evaluates speech transcript via Gemini Function Calling with zero frontend secret exposure.
 // ============================================================================
+function sanitizeVoiceResponse(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\u2014\u2015]/g, ', ')
+    .replace(/[\u2013]/g, '-')
+    .replace(/--+/g, '-')
+    .replace(/[\*\_`]/g, '')
+    .trim();
+}
+
 voiceRouter.post('/route', async (req, res) => {
   try {
     const { transcript, context = {}, current_time } = req.body;
@@ -142,118 +154,171 @@ voiceRouter.post('/route', async (req, res) => {
     const userId = authUser ? authUser.userId : (req.headers['x-session-id'] || context.userId || 'guest_traveler_session');
 
     const nowIso = current_time || new Date().toISOString();
-    const systemPrompt = `You are Lokiva Voice Assistant, a helpful cultural companion for travelers in India.
+
+    // Fast-path for common greetings or help to eliminate LLM latency completely
+    const cleanLower = transcript.trim().toLowerCase();
+    const isGreetingOrHelp = /^(hello|hi|hey|namaste|help|who are you|what can you do|good morning|good evening|greeting)\b/i.test(cleanLower);
+    if (isGreetingOrHelp) {
+      return res.json({
+        intent: 'none',
+        spoken_response: 'Namaste! Welcome to Lokiva. Where in India are you heading to, and what are your interests, like heritage, food, or artisan crafts?',
+        data: null,
+      });
+    }
+
+    const systemPrompt = `You are Lokiva Voice Assistant, a warm, knowledgeable cultural companion for travelers in India.
 Current system time: ${nowIso}.
-The user communicates via voice. Use the available functions when the user's intent matches.
-- For weather inquiries, call get_weather.
-- For recording money spent, call log_expense.
-- For reviewing money spent or asking how much they spent, call get_expense_summary.
-- For finding nearby experiences or places under time/budget/crowd constraints, call find_nearby_experience.
-If the user's input is general conversation or out of scope, do not call any function.`;
+The user communicates via voice or text.
+- If the user inquiry matches a function, call the function:
+  * For weather, call get_weather (default to "${context.currentLocationName || 'Jaipur'}" if no place specified).
+  * For recording spending, call log_expense.
+  * For checking spending, call get_expense_summary.
+  * For finding nearby experiences under budget/time, call find_nearby_experience.
+- If the user discusses travel destinations, greetings, or asks questions, DO NOT call any function. Respond conversationally in under 40 words with authentic local hospitality, asking where they are heading to and what their interests are.`;
 
-    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      tools: [
-        {
-          functionDeclarations: [
-            {
-              name: 'get_weather',
-              description: 'Get current weather conditions for a specific place.',
-              parameters: {
-                type: 'OBJECT',
-                properties: {
-                  location: {
-                    type: 'STRING',
-                    description: 'The city, neighborhood, or landmark to get weather for, e.g. City Palace or Jaipur',
-                  },
-                },
-                required: ['location'],
-              },
+    const candidateModels = [
+      process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
+      'gemini-3.1-flash-lite-preview',
+      'gemini-3-flash-preview',
+    ];
+
+    const toolDeclarations = [
+      {
+        name: 'get_weather',
+        description: 'Get current weather conditions for a specific place.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            location: {
+              type: 'STRING',
+              description: 'The city, neighborhood, or landmark to get weather for, e.g. City Palace, Jaipur, or Mumbai',
             },
-            {
-              name: 'log_expense',
-              description: 'Record a new expense the user just mentioned spending.',
-              parameters: {
-                type: 'OBJECT',
-                properties: {
-                  amount_inr: {
-                    type: 'NUMBER',
-                    description: 'Amount spent in Indian Rupees (INR)',
-                  },
-                  category: {
-                    type: 'STRING',
-                    description: 'Best guess category: food, transport, shopping, activity, other',
-                  },
-                  note: {
-                    type: 'STRING',
-                    description: 'Short description of what was bought in the user own words',
-                  },
-                },
-                required: ['amount_inr'],
-              },
-            },
-            {
-              name: 'get_expense_summary',
-              description: 'Retrieve the user total spending for a given period.',
-              parameters: {
-                type: 'OBJECT',
-                properties: {
-                  period: {
-                    type: 'STRING',
-                    enum: ['today', 'this_trip', 'this_week'],
-                  },
-                },
-                required: ['period'],
-              },
-            },
-            {
-              name: 'find_nearby_experience',
-              description: 'Find a local experience near a location, constrained by time available, budget, and crowd preference.',
-              parameters: {
-                type: 'OBJECT',
-                properties: {
-                  location_anchor: {
-                    type: 'STRING',
-                    description: 'Named place the user is currently near, e.g. City Palace',
-                  },
-                  time_available_minutes: {
-                    type: 'NUMBER',
-                    description: 'Minutes the user has free, extracted or computed from a stated deadline',
-                  },
-                  budget_max_inr: {
-                    type: 'NUMBER',
-                    description: 'Maximum budget in INR if specified',
-                  },
-                  crowd_preference: {
-                    type: 'STRING',
-                    enum: ['low', 'any'],
-                  },
-                  activity_type: {
-                    type: 'STRING',
-                    description: 'Optional category hint: shopping, food, culture, or null',
-                  },
-                },
-                required: ['location_anchor', 'time_available_minutes'],
-              },
-            },
-          ],
+          },
+          required: ['location'],
         },
-      ],
-    });
+      },
+      {
+        name: 'log_expense',
+        description: 'Record a new expense the user just mentioned spending.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            amount_inr: {
+              type: 'NUMBER',
+              description: 'Amount spent in Indian Rupees (INR)',
+            },
+            category: {
+              type: 'STRING',
+              description: 'Best guess category: food, transport, shopping, activity, other',
+            },
+            note: {
+              type: 'STRING',
+              description: 'Short description of what was bought in the user own words',
+            },
+          },
+          required: ['amount_inr'],
+        },
+      },
+      {
+        name: 'get_expense_summary',
+        description: 'Retrieve the user total spending for a given period.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            period: {
+              type: 'STRING',
+              enum: ['today', 'this_trip', 'this_week'],
+            },
+          },
+          required: ['period'],
+        },
+      },
+      {
+        name: 'find_nearby_experience',
+        description: 'Find a local experience near a location, constrained by time available, budget, and crowd preference.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            location_anchor: {
+              type: 'STRING',
+              description: 'Named place the user is currently near, e.g. City Palace',
+            },
+            time_available_minutes: {
+              type: 'NUMBER',
+              description: 'Minutes the user has free, extracted or computed from a stated deadline',
+            },
+            budget_max_inr: {
+              type: 'NUMBER',
+              description: 'Maximum budget in INR if specified',
+            },
+            crowd_preference: {
+              type: 'STRING',
+              enum: ['low', 'any'],
+            },
+            activity_type: {
+              type: 'STRING',
+              description: 'Optional category hint: shopping, food, culture, or null',
+            },
+          },
+          required: ['location_anchor', 'time_available_minutes'],
+        },
+      },
+    ];
 
-    const chat = model.startChat({
-      history: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-    });
+    let result = null;
+    let activeModel = null;
+    let lastGeminiError = null;
 
-    const result = await chat.sendMessage(transcript);
+    console.log('[ROUTER] calling Gemini with:', transcript);
+    console.time('[LATENCY] Gemini function call');
+
+    for (const modelCandidate of candidateModels) {
+      try {
+        const testModel = genAI.getGenerativeModel({
+          model: modelCandidate,
+          tools: [{ functionDeclarations: toolDeclarations }],
+        });
+        const chat = testModel.startChat({
+          history: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+        });
+        const callPromise = chat.sendMessage(transcript);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout: ${modelCandidate} exceeded 4000ms limit`)), 4000)
+        );
+        result = await Promise.race([callPromise, timeoutPromise]);
+        activeModel = testModel;
+        break;
+      } catch (candErr) {
+        lastGeminiError = candErr;
+        console.warn(`[ROUTER] Model ${modelCandidate} failed:`, candErr.message?.slice(0, 100));
+      }
+    }
+
+    console.timeEnd('[LATENCY] Gemini function call');
+
+    if (!result) {
+      console.warn('[ROUTER] All Gemini models failed or timed out. Falling back to guidance response.');
+      return res.json({
+        intent: 'none',
+        spoken_response: sanitizeVoiceResponse('Namaste! I can help you discover authentic experiences, check weather, or track expenses. Where are you heading to in India, and what are your interests, like heritage, food, or crafts?'),
+        data: null,
+      });
+    }
+
+    console.log('[ROUTER] raw Gemini response:', JSON.stringify(result.response));
     const functionCalls = result.response.functionCalls();
 
     if (!functionCalls || functionCalls.length === 0) {
-      // Fallback message as specified
+      const geminiText = result.response.text()?.trim();
+      console.log('[ROUTER] NO function call returned. Gemini text response was:', geminiText);
+      const spokenText = geminiText && geminiText.length > 0
+        ? geminiText
+        : 'Namaste! I can help you explore India, find nearby experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests, like heritage, food, or crafts?';
       return res.json({
         intent: 'none',
-        spoken_response: 'I can help you find nearby experiences, check the weather, or log an expense. What would you like?',
+        spoken_response: sanitizeVoiceResponse(spokenText),
         data: null,
       });
     }
@@ -261,6 +326,26 @@ If the user's input is general conversation or out of scope, do not call any fun
     const call = functionCalls[0];
     const callName = call.name;
     const args = call.args || {};
+    console.log('[ROUTER] Gemini selected function:', callName, 'args:', JSON.stringify(args));
+
+    // Helper for phrased responses with safe fallback and fast timeout
+    const safePhrase = async (prompt, fallbackText, label) => {
+      console.time(`[LATENCY] Gemini phrasing (${label})`);
+      try {
+        const phrasingModel = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+        const phrasePromise = phrasingModel.generateContent(prompt).then((r) => r.response.text().trim());
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('phrasing timeout (1500ms limit)')), 1500)
+        );
+        const text = await Promise.race([phrasePromise, timeoutPromise]);
+        console.timeEnd(`[LATENCY] Gemini phrasing (${label})`);
+        return text;
+      } catch (err) {
+        console.timeEnd(`[LATENCY] Gemini phrasing (${label})`);
+        console.warn(`[ROUTER] Fast fallback used for ${label} (${err.message?.slice(0, 50)})`);
+        return fallbackText;
+      }
+    };
 
     // ------------------------------------------------------------------------
     // Case 1: get_weather
@@ -274,19 +359,17 @@ If the user's input is general conversation or out of scope, do not call any fun
 
       const weatherData = await fetchCurrentWeather(lat, lng, locName);
 
-      // Second Gemini call: synthesize natural spoken response
-      const phrasePrompt = `Phrase this weather report as one warm, natural spoken sentence a friend would say.
-Data: Location: ${weatherData.location_name}, Temp: ${weatherData.temp_c}°C, Condition: ${weatherData.condition}, Will rain soon: ${weatherData.will_rain_soon}, Is live: ${weatherData.is_live}.
-${!weatherData.is_live ? 'Note: Mention that this is an estimated forecast.' : ''}`;
+      const phrasePrompt = `Phrase this weather report as one warm spoken sentence a friend would say. Keep under 25 words. Ask where in India they are heading next and what their interests are.
+Location: ${weatherData.location_name}, Temp: ${weatherData.temp_c}C, Condition: ${weatherData.condition}, Rain soon: ${weatherData.will_rain_soon}, Live: ${weatherData.is_live}.`;
+      const fallback = `In ${weatherData.location_name}, it is currently ${weatherData.temp_c} degrees Celsius with ${weatherData.condition}. Where are you heading to next, and what are your interests?`;
 
-      const phraseRes = await model.generateContent(phrasePrompt);
-      const spoken = phraseRes.response.text().trim();
+      const spoken = await safePhrase(phrasePrompt, fallback, 'weather');
 
       return res.json({
         intent: 'get_weather',
         function_call: { name: callName, args },
         data: weatherData,
-        spoken_response: spoken,
+        spoken_response: sanitizeVoiceResponse(spoken),
         is_live: weatherData.is_live,
       });
     }
@@ -309,13 +392,11 @@ ${!weatherData.is_live ? 'Note: Mention that this is an estimated forecast.' : '
 
       const summary = await getExpenseSummaryFromFirestore({ userId, period: 'today' });
 
-      const phrasePrompt = `The user logged an expense. Confirm it warmly in one spoken sentence stating the added amount and the new total for today.
-Added: ₹${amount} for ${note} (${category}).
-New Today Total: ₹${summary.total_inr}.
-Format similar to: "Got it, added ₹${amount} for ${note}. Your new total for today is ₹${summary.total_inr}."`;
+      const phrasePrompt = `Confirm this logged expense warmly in one sentence. Keep under 25 words. Ask where in India they are heading next and what their interests are.
+Added: Rs.${amount} for ${note} (${category}). New today total: Rs.${summary.total_inr}.`;
+      const fallback = `Recorded ${amount} rupees for ${note}. Your total for today is now ${summary.total_inr} rupees. Where are you heading to next, and what are your interests?`;
 
-      const phraseRes = await model.generateContent(phrasePrompt);
-      const spoken = phraseRes.response.text().trim();
+      const spoken = await safePhrase(phrasePrompt, fallback, 'expense');
 
       return res.json({
         intent: 'log_expense',
@@ -326,7 +407,7 @@ Format similar to: "Got it, added ₹${amount} for ${note}. Your new total for t
           note,
           today_total_inr: summary.total_inr,
         },
-        spoken_response: spoken,
+        spoken_response: sanitizeVoiceResponse(spoken),
       });
     }
 
@@ -337,18 +418,19 @@ Format similar to: "Got it, added ₹${amount} for ${note}. Your new total for t
       const period = args.period || 'today';
       const summary = await getExpenseSummaryFromFirestore({ userId, period });
 
-      const phrasePrompt = `The user asked for their spending summary. Respond in one concise spoken sentence.
-Total for ${period}: ₹${summary.total_inr}. Total items: ${summary.count}.
-If total is 0, mention they haven't logged any expenses yet for this period.`;
+      const phrasePrompt = `Respond to spending summary query in one sentence. Keep under 25 words. Ask where they are heading to next and what their interests are.
+Total for ${period}: Rs.${summary.total_inr}. Items: ${summary.count}. If 0, say no expenses logged yet.`;
+      const fallback = summary.total_inr > 0
+        ? `You have spent ${summary.total_inr} rupees across ${summary.count} items today. Where are you heading to next, and what are your interests?`
+        : `You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?`;
 
-      const phraseRes = await model.generateContent(phrasePrompt);
-      const spoken = phraseRes.response.text().trim();
+      const spoken = await safePhrase(phrasePrompt, fallback, 'summary');
 
       return res.json({
         intent: 'get_expense_summary',
         function_call: { name: callName, args },
         data: summary,
-        spoken_response: spoken,
+        spoken_response: sanitizeVoiceResponse(spoken),
       });
     }
 
@@ -356,7 +438,6 @@ If total is 0, mention they haven't logged any expenses yet for this period.`;
     // Case 4: find_nearby_experience
     // ------------------------------------------------------------------------
     if (callName === 'find_nearby_experience') {
-      // Call solver-api
       let solverResult = null;
       try {
         const solverRes = await fetch(`${SOLVER_API_URL}/voice/find-experience`, {
@@ -385,38 +466,38 @@ If total is 0, mention they haven't logged any expenses yet for this period.`;
           intent: 'find_nearby_experience',
           function_call: { name: callName, args },
           data: null,
-          spoken_response: `I could not find an experience near ${args.location_anchor} that fits within ${args.time_available_minutes} minutes. Would you like to expand your search?`,
+          spoken_response: sanitizeVoiceResponse(`Could not find an experience near ${args.location_anchor} fitting ${args.time_available_minutes} minutes. Where else in India are you heading to, and what are your interests?`),
         });
       }
 
       const exp = solverResult.experience;
-      const phrasePrompt = `Phrase this single recommendation as one warm, concise spoken sentence a friend would say. State the distance, that it fits their time, and mention price only if budget was given.
-Experience name: ${exp.name}
-Distance: ${exp.distance_meters} meters
-Category: ${exp.category}
-Price: ₹${exp.price_inr}
-Crowd status: ${exp.crowd_tag === 'low' ? 'usually quiet' : 'moderate'}
-Time remaining after visit: ${exp.time_remaining_after_visit_minutes} minutes
-User budget: ${args.budget_max_inr ? '₹' + args.budget_max_inr : 'unspecified'}`;
+      const phrasePrompt = `Recommend this experience warmly in one sentence. Keep under 25 words. Ask where else in India they are heading and what their interests are.
+Name: ${exp.name}, Distance: ${exp.distance_meters}m, Price: Rs.${exp.price_inr}, Crowd: ${exp.crowd_tag === 'low' ? 'quiet' : 'moderate'}, Budget given: ${args.budget_max_inr ? 'Rs.' + args.budget_max_inr : 'none'}.`;
+      const fallback = `${exp.name} is ${exp.distance_meters} meters away and fits your time and budget. Where else are you heading, and what are your interests?`;
 
-      const phraseRes = await model.generateContent(phrasePrompt);
-      const spoken = phraseRes.response.text().trim();
+      const spoken = await safePhrase(phrasePrompt, fallback, 'find-experience');
 
       return res.json({
         intent: 'find_nearby_experience',
         function_call: { name: callName, args },
         data: exp,
-        spoken_response: spoken,
+        spoken_response: sanitizeVoiceResponse(spoken),
       });
     }
 
     return res.json({
       intent: 'none',
-      spoken_response: 'I can help you find nearby experiences, check the weather, or log an expense. What would you like?',
+      spoken_response: sanitizeVoiceResponse('Namaste! I can help you explore India, check live weather, or track expenses! Where are you heading to in India, and what are your interests, like heritage, food, or artisan crafts?'),
       data: null,
     });
   } catch (err) {
-    console.error('[VoiceRouter] Intent routing error:', err);
+    console.error('[VOICE-ROUTE] Failed. err.message:', err.message);
+    if (err.response) {
+      console.error('[VOICE-ROUTE] Status:', err.response.status);
+      console.error('[VOICE-ROUTE] Data:', err.response.data);
+    } else {
+      console.error('[VOICE-ROUTE] Full error:', err);
+    }
     return res.status(500).json({ detail: err.message || 'Intent routing failed' });
   }
 });

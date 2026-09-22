@@ -22,14 +22,9 @@ import {
 } from '../types';
 
 export const API_BASE =
-  typeof window !== 'undefined' &&
-  window.location.hostname !== 'localhost' &&
-  window.location.hostname !== '127.0.0.1'
+  typeof window !== 'undefined'
     ? '/api/v1'
-    : import.meta.env.VITE_API_URL ||
-      (typeof window !== 'undefined' && window.location.port === '3000'
-        ? '/api/v1'
-        : 'http://localhost:8000/api/v1');
+    : import.meta.env.VITE_API_URL || '/api/v1';
 
 /**
  * Resolves an image URL to an absolute URL pointing to the live Render backend
@@ -236,7 +231,7 @@ export const api = {
     });
   },
 
-  // AI Cultural Concierge - Real AI powered by OpenAI
+  // AI Cultural Concierge - Powered by Gemini AI on the backend
   async chatWithConcierge(data: {
     message: string;
     chat_history?: any[];
@@ -251,10 +246,24 @@ export const api = {
     context_destination: string;
     state: string;
   }> {
-    return request('/ai/concierge', {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('lokiva_token') : null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/v1/ai/concierge', {
       method: 'POST',
+      headers,
       body: JSON.stringify(data),
     });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(errData.detail || errData.error || `Concierge request failed (${res.status})`);
+    }
+
+    return res.json();
   },
 
   async checkAIHealth(): Promise<{

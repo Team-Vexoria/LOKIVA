@@ -302,6 +302,44 @@ export function getVoiceStatusLabel(engineOverride?: TTSEngineType | null): Voic
   };
 }
 
+let sharedAudioContext: AudioContext | null = null;
+
+/**
+ * Returns or initializes the shared AudioContext.
+ */
+export function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  if (!sharedAudioContext) {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+      try {
+        sharedAudioContext = new AudioContextClass();
+      } catch (e) {
+        console.warn('[TTS] AudioContext init error:', e);
+      }
+    }
+  }
+  return sharedAudioContext;
+}
+
+/**
+ * Unlocks audio playback on user interaction (clicks, mic taps, form submits).
+ * Guarantees that future asynchronous audio playback is not blocked by browser autoplay policy.
+ */
+export function unlockAudio(): void {
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.resume();
+    }
+  } catch (e) {
+    console.warn('[TTS] unlockAudio error:', e);
+  }
+}
+
 export interface PlaybackController {
   stop: () => void;
 }
@@ -315,8 +353,25 @@ export interface SpeakOptions {
 }
 
 /**
+ * Strips markdown symbols, emojis, and unwanted punctuation for clean conversational TTS.
+ */
+function cleanTextForSpeech(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '') // strip emojis
+    .replace(/[\u2014\u2015]/g, ', ') // replace em dashes
+    .replace(/[\u2013]/g, '-') // replace en dashes
+    .replace(/--+/g, '-') // ban double dashes
+    .replace(/[*#_`~]/g, '') // remove markdown symbols
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Primary speech execution pipeline:
  * 1. ElevenLabs hosted TTS via /voice/synthesize
+ *    - Plays via Web Audio API (AudioContext) for zero-latency, autoplay-immune playback
+ *    - Falls back to HTMLAudioElement
  * 2. Automatic fallback to browser speechSynthesis on any failure or timeout
  * 3. Never produces silence.
  */
@@ -324,12 +379,20 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
   const { text, onStart, onEnd, onError, onEngineUsed } = options;
   let isCancelled = false;
   let currentAudio: HTMLAudioElement | null = null;
+  let currentAudioSource: AudioBufferSourceNode | null = null;
   const abortController = new AbortController();
+
+  // Unlock audio state on playback call
+  unlockAudio();
 
   // Latency handling: notify UI immediately to show active speaking state
   onStart?.();
 
-  const cleanText = text.replace(/[\*\#_]/g, '').trim();
+  const cleanText = cleanTextForSpeech(text);
+  if (!cleanText) {
+    onEnd?.();
+    return { stop: () => {} };
+  }
 
   // Reliable Fallback to browser speechSynthesis
   const fallbackToBrowser = () => {
@@ -343,6 +406,7 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
       }
 
       window.speechSynthesis.cancel();
+      window.speechSynthesis.resume(); // Essential fix for Chrome speech freeze
       const utterance = new SpeechSynthesisUtterance(cleanText);
       const voice = getPreferredVoice();
       if (voice) {
@@ -350,6 +414,7 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
       }
       utterance.pitch = 1.05;
       utterance.rate = 1.0;
+      utterance.volume = 1.0;
 
       utterance.onend = () => {
         if (!isCancelled) {
@@ -359,6 +424,7 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
 
       utterance.onerror = (e) => {
         if (!isCancelled) {
+          console.warn('[TTS] SpeechSynthesis error:', e);
           onError?.(e);
           onEnd?.();
         }
@@ -377,7 +443,7 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
     try {
       const timeoutId = setTimeout(() => {
         abortController.abort();
-      }, 7000);
+      }, 7500);
 
       const response = await fetch('/voice/synthesize', {
         method: 'POST',
@@ -399,15 +465,50 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
         throw new Error(`Unexpected content type: ${contentType}`);
       }
 
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
       if (isCancelled) return;
 
+      // Method 1: Web Audio API (immune to autoplay timeout blocks)
+      const ctx = getAudioContext();
+      if (ctx) {
+        try {
+          if (ctx.state === 'suspended') {
+            await ctx.resume();
+          }
+          // decodeAudioData consumes the buffer, so clone a slice
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+          if (isCancelled) return;
+
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          currentAudioSource = source;
+
+          source.onended = () => {
+            currentAudioSource = null;
+            if (!isCancelled) {
+              onEnd?.();
+            }
+          };
+
+          source.start(0);
+          onEngineUsed?.('elevenlabs');
+          console.log('[TTS] Played via ElevenLabs WebAudio API (Indian accent)');
+          return;
+        } catch (decodeErr) {
+          console.warn('[TTS] WebAudio decode failed, falling back to HTMLAudio:', decodeErr);
+        }
+      }
+
+      // Method 2: HTMLAudioElement fallback
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(blob);
       const audio = new Audio(audioUrl);
       currentAudio = audio;
 
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
         if (!isCancelled) {
           onEnd?.();
         }
@@ -415,13 +516,14 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
 
       audio.onerror = (e) => {
         URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
         console.warn('[TTS] Audio element error, falling back to browser voice:', e);
         fallbackToBrowser();
       };
 
       await audio.play();
       onEngineUsed?.('elevenlabs');
-      console.log('[TTS] Played via ElevenLabs (Indian accent)');
+      console.log('[TTS] Played via ElevenLabs HTMLAudio (Indian accent)');
     } catch (err) {
       if (isCancelled) return;
       console.warn('[TTS] ElevenLabs failed, falling back to browser voice:', err);
@@ -433,6 +535,12 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
     stop: () => {
       isCancelled = true;
       abortController.abort();
+      if (currentAudioSource) {
+        try {
+          currentAudioSource.stop();
+        } catch {}
+        currentAudioSource = null;
+      }
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;

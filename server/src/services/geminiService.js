@@ -11,9 +11,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ordered list, remember the first one that works, and fall back to asking the API
 // what this key can actually reach.
 const DEFAULT_MODEL_CANDIDATES = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
   'gemini-3.5-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
   'gemini-flash-latest',
 ];
 
@@ -25,13 +28,22 @@ const MODEL_CANDIDATES = process.env.GEMINI_MODEL
 let workingModelName = null;
 let apiDiscoveryTried = false;
 
+function sanitizeAiText(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\u2014\u2015]/g, ', ')
+    .replace(/[\u2013]/g, '-')
+    .replace(/--+/g, '-')
+    .trim();
+}
+
 /** A 404, unsupported-model, 503 high-demand, rate-limit, timeout, or transient error is worth retrying with next model. */
 function isModelUnavailable(error) {
   const msg = error?.message || '';
   return /404|not found|is not supported|not supported for|503|service unavailable|high demand|spikes in demand|overloaded|temporarily unavailable|unavailable|timeout|timed out|exceeded|500|502|504|429|resource_exhausted/i.test(msg);
 }
 
-/** Only a bad key or invalid permissions will fail identically for every model — stop early. */
+/** Only a bad key or invalid permissions will fail identically for every model: stop early. */
 function isFatalError(error) {
   const msg = error?.message || '';
   return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED/i.test(msg);
@@ -108,13 +120,14 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
         : activeModel.generateContent(prompt);
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: ${modelName} exceeded 6000ms response window`)), 6000)
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} exceeded 4000ms response window`)), 4000)
       );
 
       const result = await Promise.race([requestPromise, timeoutPromise]);
 
       workingModelName = modelName;
-      return { text: result.response.text(), modelName };
+      const rawText = result.response.text();
+      return { text: sanitizeAiText(rawText), modelName };
     } catch (error) {
       lastError = error;
 
@@ -127,7 +140,7 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
       if (workingModelName === modelName) workingModelName = null;
       console.warn(`Gemini model "${modelName}" unavailable: ${error.message}`);
 
-      // The 404 usually names its successor — jump straight to it.
+      // The 404 usually names its successor: jump straight to it.
       const recommended = extractRecommendedModel(error);
       if (recommended && !tried.has(recommended)) {
         queue.unshift(recommended);
@@ -161,7 +174,7 @@ function sanitizeHistory(chatHistory) {
       parts: [{ text: msg.content }],
     }));
 
-  // Drop any leading model turns — history must open with 'user'.
+  // Drop any leading model turns: history must open with 'user'.
   const firstUser = mapped.findIndex((m) => m.role === 'user');
   if (firstUser === -1) return [];
 
@@ -395,15 +408,15 @@ happy-to-walk), vibe (relaxed-and-slow / efficient-and-packed / a-mix).
 RULES:
 1. Constraint priority when trade-offs are needed: mobility > time_available >
    budget > interests > vibe > food_preferences.
-2. Every stop must satisfy the mobility constraint literally — if
+2. Every stop must satisfy the mobility constraint literally: if
    low-walking-or-wheelchair is selected, do not include a stop requiring
    sustained walking or stairs without step-free access, even if it's
    otherwise a perfect interest match.
 3. Every stop's "fit_reason" must cite the SPECIFIC answer it satisfies, in
    different words each time. Never reuse the same sentence across stops or
    across users. Bad: "Fits your budget & accessibility needs" (generic, reused).
-   Good: "Step-free entry hall — matches your low-walking preference" or
-   "No entry fee — comfortably inside your ₹1,000 budget."
+   Good: "Step-free entry hall, matches your low-walking preference" or
+   "No entry fee, comfortably inside your ₹1,000 budget."
 4. If vibe is "efficient-and-packed," sequence tightly with minimal gaps and
    favor more, shorter stops. If "relaxed-and-slow," fewer stops with more
    time each and built-in slack between them.
@@ -411,7 +424,7 @@ RULES:
    specific eating experience (not a generic "explore the area"), and it must
    respect food_preferences.
 6. feasibility_score (0–100) must be recomputed from how well the FULL plan
-   satisfies ALL constraints together — mobility violations or budget
+   satisfies ALL constraints together: mobility violations or budget
    overruns should visibly drop the score, not be hidden behind a high number.
 7. If fewer than 3 genuinely good matches exist for these constraints, return
    fewer stops rather than padding with irrelevant ones.

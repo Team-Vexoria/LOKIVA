@@ -1,7 +1,31 @@
+import { dbRun, dbAll } from '../db/db.js';
+
 const getProjectId = () => process.env.FIREBASE_PROJECT_ID || 'lokiva-5fd10';
 
-// In-memory cache for local continuity if Firestore network endpoint is temporarily unreachable
+// In-memory cache for local continuity
 const inMemoryExpenses = [];
+
+let tableInitialized = false;
+async function ensureExpensesTable() {
+  if (tableInitialized) return;
+  try {
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS expenses_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT NOT NULL,
+        amount_inr REAL NOT NULL,
+        category TEXT DEFAULT 'other',
+        note TEXT DEFAULT '',
+        timestamp TEXT NOT NULL,
+        source TEXT DEFAULT 'voice',
+        tripId TEXT
+      )
+    `);
+    tableInitialized = true;
+  } catch (err) {
+    console.warn('[ExpensesDB] Init table error:', err?.message || err);
+  }
+}
 
 /**
  * Helper to transform Firestore REST document to JS object
@@ -20,7 +44,7 @@ function firestoreDocToObject(doc) {
 }
 
 /**
- * Log an expense directly to Firestore collection 'expenses'
+ * Log an expense directly to Firestore collection 'expenses' with SQLite durable backup.
  * Guaranteed single source of truth for spending.
  */
 export async function logExpenseToFirestore({
@@ -45,6 +69,17 @@ export async function logExpenseToFirestore({
 
   // Add to local memory cache for instant queries
   inMemoryExpenses.push(expenseData);
+
+  // Durable SQLite persistence on disk
+  await ensureExpensesTable();
+  try {
+    await dbRun(
+      `INSERT INTO expenses_log (userId, amount_inr, category, note, timestamp, source, tripId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [String(userId), Number(amount_inr), category || 'other', note || '', timestamp, source, tripId || null]
+    );
+  } catch (dbErr) {
+    console.warn('[ExpensesDB] SQLite insert error:', dbErr?.message || dbErr);
+  }
 
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/expenses`;
   const body = {
@@ -135,7 +170,23 @@ export async function getExpenseSummaryFromFirestore({ userId, period = 'today' 
     console.warn('[Firestore] Error running query on Firestore REST:', err?.message || err);
   }
 
-  // If remote returns 0 or errored, check in-memory list for this user session
+  // Durable fallback: check SQLite table if Firestore returned 0
+  if (expensesList.length === 0) {
+    await ensureExpensesTable();
+    try {
+      const rows = await dbAll(
+        `SELECT * FROM expenses_log WHERE userId = ? AND timestamp >= ?`,
+        [String(userId), startIso]
+      );
+      if (rows && rows.length > 0) {
+        expensesList = rows;
+      }
+    } catch (dbErr) {
+      console.warn('[ExpensesDB] SQLite query error:', dbErr?.message || dbErr);
+    }
+  }
+
+  // In-memory fallback if SQLite had nothing
   if (expensesList.length === 0) {
     expensesList = inMemoryExpenses.filter(
       (e) => String(e.userId) === String(userId) && e.timestamp >= startIso

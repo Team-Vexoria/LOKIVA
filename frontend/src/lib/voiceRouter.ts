@@ -18,6 +18,11 @@ export interface VoiceRouteResponse {
 const REALTIME_API_URL =
   import.meta.env.VITE_REALTIME_API_URL || 'http://localhost:4000';
 
+function sanitizeVoiceText(str: string): string {
+  if (!str) return '';
+  return str.replace(/[\u2014\u2015]/g, ', ').replace(/[\u2013]/g, '-').replace(/--+/g, '-').trim();
+}
+
 /**
  * Routes spoken input through the secure backend proxy.
  * Gemini Function Calling is executed strictly on the server to prevent
@@ -32,8 +37,9 @@ export async function routeVoiceInput(
   if (!transcript || transcript.trim() === '') {
     return {
       intent: 'none',
-      spoken_response:
-        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
+      spoken_response: sanitizeVoiceText(
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?'
+      ),
     };
   }
 
@@ -83,9 +89,10 @@ export async function routeVoiceInput(
     const json = await res.json();
     return {
       intent: json.intent || 'none',
-      spoken_response:
+      spoken_response: sanitizeVoiceText(
         json.spoken_response ||
-        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?'
+      ),
       data: json.data || null,
       is_live: json.is_live,
     };
@@ -93,8 +100,9 @@ export async function routeVoiceInput(
     console.warn('[VoiceRouter] Backend call failed, using graceful fallback:', err?.message || err);
     return {
       intent: 'none',
-      spoken_response:
-        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
+      spoken_response: sanitizeVoiceText(
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?'
+      ),
     };
   }
 }

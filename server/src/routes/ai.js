@@ -10,6 +10,15 @@ import {
 
 export const aiRouter = express.Router();
 
+function sanitizeAiText(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\u2014\u2015]/g, ', ')
+    .replace(/[\u2013]/g, '-')
+    .replace(/--+/g, '-')
+    .trim();
+}
+
 // POST /ai/day-plan - Generate day plan using Gemini from 8 onboarding answers
 aiRouter.post('/day-plan', async (req, res) => {
   try {
@@ -162,7 +171,7 @@ aiRouter.post('/concierge', async (req, res) => {
     if (isGreeting) {
       if (!activeCity) {
         return res.json({
-          reply: `Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India — from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nBefore I recommend any places, could you share a few details?\n1. **Where are you heading?** Which Indian city or destination are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n2. **How much time do you have?** (e.g., 2–3 hours quick stop, a half day, or a full day?)\n3. **Who is traveling?** (Solo explorer, couple, or family with kids/elders?)\n4. **What is your budget & preferred vibe?** (Historic architecture, hands-on craft workshops, food trails, or quiet spiritual heritage?)\n\nTell me where you're heading and what you enjoy, and I'll curate the top 2 signature spots perfectly suited for you!`,
+          reply: sanitizeAiText(`Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India, from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nBefore I recommend any places, could you share a few details?\n1. **Where are you heading?** Which Indian city or destination are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n2. **How much time do you have?** (e.g., 2-3 hours quick stop, a half day, or a full day?)\n3. **Who is traveling?** (Solo explorer, couple, or family with kids/elders?)\n4. **What is your budget and preferred vibe?** (Historic architecture, hands-on craft workshops, food trails, or quiet spiritual heritage?)\n\nTell me where you're heading and what your interests are, and I'll curate the top 2 signature spots perfectly suited for you!`),
           tokens_used: 25,
           model: 'lokiva-instant',
           extracted_intent: intent,
@@ -172,7 +181,7 @@ aiRouter.post('/concierge', async (req, res) => {
         });
       } else {
         return res.json({
-          reply: `Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours do you have available?** (e.g., 2–3 hours, half day, or full day?)\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare what you're in the mood for, and I'll recommend the top 2 cultural spots for you!`,
+          reply: sanitizeAiText(`Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours do you have available?** (e.g., 2-3 hours, half day, or full day?)\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare where you are heading next and what your interests are, and I'll recommend the top 2 cultural spots for you!`),
           tokens_used: 20,
           model: 'lokiva-instant',
           extracted_intent: intent,
@@ -195,16 +204,16 @@ aiRouter.post('/concierge', async (req, res) => {
         });
       } catch (aiErr) {
         aiResponse = {
-          reply: `Namaste! I'd love to help you plan an authentic trip. Which city or destination in India are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nOnce you share your destination and how much time you have, I will curate the top 2 cultural spots for you!`,
+          reply: `Namaste! I would love to help you plan an authentic trip. Which city or destination in India are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nTell me where you are heading to and what your interests are, and I will curate the top 2 cultural spots for you!`,
           tokensUsed: 0,
           model: 'cultural-concierge-local',
         };
       }
 
       return res.json({
-        reply: aiResponse.reply,
+        reply: sanitizeAiText(aiResponse.reply),
         tokens_used: aiResponse.tokensUsed || 0,
-        model: aiResponse.model || 'gemini-3.5-flash',
+        model: aiResponse.model || 'gemini-3.1-flash-lite',
         extracted_intent: intent,
         suggested_experiences: [],
         context_destination: null,
@@ -226,7 +235,7 @@ aiRouter.post('/concierge', async (req, res) => {
 
     if (isJustCity) {
       return res.json({
-        reply: `Wonderful! **${activeCity}** has an incredible cultural fabric.\n\nTo ensure I recommend the 2 best places tailored specifically to your visit:\n1. **How much time do you have?** (e.g., 2–3 hours, half a day, or a full day?)\n2. **Who is traveling and what's your rough budget?** (Solo explorer, couple, or family with kids/elders?)\n3. **What excites you most?** (Royal architecture & forts, hands-on master artisan workshops like pottery/textiles, or authentic regional food trails?)\n\nTell me your preferences, and I'll curate the top 2 spots for you!`,
+        reply: sanitizeAiText(`Wonderful! **${activeCity}** has an incredible cultural fabric.\n\nTo ensure I recommend the 2 best places tailored specifically to your visit:\n1. **How much time do you have?** (e.g., 2-3 hours, half a day, or a full day?)\n2. **Who is traveling and what's your rough budget?** (Solo explorer, couple, or family with kids/elders?)\n3. **What excites you most?** (Royal architecture & forts, hands-on master artisan workshops like pottery/textiles, or authentic regional food trails?)\n\nTell me where you're heading and what your interests are, and I'll curate the top 2 spots for you!`),
         tokens_used: 20,
         model: 'lokiva-instant',
         extracted_intent: intent,
@@ -299,9 +308,9 @@ aiRouter.post('/concierge', async (req, res) => {
     }
 
     res.json({
-      reply: aiResponse.reply,
+      reply: sanitizeAiText(aiResponse.reply),
       tokens_used: aiResponse.tokensUsed || 0,
-      model: aiResponse.model || 'gemini-3.5-flash',
+      model: aiResponse.model || 'gemini-3.1-flash-lite',
       extracted_intent: intent,
       suggested_experiences: placesToAttach,
       context_destination: activeCity,
