@@ -10,7 +10,6 @@ import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
 import { LokivaMomentsSection } from '../components/moments/LokivaMomentsSection';
-import { ProjectVideoModal } from '../components/modals/ProjectVideoModal';
 import { deduplicateExperienceList } from '../lib/imageDeduplicator';
 import { api } from '../lib/api';
 import { Experience } from '../types';
@@ -30,7 +29,6 @@ export function HomePage() {
   const [selectedCity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadInitial() {
@@ -186,7 +184,7 @@ export function HomePage() {
   return (
     <main ref={containerRef} className="relative w-full min-h-screen bg-[#FAF7F2] text-[#12213B] overflow-x-clip">
       {/* 1. PINNED HERO + SHOWREEL (PANEL 0 - Spain Collection scroll architecture, GSAP pin) */}
-      <HeroScrollExperience onWatchFilm={() => setIsVideoModalOpen(true)} />
+      <HeroScrollExperience />
 
       {/* 2. CARD-STACKED TRANSITION GROUP (Between Showcase and Everything you need) */}
       <div className="card-stack-wrapper relative w-full">
@@ -276,12 +274,6 @@ export function HomePage() {
       <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24 pb-24">
         <FaqSection />
       </section>
-
-      {/* Shared Video Player Modal */}
-      <ProjectVideoModal
-        isOpen={isVideoModalOpen}
-        onClose={() => setIsVideoModalOpen(false)}
-      />
     </main>
   );
 }

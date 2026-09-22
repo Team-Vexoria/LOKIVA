@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Play, ArrowRight, Compass, MapPin } from 'lucide-react';
+import { ArrowRight, Compass, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   SquiggleUnderline,
@@ -14,14 +14,13 @@ import { DayPlanResponse } from '../../types';
 gsap.registerPlugin(ScrollTrigger);
 
 interface HeroScrollExperienceProps {
-  onWatchFilm?: () => void;
   onOpenPlanner?: () => void;
 }
 
-export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps) {
+export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   const navigate = useNavigate();
 
-  // ─── Onboarding state (was in LokivaLandingHero, now lives here) ───────────
+  // ─── Onboarding state ──────────────────────────────────────────────────────
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [solvedPlan, setSolvedPlan] = useState<{
     answers: TripContextAnswers;
@@ -37,7 +36,7 @@ export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps)
   const pinContainerRef = useRef<HTMLElement>(null);
   const heroContentRef = useRef<HTMLDivElement>(null);
   const mediaCardRef = useRef<HTMLDivElement>(null);
-  const playButtonRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const overlayTextRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,6 +49,35 @@ export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps)
           pin: true,
           scrub: 1,
           anticipatePin: 1,
+          onUpdate: (self) => {
+            const video = videoRef.current;
+            if (!video) return;
+            // Play video automatically when scrolled past hero text into the full video view
+            if (self.progress >= 0.25 && self.progress <= 0.98) {
+              if (video.paused) {
+                video.play().catch(() => {});
+              }
+            } else {
+              if (!video.paused) {
+                video.pause();
+              }
+            }
+          },
+          onLeave: () => {
+            if (videoRef.current && !videoRef.current.paused) {
+              videoRef.current.pause();
+            }
+          },
+          onLeaveBack: () => {
+            if (videoRef.current && !videoRef.current.paused) {
+              videoRef.current.pause();
+            }
+          },
+          onEnterBack: (self) => {
+            if (videoRef.current && videoRef.current.paused && self.progress >= 0.25) {
+              videoRef.current.play().catch(() => {});
+            }
+          },
         },
       });
 
@@ -81,14 +109,6 @@ export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps)
           overlayTextRef.current,
           { opacity: 0, y: 20 },
           { opacity: 1, y: 0, ease: 'power1.out', duration: 0.6 },
-          0.3
-        )
-
-        // 4. Play button appears mid-scrub
-        .fromTo(
-          playButtonRef.current,
-          { scale: 0.8, opacity: 0 },
-          { scale: 1, opacity: 1, ease: 'power1.out', duration: 0.6 },
           0.3
         );
     }, pinContainerRef);
@@ -214,35 +234,19 @@ export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps)
             boxShadow: '0 -8px 30px rgba(18, 33, 59, 0.12)',
           }}
         >
-          {/* Background image */}
-          <img
-            src="/lokiva_background.avif"
-            alt="Snowy Himalayan mountain passes with an illuminated winding path"
+          {/* Autoplay Landing Video */}
+          <video
+            ref={videoRef}
+            src="/landing_video.mp4"
+            playsInline
+            muted
+            loop
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover object-center"
-            loading="eager"
           />
 
-          {/* Dark scrim (always present at low opacity) */}
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-
-          {/* Play button (fades in during scrub) */}
-          <div
-            ref={playButtonRef}
-            className="absolute inset-0 flex items-center justify-center z-10"
-            style={{ opacity: 0 }}
-          >
-            <button
-              type="button"
-              onClick={onWatchFilm}
-              className="group relative flex items-center justify-center cursor-pointer"
-              title="Watch Film"
-            >
-              <span className="absolute w-24 h-24 rounded-full bg-white/20 animate-ping" />
-              <span className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/25 hover:bg-white/35 backdrop-blur-md border border-white/40 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-300">
-                <Play className="w-7 h-7 fill-white ml-1" />
-              </span>
-            </button>
-          </div>
+          {/* Dark scrim for crisp text contrast */}
+          <div className="absolute inset-0 bg-black/35 pointer-events-none" />
 
           {/* Overlay text - bottom-left, fades in during scrub */}
           <div

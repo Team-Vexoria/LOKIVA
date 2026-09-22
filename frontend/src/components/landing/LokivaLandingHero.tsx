@@ -54,6 +54,7 @@ export function LokivaLandingHero({ onOpenOnboarding }: LokivaLandingHeroProps =
 
   const handlePlanGenerated = (answers: TripContextAnswers, plan: DayPlanResponse) => {
     setSolvedPlan({ answers, plan });
+    navigate('/discovery-map', { state: { solvedPlan: plan, solvedAnswers: answers } });
   };
 
   return (
