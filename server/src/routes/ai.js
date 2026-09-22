@@ -81,7 +81,9 @@ const KNOWN_CITIES = [
   'Pondicherry', 'Puducherry', 'Hampi', 'Rishikesh', 'Haridwar', 'Shimla',
   'Darjeeling', 'Srinagar', 'Lucknow', 'Bhopal', 'Bhubaneswar', 'Mysore',
   'Mysuru', 'Jodhpur', 'Puri', 'Shillong', 'Gangtok', 'Munnar', 'Khajuraho',
-  'Mathura', 'Bodh Gaya', 'Mahabalipuram', 'Leh', 'Ujjain', 'Patan'
+  'Mathura', 'Bodh Gaya', 'Mahabalipuram', 'Leh', 'Ujjain', 'Patan',
+  'Kerala', 'Karnataka', 'Tamil Nadu', 'Rajasthan', 'Himachal Pradesh',
+  'Uttarakhand', 'Punjab', 'Maharashtra', 'West Bengal', 'Gujarat', 'Kashmir', 'Ladakh'
 ];
 
 function detectCityFromText(text) {
@@ -96,6 +98,15 @@ function detectCityFromText(text) {
       if (/cochin/i.test(city)) return 'Kochi';
       if (/mysuru/i.test(city)) return 'Mysore';
       if (/new delhi/i.test(city)) return 'Delhi';
+      if (/kerala/i.test(city)) return 'Kochi';
+      if (/karnataka/i.test(city)) return 'Mysore';
+      if (/tamil nadu|tamil/i.test(city)) return 'Chennai';
+      if (/rajasthan/i.test(city)) return 'Jaipur';
+      if (/punjab/i.test(city)) return 'Amritsar';
+      if (/himachal/i.test(city)) return 'Shimla';
+      if (/uttarakhand/i.test(city)) return 'Rishikesh';
+      if (/west bengal/i.test(city)) return 'Kolkata';
+      if (/maharashtra/i.test(city)) return 'Mumbai';
       return city;
     }
   }
@@ -115,10 +126,10 @@ export function generateFallbackResponse(message, city, recommendedPlaces = []) 
     baseReply = `For traveling with family in **${city}**, I've chosen comfortable, accessible spots with gentle pacing and engaging cultural stories for all ages.`;
   } else if (msg.includes('budget') || msg.includes('cheap') || msg.includes('affordable')) {
     baseReply = `To keep within your budget in **${city}**, these selections offer maximum cultural immersion with low or no entry fees.`;
-  } else if (msg.includes('hour') || msg.includes('time') || msg.includes('duration')) {
-    baseReply = `Based on your available time in **${city}**, I've selected 2 signature stops that are nearby each other to minimize transit and avoid rushing.`;
+  } else if (msg.includes('hour') || msg.includes('time') || msg.includes('duration') || msg.includes('day')) {
+    baseReply = `Based on your available time in **${city}**, I've selected signature stops that are nearby each other to minimize transit and avoid rushing.`;
   } else {
-    baseReply = `Based on your request, here are 2 signature cultural highlights in **${city}** that capture its authentic heritage.`;
+    baseReply = `Based on your request, here are signature cultural highlights in **${city}** that capture its authentic heritage.`;
   }
 
   if (Array.isArray(recommendedPlaces) && recommendedPlaces.length > 0) {
@@ -165,13 +176,11 @@ aiRouter.post('/concierge', async (req, res) => {
     let activeCity = mentionedInMessage || cleanRequestedCity || cityInUserHistory || null;
     const intent = parseIntentFromPrompt(message);
 
-    // 2. CASE: Greeting ("hi", "hello", "hey", "namaste", etc.)
-    // Directives: Answer the greeting properly and ask the questions before recommending!
-    // NEVER return place recommendations on greetings!
+    // 2. CASE: Pure Greeting without content ("hi", "hello", "namaste")
     if (isGreeting) {
       if (!activeCity) {
         return res.json({
-          reply: sanitizeAiText(`Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India, from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nBefore I recommend any places, could you share a few details?\n1. **Where are you heading?** Which Indian city or destination are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n2. **How much time do you have?** (e.g., 2-3 hours quick stop, a half day, or a full day?)\n3. **Who is traveling?** (Solo explorer, couple, or family with kids/elders?)\n4. **What is your budget and preferred vibe?** (Historic architecture, hands-on craft workshops, food trails, or quiet spiritual heritage?)\n\nTell me where you're heading and what your interests are, and I'll curate the top 2 signature spots perfectly suited for you!`),
+          reply: sanitizeAiText(`Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India, from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nTo tailor the most authentic recommendations for you:\n• **Which destination or region in India are you considering?** (e.g., South India backwaters, Rajasthan royal palaces, Varanasi ghats, or Mumbai coastal trails?)\n• **How many days or hours do you have for your trip?**\n• **Who is traveling and what's your preferred vibe?** (Historic architecture, hands-on craft workshops, or culinary trails?)\n\nShare what you have in mind and I will curate a personalized plan for you!`),
           tokens_used: 25,
           model: 'lokiva-instant',
           extracted_intent: intent,
@@ -181,7 +190,7 @@ aiRouter.post('/concierge', async (req, res) => {
         });
       } else {
         return res.json({
-          reply: sanitizeAiText(`Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours do you have available?** (e.g., 2-3 hours, half day, or full day?)\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare where you are heading next and what your interests are, and I'll recommend the top 2 cultural spots for you!`),
+          reply: sanitizeAiText(`Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours or days do you have available?**\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare where you are heading next and what your interests are, and I'll recommend the top signature cultural spots for you!`),
           tokens_used: 20,
           model: 'lokiva-instant',
           extracted_intent: intent,
@@ -192,28 +201,19 @@ aiRouter.post('/concierge', async (req, res) => {
       }
     }
 
-    // 3. CASE: No destination known yet
+    // 3. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
     if (!activeCity) {
-      let aiResponse;
-      try {
-        aiResponse = await chatWithCulturalConcierge({
-          userMessage: message,
-          chatHistory: chat_history,
-          city: null,
-          availableExperiences: [],
-        });
-      } catch (aiErr) {
-        aiResponse = {
-          reply: `Namaste! I would love to help you plan an authentic trip. Which city or destination in India are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nTell me where you are heading to and what your interests are, and I will curate the top 2 cultural spots for you!`,
-          tokensUsed: 0,
-          model: 'cultural-concierge-local',
-        };
-      }
+      const aiResponse = await chatWithCulturalConcierge({
+        userMessage: message,
+        chatHistory: chat_history,
+        city: null,
+        availableExperiences: [],
+      });
 
       return res.json({
         reply: sanitizeAiText(aiResponse.reply),
         tokens_used: aiResponse.tokensUsed || 0,
-        model: aiResponse.model || 'gemini-3.1-flash-lite',
+        model: aiResponse.model || 'gemini-1.5-flash',
         extracted_intent: intent,
         suggested_experiences: [],
         context_destination: null,

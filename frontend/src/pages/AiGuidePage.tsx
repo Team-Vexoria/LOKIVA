@@ -38,9 +38,9 @@ import {
   Compass,
 } from 'lucide-react';
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // Types
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 interface WeatherData {
   location_name: string;
@@ -84,9 +84,9 @@ interface ChatMessage {
   isVoiceInitiated?: boolean;
 }
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // Constants
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome-msg',
@@ -112,9 +112,9 @@ const getChatStorageKey = (user: { id?: string | number; email?: string } | null
   return `lokiva_ai_guide_chat_${user.id || user.email}`;
 };
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // Daily Expense Storage & Midnight Reset Helpers
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 const getTodayDateStr = (): string => {
   const d = new Date();
@@ -184,9 +184,9 @@ const saveDailySpend = (
   }
 };
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // Component
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 export function AiGuidePage() {
   const { user, token, isAuthenticated, isLoading: authLoading, demoLogin } = useAuth();
@@ -275,9 +275,9 @@ export function AiGuidePage() {
     },
   });
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Expense total fetch & persistence
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   const fetchTodayTotal = useCallback(async () => {
     setIsTotalLoading(true);
     const activeUserId = user?.id;
@@ -341,9 +341,9 @@ export function AiGuidePage() {
     }
   }, [user, token]);
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Effects
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   // Fetch today's expense total on mount and when authentication or user updates
   useEffect(() => {
@@ -476,9 +476,9 @@ export function AiGuidePage() {
     }
   }, [isAuthenticated]);
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // TTS
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   const handleSpeak = useCallback(
     (messageId: string, text: string) => {
@@ -522,9 +522,9 @@ export function AiGuidePage() {
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Start fresh chat
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   const handleStartFreshChat = () => {
     if (messages.length > 1) {
       const confirmReset = window.confirm('Start a fresh conversation? This will clear your current chat history.');
@@ -547,9 +547,9 @@ export function AiGuidePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Unified send handler (typed, chip tap, voice)
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   const handleSend = async (customText?: string, voiceInitiated = false) => {
     if (!isAuthenticated || !user) return;
     const textToSend = (customText || inputMessage).trim();
@@ -585,11 +585,11 @@ export function AiGuidePage() {
       let expenseData: ExpenseData | undefined;
       let detectedIntent: ChatMessage['intent'] = 'none';
 
-      // Check if this query is a structured voice tool query (weather, expense, nearby experience)
+      // Check if this query is an explicit voice tool command (logging an expense or asking live sensor weather)
       const isVoiceTool =
-        /(\bweather\b|\brain\b|\btemperature\b|\bforecast\b|\bclimate\b|\bfeels like\b|\bdegrees\b)/i.test(textToSend) ||
-        /(\bspent\b|\bspend\b|\bpaid\b|\bexpense\b|\brupees\b|\brs\.?\b|\bcost\b|\bbought\b|\bhow much did i spend\b|\btoday'?s total\b)/i.test(textToSend) ||
-        /(\bnearby\b|\bnear me\b|\bwithin \d+\s*min|\bfree for \d+\s*min|\bhave \d+\s*min|\bquick stop\b)/i.test(textToSend);
+        voiceInitiated &&
+        (/(^|\b)(i (spent|paid|bought)|add expense|log expense|track expense|how much did i spend today|what('s| is) my total spend)(\b|$)/i.test(textToSend) ||
+         /(^|\b)(what('s| is) the (weather|temperature|forecast)|is it raining in)(\b|$)/i.test(textToSend));
 
       if (isVoiceTool) {
         // Route to the Gemini function-calling router for tool actions
@@ -739,9 +739,9 @@ export function AiGuidePage() {
     }
   };
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Render
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   // Input display: show live voice speech while listening, otherwise normal input value
   const inputDisplayValue = isListening ? (interimTranscript || 'Listening to your voice...') : inputMessage;
