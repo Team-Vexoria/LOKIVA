@@ -39,8 +39,50 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayTextRef = useRef<HTMLDivElement>(null);
 
+  // ─── Native Scroll Tracking for Bulletproof Video Playback ────────────────
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.defaultMuted = true;
+    }
+
+    const checkPlayback = () => {
+      const vid = videoRef.current;
+      if (!vid) return;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+      const vh = window.innerHeight;
+
+      // Start playing as soon as user scrolls a little past hero top (scrollY > 30px)
+      // Keep playing through fullscreen and until half of next section (scrollY < vh * 2.2)
+      if (scrollY > 30 && scrollY < vh * 2.2) {
+        if (vid.paused) {
+          vid.muted = true;
+          const playPromise = vid.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {});
+          }
+        }
+      } else {
+        if (!vid.paused) {
+          vid.pause();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', checkPlayback, { passive: true });
+    window.addEventListener('resize', checkPlayback, { passive: true });
+    checkPlayback();
+
+    return () => {
+      window.removeEventListener('scroll', checkPlayback);
+      window.removeEventListener('resize', checkPlayback);
+    };
+  }, []);
+
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // PINNED HERO + EXPANDING CARD TIMELINE
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: pinContainerRef.current,
@@ -49,35 +91,6 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           pin: true,
           scrub: 1,
           anticipatePin: 1,
-          onUpdate: (self) => {
-            const video = videoRef.current;
-            if (!video) return;
-            // Play video automatically when scrolled past hero text into the full video view
-            if (self.progress >= 0.25 && self.progress <= 0.98) {
-              if (video.paused) {
-                video.play().catch(() => {});
-              }
-            } else {
-              if (!video.paused) {
-                video.pause();
-              }
-            }
-          },
-          onLeave: () => {
-            if (videoRef.current && !videoRef.current.paused) {
-              videoRef.current.pause();
-            }
-          },
-          onLeaveBack: () => {
-            if (videoRef.current && !videoRef.current.paused) {
-              videoRef.current.pause();
-            }
-          },
-          onEnterBack: (self) => {
-            if (videoRef.current && videoRef.current.paused && self.progress >= 0.25) {
-              videoRef.current.play().catch(() => {});
-            }
-          },
         },
       });
 
