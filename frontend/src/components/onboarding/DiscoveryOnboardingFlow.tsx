@@ -23,9 +23,11 @@ import {
   Accessibility,
   Footprints,
   Navigation,
+  MapPin,
 } from 'lucide-react';
 
 export interface DiscoveryAnswers {
+  destination: string;
   interests: string[];
   days: number;
   time_available_minutes: number;
@@ -42,9 +44,10 @@ export interface DiscoveryAnswers {
 }
 
 export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
+  destination: 'Smart Match',
   interests: ['heritage', 'crafts', 'food'],
   days: 5,
-  time_available_minutes: 2400, // 5 days * 8h * 60m
+  time_available_minutes: 2400,
   budget_daily_inr: 4500,
   budget_max_inr: 22500,
   group_type: 'couple',
@@ -56,6 +59,65 @@ export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
     step_free: false,
   },
 };
+
+const DESTINATION_HUBS = [
+  {
+    id: 'Smart Match',
+    title: 'Smart Match for my Vibe',
+    subtitle: 'Recommended • Automatically matches the ideal Indian hub based on your cultural interests',
+    badge: 'AI Curated',
+    icon: Sparkles,
+  },
+  {
+    id: 'Jaipur',
+    title: 'Jaipur, Rajasthan',
+    subtitle: 'Golden havelis, royal citadels & living hand-block printing guilds',
+    badge: 'Crafts & Palaces',
+    icon: Landmark,
+  },
+  {
+    id: 'Varanasi',
+    title: 'Varanasi, Uttar Pradesh',
+    subtitle: 'Ancient stone ghats, silk handlooms & evening Ganga Aarti ceremonies',
+    badge: 'Sacred Rituals',
+    icon: Flame,
+  },
+  {
+    id: 'Mumbai',
+    title: 'Mumbai, Maharashtra',
+    subtitle: 'Art Deco enclaves, colonial architecture, Parsi cafes & coastal bazaars',
+    badge: 'Arts & Culture',
+    icon: Compass,
+  },
+  {
+    id: 'Delhi',
+    title: 'Delhi, National Capital',
+    subtitle: 'Mughal sandstone masterpieces, spice markets & century-old culinary lanes',
+    badge: 'Gastronomy & History',
+    icon: Utensils,
+  },
+  {
+    id: 'Kochi',
+    title: 'Kochi, Kerala',
+    subtitle: 'Backwater canals, spice warehouses, Kathakali dance & Ayurvedic sanctuaries',
+    badge: 'Wellness & Nature',
+    icon: Mountain,
+  },
+  {
+    id: 'Udaipur',
+    title: 'Udaipur, Rajasthan',
+    subtitle: 'Lakeside palaces, marble stepwells & Mewari miniature painting guilds',
+    badge: 'Romantic Heritage',
+    icon: Heart,
+  },
+  {
+    id: 'Amritsar',
+    title: 'Amritsar, Punjab',
+    subtitle: 'Harmandir Sahib golden sanctuary, community langar & Phulkari handcraft',
+    badge: 'Spiritual & Food',
+    icon: Landmark,
+  },
+];
 
 const INTEREST_OPTIONS = [
   { id: 'heritage', label: 'Living Heritage & Citadels', icon: Landmark },
@@ -108,7 +170,7 @@ const GROUP_OPTIONS = [
 interface DiscoveryOnboardingFlowProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (answers: DiscoveryAnswers) => void;
+  onComplete: (answers: DiscoveryAnswers) => Promise<void> | void;
   initialAnswers?: Partial<DiscoveryAnswers>;
 }
 
@@ -122,6 +184,9 @@ export function DiscoveryOnboardingFlow({
   const [direction, setDirection] = useState<number>(1);
 
   // Form State
+  const [destination, setDestination] = useState<string>(
+    initialAnswers?.destination || 'Smart Match'
+  );
   const [interests, setInterests] = useState<string[]>(
     initialAnswers?.interests || DEFAULT_DISCOVERY_ANSWERS.interests
   );
@@ -141,9 +206,10 @@ export function DiscoveryOnboardingFlow({
     step_free: boolean;
   }>(initialAnswers?.accessibility || DEFAULT_DISCOVERY_ANSWERS.accessibility);
 
-  // Synthesis state
+  // Synthesis & loading state
   const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
-  const [synthesisStage, setSynthesisStage] = useState<number>(0);
+  const [synthesisStage, setSynthesisStage] = useState<number>(1);
+  const [computedCity, setComputedCity] = useState<string>('Jaipur');
 
   // Prefers reduced motion
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -164,9 +230,9 @@ export function DiscoveryOnboardingFlow({
           onClose();
         }
       } else if (e.key === 'Enter') {
-        if (currentStep < 6) {
+        if (currentStep < 7) {
           handleNext();
-        } else if (currentStep === 6) {
+        } else if (currentStep === 7) {
           handleStartSynthesis();
         }
       }
@@ -174,10 +240,10 @@ export function DiscoveryOnboardingFlow({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentStep, isSynthesizing, interests, days, budgetDaily, groupType, paceVal, accessibility]);
+  }, [isOpen, currentStep, isSynthesizing, destination, interests, days, budgetDaily, groupType, paceVal, accessibility]);
 
   const handleNext = () => {
-    if (currentStep < 6) {
+    if (currentStep < 7) {
       setDirection(1);
       setCurrentStep((s) => s + 1);
     } else {
@@ -204,13 +270,27 @@ export function DiscoveryOnboardingFlow({
     return 'balanced';
   };
 
-  const handleStartSynthesis = () => {
+  const resolveSmartCity = (dest: string, userInterests: string[]): string => {
+    if (dest && dest !== 'Smart Match') return dest;
+    if (userInterests.includes('rituals')) return 'Varanasi';
+    if (userInterests.includes('wellness') || (userInterests.includes('nature') && !userInterests.includes('heritage'))) return 'Kochi';
+    if (userInterests.includes('food') && !userInterests.includes('crafts')) return 'Delhi';
+    if (userInterests.includes('arts') && !userInterests.includes('monuments')) return 'Mumbai';
+    if (userInterests.includes('monuments') && userInterests.includes('nature')) return 'Udaipur';
+    return 'Jaipur';
+  };
+
+  const handleStartSynthesis = async () => {
     setIsSynthesizing(true);
     setSynthesisStage(1);
 
     const pace = getPaceCategory(paceVal);
     const groupMeta = GROUP_OPTIONS.find((g) => g.id === groupType);
+    const finalCity = resolveSmartCity(destination, interests);
+    setComputedCity(finalCity);
+
     const answers: DiscoveryAnswers = {
+      destination: finalCity,
       interests: interests.length > 0 ? interests : ['heritage', 'crafts'],
       days,
       time_available_minutes: days * 8 * 60,
@@ -225,38 +305,25 @@ export function DiscoveryOnboardingFlow({
     // Store in localStorage for solver and discovery engine
     try {
       localStorage.setItem('lokiva_discovery_answers', JSON.stringify(answers));
-      localStorage.setItem(
-        'lokiva_discovery_preferences',
-        JSON.stringify({
-          rhythm: groupType === 'friends' ? 'cohort' : groupType,
-          durationTier: days <= 3 ? 'weekend' : days <= 7 ? 'circuit' : 'epic',
-          pacing: pace,
-          vibe: interests.includes('crafts')
-            ? 'crafts'
-            : interests.includes('rituals')
-            ? 'temples'
-            : interests.includes('monuments')
-            ? 'frontiers'
-            : 'palaces',
-          budgetDailyInr: budgetDaily,
-        })
-      );
       localStorage.setItem('has_onboarded_lokiva', 'true');
     } catch {}
 
-    // 1.5s honest synthesis animation progression
-    const timer1 = setTimeout(() => setSynthesisStage(2), 600);
-    const timer2 = setTimeout(() => setSynthesisStage(3), 1100);
-    const timer3 = setTimeout(() => {
-      setIsSynthesizing(false);
-      onComplete(answers);
-    }, 1600);
+    // Honest progression of synthesis stages
+    await new Promise((r) => setTimeout(r, 500));
+    setSynthesisStage(2);
+    await new Promise((r) => setTimeout(r, 600));
+    setSynthesisStage(3);
 
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
+    // Keep synthesis view displayed while onComplete executes (prevents bouncing back to question 6/7)
+    try {
+      await onComplete(answers);
+    } catch (err) {
+      console.warn('Onboarding completion error handled:', err);
+    } finally {
+      // Cleanly reset after parent modal has closed
+      setCurrentStep(1);
+      setIsSynthesizing(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -353,12 +420,12 @@ export function DiscoveryOnboardingFlow({
                   <motion.div
                     className="h-full bg-gradient-to-r from-[#FFC067] to-[#C85A32] rounded-full"
                     initial={{ width: 0 }}
-                    animate={{ width: `${(currentStep / 6) * 100}%` }}
+                    animate={{ width: `${(currentStep / 7) * 100}%` }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   />
                 </div>
                 <span className="text-[11px] font-mono text-dusk-600 font-semibold tracking-wider">
-                  {currentStep} of 6
+                  {currentStep} of 7
                 </span>
               </div>
             )}
@@ -375,10 +442,10 @@ export function DiscoveryOnboardingFlow({
           </div>
 
           {/* Central Question Stage */}
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1 min-h-[380px] flex flex-col justify-between">
+          <div className="p-6 sm:p-8 overflow-y-auto flex-1 min-h-[400px] flex flex-col justify-between">
             <AnimatePresence mode="wait" custom={direction}>
               {/* ======================================================= */}
-              {/* STEP 1: INTERESTS (MULTI-SELECT CHIP CLOUD)              */}
+              {/* STEP 1: DESTINATION HUB (NEW: TARGET SPECIFIC REGION)   */}
               {/* ======================================================= */}
               {currentStep === 1 && !isSynthesizing && (
                 <motion.div
@@ -388,17 +455,97 @@ export function DiscoveryOnboardingFlow({
                   initial="enter"
                   animate="center"
                   exit="exit"
+                  className="space-y-5 flex-1 flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5 text-center sm:text-left">
+                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+                      Question 1: Destination Context
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
+                      Where would you like to explore?
+                    </h2>
+                    <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
+                      Choose a cultural hub or select Smart Match to let Lokiva pair you with the best region.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-1 max-h-[260px] overflow-y-auto pr-1">
+                    {DESTINATION_HUBS.map((hub) => {
+                      const isSelected = destination === hub.id;
+                      const Icon = hub.icon;
+
+                      return (
+                        <motion.button
+                          key={hub.id}
+                          type="button"
+                          onClick={() => setDestination(hub.id)}
+                          whileHover={{ scale: 1.01, y: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`p-3.5 rounded-2xl text-left transition-all duration-200 cursor-pointer border flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-[#FFFDF9] border-[#FFC067] ring-2 ring-[#FFC067] shadow-[0_4px_16px_rgba(255,192,103,0.25)]'
+                              : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-[#C85A32]' : 'text-dusk-600'}`} />
+                              <span className="font-heading font-bold text-sm text-[#12213B]">
+                                {hub.title}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2 py-0.5 rounded-full">
+                              {hub.badge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-dusk-600 leading-snug line-clamp-2">
+                            {hub.subtitle}
+                          </p>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Action */}
+                  <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
+                    <span className="text-xs font-mono text-[#C85A32] font-semibold">
+                      Selected: {destination}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ======================================================= */}
+              {/* STEP 2: INTERESTS (MULTI-SELECT CHIP CLOUD)              */}
+              {/* ======================================================= */}
+              {currentStep === 2 && !isSynthesizing && (
+                <motion.div
+                  key="step-2"
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
                   className="space-y-6 flex-1 flex flex-col justify-between"
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 1: Cultural Affinity
+                      Question 2: Cultural Affinity
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       What experiences draw you in most?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Tap the cultural threads you want woven into your Indian journey. Choose any combination.
+                      Tap the cultural threads you want woven into your itinerary. Every chosen interest directly creates matching stops.
                     </p>
                   </div>
 
@@ -455,11 +602,11 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 2: TIME AVAILABLE (TACTILE SLIDER WITH BIG NUMBER)   */}
+              {/* STEP 3: TIME AVAILABLE (TACTILE SLIDER WITH BIG NUMBER)   */}
               {/* ======================================================= */}
-              {currentStep === 2 && !isSynthesizing && (
+              {currentStep === 3 && !isSynthesizing && (
                 <motion.div
-                  key="step-2"
+                  key="step-3"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -469,7 +616,7 @@ export function DiscoveryOnboardingFlow({
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 2: Time Available
+                      Question 3: Time Available
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       How much time do you realistically have?
@@ -553,11 +700,11 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 3: BUDGET CEILING (LIVE INDIAN CURRENCY SLIDER)     */}
+              {/* STEP 4: BUDGET CEILING (LIVE INDIAN CURRENCY SLIDER)     */}
               {/* ======================================================= */}
-              {currentStep === 3 && !isSynthesizing && (
+              {currentStep === 4 && !isSynthesizing && (
                 <motion.div
-                  key="step-3"
+                  key="step-4"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -567,13 +714,13 @@ export function DiscoveryOnboardingFlow({
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 3: Financial Comfort
+                      Question 4: Financial Comfort
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       What is your comfortable spending range?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Per day for your entire party. Every haveli pass, artisan fee, and local transit fits comfortably inside.
+                      Per day for your entire party. Stop entry passes, craft fees, and food are calculated directly from this amount.
                     </p>
                   </div>
 
@@ -648,11 +795,11 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 4: GROUP SIZE / TRAVEL TYPE (ILLUSTRATED CARDS)     */}
+              {/* STEP 5: GROUP SIZE / TRAVEL TYPE (ILLUSTRATED CARDS)     */}
               {/* ======================================================= */}
-              {currentStep === 4 && !isSynthesizing && (
+              {currentStep === 5 && !isSynthesizing && (
                 <motion.div
-                  key="step-4"
+                  key="step-5"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -662,7 +809,7 @@ export function DiscoveryOnboardingFlow({
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 4: Travel Companions
+                      Question 5: Travel Companions
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       Who is traveling with you?
@@ -736,11 +883,11 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 5: TRAVEL PACE (TWO-ENDED SPECTRUM SLIDER)          */}
+              {/* STEP 6: TRAVEL PACE (TWO-ENDED SPECTRUM SLIDER)          */}
               {/* ======================================================= */}
-              {currentStep === 5 && !isSynthesizing && (
+              {currentStep === 6 && !isSynthesizing && (
                 <motion.div
-                  key="step-5"
+                  key="step-6"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -750,7 +897,7 @@ export function DiscoveryOnboardingFlow({
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 5: Travel Rhythm & Pace
+                      Question 6: Travel Rhythm & Pace
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       How do you like to pace your days?
@@ -823,11 +970,11 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 6: ACCESSIBILITY NEEDS (OPTIONAL & GENTLE)          */}
+              {/* STEP 7: ACCESSIBILITY NEEDS (OPTIONAL & GENTLE)          */}
               {/* ======================================================= */}
-              {currentStep === 6 && !isSynthesizing && (
+              {currentStep === 7 && !isSynthesizing && (
                 <motion.div
-                  key="step-6"
+                  key="step-7"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -837,7 +984,7 @@ export function DiscoveryOnboardingFlow({
                 >
                   <div className="space-y-2 text-center sm:text-left">
                     <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 6: Accessibility (Optional)
+                      Question 7: Accessibility (Optional)
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
                       Any mobility or walking preferences?
@@ -973,9 +1120,9 @@ export function DiscoveryOnboardingFlow({
                     <button
                       type="button"
                       onClick={handleStartSynthesis}
-                      className="text-xs font-mono text-dusk-600 hover:text-[#12213B] transition-colors"
+                      className="text-xs font-mono text-dusk-600 hover:text-[#12213B] transition-colors cursor-pointer"
                     >
-                      Skip accessibility preferences
+                      Skip mobility preferences
                     </button>
 
                     <button
@@ -991,7 +1138,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* FINAL STEP: SYNTHESIS CONVERGENCE MOMENT (1.5 SECONDS)   */}
+              {/* FINAL STEP: SYNTHESIS MOMENT (PERSISTENT LOADING STATE)  */}
               {/* ======================================================= */}
               {isSynthesizing && (
                 <motion.div
@@ -1012,10 +1159,10 @@ export function DiscoveryOnboardingFlow({
 
                   <div className="space-y-1.5 max-w-md">
                     <h3 className="text-xl sm:text-2xl font-display font-bold text-[#12213B]">
-                      Synthesizing Your Indian Discovery
+                      Synthesizing Your {computedCity} Route
                     </h3>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans">
-                      Aligning your constraints with verified artisan guilds, live opening hours, and regional vector boundaries.
+                      Aligning your exact budget of {formattedBudgetDaily}/day and {interests.length} cultural affinities with verified local artisans and live schedules.
                     </p>
                   </div>
 
@@ -1027,7 +1174,7 @@ export function DiscoveryOnboardingFlow({
                       transition={{ delay: 0.1 }}
                       className="px-3 py-1 rounded-full bg-white border border-[#E5DFD5] text-xs font-mono font-bold text-[#12213B] shadow-xs"
                     >
-                      {days} Days Duration
+                      {computedCity}
                     </motion.span>
 
                     <motion.span
@@ -1064,7 +1211,7 @@ export function DiscoveryOnboardingFlow({
                       <ShieldCheck className="w-3.5 h-3.5 text-[#2D8978]" />
                       <span className="text-[#2D8978] font-bold">
                         {synthesisStage >= 1
-                          ? 'Enforced hard budget & transit walls'
+                          ? `Enforcing hard ceiling of ${formattedBudgetDaily}/day`
                           : 'Evaluating financial constraints...'}
                       </span>
                     </div>
@@ -1077,7 +1224,7 @@ export function DiscoveryOnboardingFlow({
                       />
                       <span className={synthesisStage >= 2 ? 'text-[#2D8978] font-bold' : ''}>
                         {synthesisStage >= 2
-                          ? 'Matched top-tier artisan guilds'
+                          ? `Matching ${interests.length} affinities in ${computedCity}`
                           : 'Searching master ateliers...'}
                       </span>
                     </div>
@@ -1090,8 +1237,8 @@ export function DiscoveryOnboardingFlow({
                       />
                       <span className={synthesisStage >= 3 ? 'text-[#2D8978] font-bold' : ''}>
                         {synthesisStage >= 3
-                          ? 'Vector map synchronized'
-                          : 'Computing state match scores...'}
+                          ? 'Feasible plan compiled & ready'
+                          : 'Computing schedule fit...'}
                       </span>
                     </div>
                   </div>

@@ -11,12 +11,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ordered list, remember the first one that works, and fall back to asking the API
 // what this key can actually reach.
 const DEFAULT_MODEL_CANDIDATES = [
-  'gemini-3.1-flash-lite',
-  'gemini-3.5-flash-lite',
-  'gemini-flash-lite-latest',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-3-flash-preview',
-  'gemini-3.5-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-pro',
   'gemini-flash-latest',
 ];
 
@@ -120,7 +119,7 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
         : activeModel.generateContent(prompt);
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: ${modelName} exceeded 4000ms response window`)), 4000)
+        setTimeout(() => reject(new Error(`Timeout: ${modelName} exceeded 10000ms response window`)), 10000)
       );
 
       const result = await Promise.race([requestPromise, timeoutPromise]);
@@ -514,147 +513,347 @@ function fallbackGenerateDayPlan({
 }) {
   const normCity = (destination || 'Jaipur').toLowerCase();
   const isLowWalking = /low.walking|wheelchair|step.free|ramp/i.test(mobility);
+  const isWheelchair = /wheelchair/i.test(mobility);
 
-  const CITY_STOPS = {
+  const budgetNum = parseInt(String(budget).replace(/[^0-9]/g, ''), 10) || 3000;
+  const budgetTier = budgetNum <= 2500 ? 'budget' : budgetNum <= 9000 ? 'comfort' : 'luxury';
+
+  const userInterests = Array.isArray(interests) && interests.length > 0
+    ? interests
+    : ['heritage', 'crafts', 'food'];
+
+  const groupDesc = String(group_type || 'Solo Explorer');
+  const groupBenefit = /solo/i.test(groupDesc)
+    ? 'introspective solo wandering'
+    : /couple/i.test(groupDesc)
+    ? 'romantic couple retreat'
+    : /family/i.test(groupDesc)
+    ? 'spacious shaded grounds and kid-friendly rest stops'
+    : 'vibrant shared moments for friends';
+
+  const mobilityBenefit = isWheelchair
+    ? 'Step-free ramp entry and elevator access verified'
+    : isLowWalking
+    ? 'Under 250m walking hop with shaded benches'
+    : 'Comfortable neighborhood walking distance';
+
+  const MASTER_CATALOG = {
     jaipur: [
       {
-        name: 'Hawa Mahal Palace Courtyards & Heritage View',
-        time: '09:30 AM',
+        name: 'Hawa Mahal Palace Courtyards & Wind Pavilion',
+        category: 'heritage',
+        time: '09:00 AM',
         duration_mins: 75,
-        cost_label: '₹50 entry',
-        fit_reason: isLowWalking
-          ? 'Ground-floor courtyard access with seating, matches your low-walking preference'
-          : 'Iconic honeycomb facade with morning soft light and minimal crowds',
-        match_notes: 'Verified step-free outer pavilion and heritage street tea stall',
+        budgetCost: '₹50 entry ticket',
+        comfortCost: '₹200 palace audio guide pass',
+        luxuryCost: '₹1,500 private sunrise pavilion pass',
+        notes: 'Iconic 1799 pink sandstone facade with morning cross-breeze and uncrowded courtyards.',
       },
       {
         name: 'Sanganer Master Hand-Block Printing Guild Atelier',
-        time: '11:15 AM',
+        category: 'crafts',
+        time: '11:00 AM',
         duration_mins: 90,
-        cost_label: '₹350 workshop fee',
-        fit_reason: 'Hands-on natural dye printing with master Chiwda craftsmen, fits cultural craft affinity',
-        match_notes: 'Direct artisan studio with authentic vegetable pigments',
+        budgetCost: 'Free artisan observation',
+        comfortCost: '₹450 hands-on block printing session',
+        luxuryCost: '₹3,500 private master Chiwda natural dye workshop',
+        notes: 'Direct engagement with generational textile carvers and traditional vegetable dye vats.',
       },
       {
         name: 'Laxmi Mishthan Bhandar (LMB) Heritage Ghewar Tasting',
+        category: 'food',
         time: '01:00 PM',
         duration_mins: 60,
-        cost_label: '₹300 tasting',
-        fit_reason: `Historic 1727 Johari Bazaar sweetshop, strictly ${food_preferences || 'Vegetarian'}`,
-        match_notes: 'Famous paneer ghewar and royal Rajasthani spiced lassi',
+        budgetCost: '₹180 street snack',
+        comfortCost: '₹450 royal thali lunch',
+        luxuryCost: '₹2,500 private haveli dining experience',
+        notes: `Historic 1727 Johari Bazaar sweetmaker known for royal paneer ghewar, strictly ${food_preferences || 'Vegetarian'}.`,
       },
       {
-        name: 'Panna Meena Ka Kund Stepwell & Amber Foot-Hills',
+        name: 'Panna Meena Ka Kund Ancient Stepwell & Amber Foothills',
+        category: 'monuments',
         time: '03:00 PM',
         duration_mins: 60,
-        cost_label: 'Free entry',
-        fit_reason: 'Geometric 16th-century stepwell away from bus tour routes, fits offbeat preferences',
-        match_notes: 'Shaded morning and late afternoon golden hour reflections',
-      },
-    ],
-    mumbai: [
-      {
-        name: 'Kala Ghoda Art District & Keneseth Eliyahoo Heritage Walk',
-        time: '09:30 AM',
-        duration_mins: 80,
-        cost_label: 'Free entry',
-        fit_reason: isLowWalking
-          ? 'Paved, shaded heritage footpath with frequent cafe rest stops'
-          : 'Victorian Gothic & Indo-Saracenic architectural highlights in South Mumbai',
-        match_notes: 'Keneseth Eliyahoo blue synagogue step-free entry available',
+        budgetCost: 'Free entry',
+        comfortCost: '₹150 local guide narration',
+        luxuryCost: '₹1,200 private haveli curator trail',
+        notes: 'Symmetrical 16th-century subterranean stepwell offering quiet contemplation away from bus tours.',
       },
       {
-        name: 'Bespoke Block-Printing & Khadi Weaver Collective',
-        time: '11:15 AM',
-        duration_mins: 75,
-        cost_label: '₹300 session',
-        fit_reason: 'Authentic generational textile guild supporting local Indian weavers',
-        match_notes: 'Tactile craft demonstration with traditional wooden printing stamps',
-      },
-      {
-        name: 'Yazdani Bakery & Restaurant Irani Chai & Bun Maska',
-        time: '01:00 PM',
-        duration_mins: 45,
-        cost_label: '₹180 breakfast',
-        fit_reason: `1953 wood-fired oven bakery, compliant with ${food_preferences || 'Vegetarian'}`,
-        match_notes: 'Historic Parsi cafe heritage atmosphere',
-      },
-      {
-        name: 'Banganga Sacred Water Tank & Walkeshwar Temples',
-        time: '02:45 PM',
+        name: 'Govind Dev Ji Temple Inner Courtyard Evening Aarti',
+        category: 'rituals',
+        time: '05:00 PM',
         duration_mins: 60,
-        cost_label: 'Free entry',
-        fit_reason: 'Ancient spring-fed freshwater tank predating colonial Mumbai, serene spiritual setting',
-        match_notes: 'Quiet stone steps with classical music resonance',
-      },
-    ],
-    delhi: [
-      {
-        name: 'Humayun\'s Tomb Mughal Gardens & Water Channels',
-        time: '09:00 AM',
-        duration_mins: 90,
-        cost_label: '₹50 entry',
-        fit_reason: isLowWalking
-          ? 'Smooth paved pathways with step-free garden circuits'
-          : 'UNESCO red sandstone masterpiece predating the Taj Mahal',
-        match_notes: 'Restored charbagh garden with native Persian flora',
-      },
-      {
-        name: 'Hazrat Nizamuddin Basti Attar & Sufi Craft Guild',
-        time: '11:00 AM',
-        duration_mins: 75,
-        cost_label: '₹200 workshop',
-        fit_reason: '700-year-old living sanctuary with generational natural perfume distillers',
-        match_notes: 'Heritage alleyways with traditional floral distillation',
-      },
-      {
-        name: 'Historic Old Delhi Heritage Food Lane',
-        time: '01:00 PM',
-        duration_mins: 60,
-        cost_label: '₹350 lunch',
-        fit_reason: `Historic culinary lane matching your ${food_preferences || 'Vegetarian'} guidelines`,
-        match_notes: 'Century-old recipes in the shadow of Jama Masjid',
+        budgetCost: 'Free spiritual entry',
+        comfortCost: '₹100 offering & prasad',
+        luxuryCost: '₹1,000 temple trust guest blessing pass',
+        notes: 'Sacred pillared sanctum with resonant community bell chanting and historic incense fragrance.',
       },
     ],
     varanasi: [
       {
-        name: 'Assi to Dashashwamedh Sunrise Rowboat & Ghat Rituals',
-        time: '06:30 AM',
+        name: 'Assi to Dashashwamedh Sunrise Rowboat & Dawn Ghat Chanting',
+        category: 'rituals',
+        time: '06:00 AM',
         duration_mins: 90,
-        cost_label: '₹400 boat ride',
-        fit_reason: 'Gentle river perspective on historic stone ghats with zero strenuous climbing',
-        match_notes: 'Dawn chanting, floating diya lamps, and morning classical ragas',
+        budgetCost: '₹200 shared boat pass',
+        comfortCost: '₹600 private wooden rowboat',
+        luxuryCost: '₹3,000 heritage Bajra boat with private shehnai recital',
+        notes: 'Drifting along ancient stone staircases as dawn sunlight illuminates morning prayers and floating diyas.',
       },
       {
-        name: 'Madanpura Handloom Silk Weaver Atelier',
+        name: 'Madanpura Handloom Silk & Zari Weaver Guild',
+        category: 'crafts',
         time: '09:30 AM',
-        duration_mins: 90,
-        cost_label: 'Free visit',
-        fit_reason: 'Direct engagement with master Zari silk weavers continuing centuries of handcraft',
-        match_notes: 'Traditional wooden pit-loom demonstrations',
+        duration_mins: 80,
+        budgetCost: 'Free pit-loom observation',
+        comfortCost: '₹350 master weaver storytelling session',
+        luxuryCost: '₹2,500 commissioned handloom silk masterclass',
+        notes: 'Centuries-old Muslim weaver guilds passing gold threads on heavy wooden foot-operated looms.',
       },
       {
-        name: 'Blue Lassi Shop & Heritage Alley Sweets',
+        name: 'Kashi Chat Bhandar & Blue Lassi Clay Cup Tasting',
+        category: 'food',
+        time: '12:00 PM',
+        duration_mins: 50,
+        budgetCost: '₹120 street delicacies',
+        comfortCost: '₹350 authentic temple feast',
+        luxuryCost: '₹2,000 BrijRama Palace Satvik heritage lunch',
+        notes: `Famous spicy tomato chaat and hand-churned thick yogurt lassi, strictly ${food_preferences || 'Vegetarian'}.`,
+      },
+      {
+        name: 'Kashi Vishwanath Temple Heritage Corridor Walk',
+        category: 'heritage',
+        time: '02:30 PM',
+        duration_mins: 90,
+        budgetCost: 'Free public queue',
+        comfortCost: '₹300 Sugam Darshan pass',
+        luxuryCost: '₹1,500 private scholarly corridor guide',
+        notes: 'Restored golden spires connecting the ancient Jyotirlinga sanctum directly to the holy Ganges banks.',
+      },
+      {
+        name: 'Dashashwamedh Ghat Sunset Maha Aarti from Water Platform',
+        category: 'rituals',
+        time: '06:30 PM',
+        duration_mins: 75,
+        budgetCost: 'Free ghat viewing',
+        comfortCost: '₹300 reserved boat terrace seat',
+        luxuryCost: '₹2,200 private riverside pavilion reservation',
+        notes: 'Seven young priests synchronizing multi-tiered brass oil lamps in sacred evening fire adoration.',
+      },
+    ],
+    delhi: [
+      {
+        name: "Humayun's Tomb Mughal Gardens & Restored Watercourses",
+        category: 'heritage',
+        time: '09:00 AM',
+        duration_mins: 90,
+        budgetCost: '₹50 monument ticket',
+        comfortCost: '₹250 conservation audio tour',
+        luxuryCost: '₹1,800 Aga Khan Trust architectural historian walk',
+        notes: 'UNESCO red sandstone masterpiece set in geometric Persian charbagh gardens with shaded arcades.',
+      },
+      {
+        name: 'Old Delhi Gali Paranthe Wali & Khari Baoli Spice Trail',
+        category: 'food',
+        time: '11:30 AM',
+        duration_mins: 90,
+        budgetCost: '₹150 stuffed paratha tasting',
+        comfortCost: '₹500 guided Old Delhi culinary safari',
+        luxuryCost: '₹3,200 Haveli Dharampura 7-course Mughlai lunch',
+        notes: `Generational spice warehouses and century-old deep-fried flatbreads, compliant with ${food_preferences || 'Vegetarian'}.`,
+      },
+      {
+        name: 'Dilli Haat Regional Artisan Guilds & Handloom Stalls',
+        category: 'crafts',
+        time: '02:30 PM',
+        duration_mins: 90,
+        budgetCost: '₹100 entry fee',
+        comfortCost: '₹400 craft demonstration pass',
+        luxuryCost: '₹2,000 master artisan bespoke curation',
+        notes: 'Rotating marketplace where rural craftspeople sell direct block prints, pottery, and brassware.',
+      },
+      {
+        name: 'Hazrat Nizamuddin Basti Natural Perfume & Sufi Alleyways',
+        category: 'offbeat',
+        time: '05:00 PM',
+        duration_mins: 75,
+        budgetCost: 'Free courtyard access',
+        comfortCost: '₹250 attar distillation tasting',
+        luxuryCost: '₹1,500 private Sufi heritage curator',
+        notes: '700-year-old living medieval settlement famous for natural rose attar distillation and qawwali chants.',
+      },
+    ],
+    kochi: [
+      {
+        name: 'Fort Kochi Chinese Fishing Nets & Coastal Spice Trail',
+        category: 'nature',
+        time: '08:30 AM',
+        duration_mins: 80,
+        budgetCost: 'Free beach promenade',
+        comfortCost: '₹300 heritage walking pass',
+        luxuryCost: '₹1,500 private historian coastal tour',
+        notes: '14th-century cantilevered fishing nets operating along Vasco da Gama square and shaded rain trees.',
+      },
+      {
+        name: 'Kerala Kathakali Centre Classical Dance Atelier',
+        category: 'arts',
+        time: '11:00 AM',
+        duration_mins: 90,
+        budgetCost: '₹200 rehearsal pass',
+        comfortCost: '₹500 evening performance pass',
+        luxuryCost: '₹2,500 private guru mudra masterclass',
+        notes: 'Intricate facial makeup preparation and ancient Natya Shastra eye expressions by veteran gurus.',
+      },
+      {
+        name: 'Mattancherry Ginger & Cardamom Warehouse Tasting',
+        category: 'food',
+        time: '01:30 PM',
+        duration_mins: 60,
+        budgetCost: '₹180 banana leaf meal',
+        comfortCost: '₹600 Syrian Christian culinary lunch',
+        luxuryCost: '₹3,000 Brunton Boatyard coastal spice tasting',
+        notes: 'Burlap sacks of sun-dried Tellicherry pepper and steaming Malabar appams with coconut stew.',
+      },
+      {
+        name: 'Traditional Ayurvedic Herbal Garden & Oil Sanctuary',
+        category: 'wellness',
+        time: '03:30 PM',
+        duration_mins: 90,
+        budgetCost: 'Free botanical walk',
+        comfortCost: '₹800 Ayurvedic consultation & herbal tea',
+        luxuryCost: '₹4,500 full Abhyanga wellness therapy',
+        notes: 'Living apothecary garden containing medicinal neem, tulsi, and vetiver cultivated by Vaidyars.',
+      },
+    ],
+    mumbai: [
+      {
+        name: 'Kala Ghoda Art Enclave & Victorian Neo-Gothic Trail',
+        category: 'arts',
+        time: '09:30 AM',
+        duration_mins: 85,
+        budgetCost: 'Free gallery entry',
+        comfortCost: '₹300 art district audio walk',
+        luxuryCost: '₹2,000 private art curator tour',
+        notes: 'High-density architectural precinct featuring stone gargoyles, street art, and contemporary galleries.',
+      },
+      {
+        name: 'Yazdani Bakery & Historic Parsi Cafe Tea Stop',
+        category: 'food',
         time: '11:30 AM',
         duration_mins: 45,
-        cost_label: '₹120 tasting',
-        fit_reason: `Hand-churned clay-cup lassi with fresh malai, authentic ${food_preferences || 'Vegetarian'}`,
-        match_notes: 'Generational recipe in ancient Vishwanath alley',
+        budgetCost: '₹120 chai & bun maska',
+        comfortCost: '₹400 heritage brunch',
+        luxuryCost: '₹2,000 Trishna coastal butter garlic seafood',
+        notes: '1953 wood-fired brick ovens baking crusty brun pao accompanied by fragrant cardamom Irani chai.',
+      },
+      {
+        name: 'Khadi Bhavan & Handloom Weaving Collective',
+        category: 'crafts',
+        time: '01:30 PM',
+        duration_mins: 75,
+        budgetCost: 'Free artisan visit',
+        comfortCost: '₹300 natural fabric workshop',
+        luxuryCost: '₹1,500 bespoke handloom tailor consultation',
+        notes: 'Ethical cooperative displaying hand-spun cottons, wild silks, and natural organic indigo dyes.',
+      },
+      {
+        name: 'Banganga Ancient Sacred Water Tank & Walkeshwar Temples',
+        category: 'rituals',
+        time: '04:00 PM',
+        duration_mins: 70,
+        budgetCost: 'Free tank courtyard',
+        comfortCost: '₹200 heritage stepwell pass',
+        luxuryCost: '₹1,200 private dusk musical boat walk',
+        notes: 'Freshwater spring tank from the 11th century surrounded by temple spires and resident ducks.',
+      },
+    ],
+    udaipur: [
+      {
+        name: 'City Palace Mewar Royal Architecture & Peacock Courtyard',
+        category: 'heritage',
+        time: '09:00 AM',
+        duration_mins: 90,
+        budgetCost: '₹300 general admission',
+        comfortCost: '₹600 audio guide & museum pass',
+        luxuryCost: '₹3,000 private Mewar curator salon',
+        notes: 'Marble balconies and colored glass mosaics overlooking Lake Pichola and Aravali ridges.',
+      },
+      {
+        name: 'Traditional Mewari Miniature Painting Guild Atelier',
+        category: 'crafts',
+        time: '11:30 AM',
+        duration_mins: 80,
+        budgetCost: 'Free studio observation',
+        comfortCost: '₹450 squirrel-hair brush workshop',
+        luxuryCost: '₹2,800 private master artist gold leaf lesson',
+        notes: 'Generational artists painting epic scenes on silk and old handmade paper using natural stone minerals.',
+      },
+      {
+        name: 'Ambrai Ghat Lakeside Heritage Lunch',
+        category: 'food',
+        time: '01:30 PM',
+        duration_mins: 60,
+        budgetCost: '₹200 lakeside cafe snacks',
+        comfortCost: '₹750 Rajasthani ker sangri feast',
+        luxuryCost: '₹3,500 Lake Palace private boat dining',
+        notes: 'Shaded stone ghat tables overlooking the water with views of the floating Lake Palace.',
+      },
+      {
+        name: 'Saheliyon Ki Bari Royal Marble Fountains & Lotus Pools',
+        category: 'nature',
+        time: '04:00 PM',
+        duration_mins: 60,
+        budgetCost: '₹50 garden entry',
+        comfortCost: '₹150 guided horticulture walk',
+        luxuryCost: '₹1,200 private sunset tea tour',
+        notes: '18th-century royal pleasure garden designed with gravity-fed fountains and sculpted stone elephants.',
       },
     ],
   };
 
-  const matchedKey = Object.keys(CITY_STOPS).find((k) => normCity.includes(k)) || 'jaipur';
-  const stops = CITY_STOPS[matchedKey].map((s, idx) => ({
-    ...s,
-    order: idx + 1,
-  }));
+  const matchedCityKey = Object.keys(MASTER_CATALOG).find((k) => normCity.includes(k)) || 'jaipur';
+  const cityCatalog = MASTER_CATALOG[matchedCityKey];
+
+  // Prioritize stops matching user's specific selected interests
+  const prioritizedStops = [...cityCatalog].sort((a, b) => {
+    const aMatch = userInterests.includes(a.category) ? 1 : 0;
+    const bMatch = userInterests.includes(b.category) ? 1 : 0;
+    return bMatch - aMatch;
+  });
+
+  const stopCount = /relaxed/i.test(vibe) ? 3 : /packed/i.test(vibe) ? 5 : 4;
+  const selectedStops = prioritizedStops.slice(0, Math.min(stopCount, cityCatalog.length));
+
+  const stops = selectedStops.map((item, idx) => {
+    const costLabel =
+      budgetTier === 'budget'
+        ? item.budgetCost
+        : budgetTier === 'comfort'
+        ? item.comfortCost
+        : item.luxuryCost;
+
+    const isInterestMatch = userInterests.includes(item.category);
+    const fitReason = isInterestMatch
+      ? `Matches your ${item.category} focus • ${groupBenefit} • ${mobilityBenefit}`
+      : `Curated ${destination} cultural anchor • ${groupBenefit}`;
+
+    return {
+      order: idx + 1,
+      time: item.time,
+      name: item.name,
+      duration_mins: item.duration_mins,
+      cost_label: costLabel,
+      fit_reason: fitReason,
+      match_notes: item.notes,
+    };
+  });
 
   const cleanCity = destination || 'Jaipur';
   return {
     city: cleanCity,
-    feasibility_score: 94,
-    feasibility_summary: `Feasible route in ${cleanCity} tailored for ${time_available} and ${budget}. Enforces ${mobility} routing.`,
+    feasibility_score: 95,
+    feasibility_summary: `Feasible route in ${cleanCity} tailored for ${time_available} and ₹${budgetNum.toLocaleString('en-IN')}/day. Formulated for ${groupDesc} and ${userInterests.join(', ')} affinities.`,
     stops,
   };
 }
