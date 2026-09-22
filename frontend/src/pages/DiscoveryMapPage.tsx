@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -13,6 +13,8 @@ import {
   Landmark,
   Scissors,
   CheckCircle2,
+  Clock,
+  Coins,
 } from 'lucide-react';
 import { InteractiveIndiaMap } from '../components/map/InteractiveIndiaMap';
 import { CuratedJourneyProfiler } from '../components/discovery/CuratedJourneyProfiler';
@@ -28,9 +30,25 @@ import {
   calculateStateMatchScore,
   INDIA_STATES_METADATA,
 } from '../data/indiaStateMetadata';
+import { DayPlanResponse } from '../types';
+import { TripContextAnswers } from '../components/onboarding/TripOnboardingTakeover';
+
+// Map destination city to Indian state name for the map
+const CITY_TO_STATE: Record<string, string> = {
+  jaipur: 'Rajasthan',
+  udaipur: 'Rajasthan',
+  varanasi: 'Uttar Pradesh',
+  delhi: 'Delhi',
+  mumbai: 'Maharashtra',
+  kochi: 'Kerala',
+  amritsar: 'Punjab',
+};
 
 export function DiscoveryMapPage() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const routerState = (location.state as { solvedPlan?: DayPlanResponse; solvedAnswers?: TripContextAnswers } | null) ?? {};
+
   const [preferences, setPreferences] = useState<UserJourneyPreferences>(() => {
     try {
       const saved = localStorage.getItem('lokiva_discovery_preferences');
@@ -40,11 +58,29 @@ export function DiscoveryMapPage() {
     }
   });
 
-  const [selectedState, setSelectedState] = useState<string>('Rajasthan');
+  const [selectedState, setSelectedState] = useState<string>(() => {
+    if (routerState.solvedAnswers?.city) {
+      const mapped = CITY_TO_STATE[routerState.solvedAnswers.city.toLowerCase()];
+      if (mapped) return mapped;
+    }
+    return 'Rajasthan';
+  });
+
+  const [injectedPlan, setInjectedPlan] = useState<DayPlanResponse | null>(routerState.solvedPlan ?? null);
+
   const [isProfilerOpen, setIsProfilerOpen] = useState<boolean>(false);
   const [isGuidedFlowOpen, setIsGuidedFlowOpen] = useState<boolean>(() => {
     return searchParams.get('onboard') === 'true';
   });
+
+  useEffect(() => {
+    if (injectedPlan) {
+      setTimeout(() => {
+        const el = document.getElementById('circuit-drawer-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+    }
+  }, [injectedPlan]);
 
   const handleUpdatePreferences = (updated: UserJourneyPreferences) => {
     setPreferences(updated);
@@ -208,17 +244,103 @@ export function DiscoveryMapPage() {
           />
         </div>
 
-        {/* Phase 3: Synchronized Destination Output & Circuit Drawer */}
-        <div id="circuit-drawer-section" className="pt-2">
-          <RecommendedCircuitDrawer
-            selectedState={selectedState}
-            userPreferences={preferences}
-            onSelectState={handleStateSelect}
-            onOpenProfiler={() => {
-              setIsGuidedFlowOpen(true);
-            }}
-          />
-        </div>
+        {/* Phase 3: Curated Plan Results (only when arriving from landing hero flow) */}
+        {injectedPlan && injectedPlan.stops && injectedPlan.stops.length > 0 && (
+          <motion.div
+            id="circuit-drawer-section"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-2 space-y-5"
+          >
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-3 border-b border-[#E5DFD5]">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#C85A32]" />
+                  <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+                    Your Curated Day Plan
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#12213B]">
+                  {injectedPlan.city} Micro-Circuit
+                </h2>
+                {injectedPlan.feasibility_summary && (
+                  <p className="text-xs text-[#5B6B8C] font-sans max-w-xl leading-relaxed">
+                    {injectedPlan.feasibility_summary}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setInjectedPlan(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-heading font-bold text-[#5B6B8C] hover:text-[#C85A32] border border-[#E5DFD5] hover:border-[#C85A32] rounded-xl transition-colors cursor-pointer self-start"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Clear
+              </button>
+            </div>
+
+            {/* Stops list */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {injectedPlan.stops.map((stop, idx) => (
+                <motion.div
+                  key={stop.name}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * idx, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative bg-white border border-[#E5DFD5] rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#C85A32]/40 transition-all"
+                >
+                  {/* Order + time */}
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="w-6 h-6 rounded-full bg-[#FFF3E8] text-[#C85A32] text-xs font-mono font-extrabold flex items-center justify-center">
+                      {stop.order}
+                    </span>
+                    <span className="text-xs font-mono text-[#5B6B8C]">{stop.time}</span>
+                  </div>
+
+                  {/* Name */}
+                  <h3 className="font-heading font-bold text-[#12213B] text-sm leading-snug mb-1.5">
+                    {stop.name}
+                  </h3>
+
+                  {/* Duration + cost */}
+                  <div className="flex items-center gap-3 text-xs font-sans text-[#5B6B8C] mb-2">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-[#C85A32]" />
+                      {stop.duration_mins} min
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Coins className="w-3 h-3 text-[#D99B43]" />
+                      {stop.cost_label}
+                    </span>
+                  </div>
+
+                  {/* Fit reason */}
+                  {stop.fit_reason && (
+                    <p className="text-xs font-sans text-[#5B6B8C] leading-relaxed border-t border-[#F0EBE3] pt-2 mt-2">
+                      {stop.fit_reason}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Phase 4: Synchronized Destination Output and Circuit Drawer */}
+        {!injectedPlan && (
+          <div id="circuit-drawer-section" className="pt-2">
+            <RecommendedCircuitDrawer
+              selectedState={selectedState}
+              userPreferences={preferences}
+              onSelectState={handleStateSelect}
+              onOpenProfiler={() => {
+                setIsGuidedFlowOpen(true);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* 6-Step Guided Discovery Flow Modal */}

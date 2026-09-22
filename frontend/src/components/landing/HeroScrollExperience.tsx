@@ -29,6 +29,8 @@ export function HeroScrollExperience({ onWatchFilm }: HeroScrollExperienceProps)
   } | null>(null);
   const handlePlanGenerated = (answers: TripContextAnswers, plan: DayPlanResponse) => {
     setSolvedPlan({ answers, plan });
+    // Navigate to discovery map carrying the solved plan so user sees their curated results
+    navigate('/discovery-map', { state: { solvedPlan: plan, solvedAnswers: answers } });
   };
 
   // ─── GSAP refs ─────────────────────────────────────────────────────────────
