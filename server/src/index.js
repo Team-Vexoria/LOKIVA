@@ -13,9 +13,10 @@ import { adminRouter } from './routes/admin.js';
 import { reviewsRouter } from './routes/reviews.js';
 import { router as ingestionRouter } from './routes/ingestion.js';
 import { mediaRouter } from './routes/media.js';
+import { voiceRouter } from './routes/voice.js';
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(
@@ -38,6 +39,8 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/reviews', reviewsRouter);
 app.use('/api/v1/ingestion', ingestionRouter);
 app.use('/api/v1/media', mediaRouter);
+app.use('/api/v1/voice', voiceRouter);
+app.use('/voice', voiceRouter);
 
 // Root and Health Endpoints
 app.get('/', (req, res) => {

@@ -143,6 +143,7 @@ class Experience(Base):
 
     is_indoor = Column(Boolean, default=False)
     is_hidden_gem = Column(Boolean, default=False)
+    crowd_tag = Column(String(20), default="low") # low, medium, high (static seeded tag, usually quiet)
     
     # Accessibility & Dietary & Audience flags
     accessibility_low_walking = Column(Boolean, default=False)

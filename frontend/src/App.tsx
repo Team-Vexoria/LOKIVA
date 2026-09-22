@@ -16,6 +16,7 @@ import { SavedPage } from './pages/SavedPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DiscoveryMapPage } from './pages/DiscoveryMapPage';
 import { LocationDecisionModal, useOnboardingGate } from './components/onboarding/LocationDecisionModal';
+import { LokivaVoiceAssistant } from './components/voice/LokivaVoiceAssistant';
 import { LoginPage } from './pages/LoginPage';
 import { TravelerLoginPage } from './pages/TravelerLoginPage';
 import { ProviderLoginPage } from './pages/ProviderLoginPage';
@@ -67,6 +68,9 @@ export function App() {
             </Routes>
           </main>
           <Footer />
+
+          {/* Global Voice Assistant with Spatiotemporal Solver, Weather, and Expense Logging */}
+          <LokivaVoiceAssistant />
 
           {/* First-visit onboarding modal */}
           <LocationDecisionModal isOpen={showModal} onClose={closeModal} />

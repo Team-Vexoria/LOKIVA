@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.core.database import Base, engine
-from backend.app.api import auth, experiences, recommendations, ai, itineraries, providers, admin, reviews, destinations
+from backend.app.api import auth, experiences, recommendations, ai, itineraries, providers, admin, reviews, destinations, voice_solver
 
 # Create all database tables
 Base.metadata.create_all(bind=engine)
@@ -20,6 +20,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
+        "http://localhost:4000",
         "http://localhost:8000",
         "http://127.0.0.1:8000"
     ],
@@ -39,6 +40,7 @@ app.include_router(itineraries.router, prefix=settings.API_V1_STR)
 app.include_router(providers.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(reviews.router, prefix=settings.API_V1_STR)
+app.include_router(voice_solver.router)
 
 @app.get("/")
 def root():
