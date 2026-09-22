@@ -318,7 +318,7 @@ export function DiscoveryMapPage() {
               {/* Rich Stop Cards */}
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {injectedPlan.stops.map((stop, idx) => {
-                  const cat = (stop as any).match_notes ? (stop as any).category || 'heritage' : 'heritage';
+                  const cat = (stop as any).category || 'heritage';
                   const img = CATEGORY_IMAGES[cat] || CATEGORY_IMAGES.heritage;
                   const catLabel = CATEGORY_LABEL[cat] || 'Cultural Stop';
                   return (
