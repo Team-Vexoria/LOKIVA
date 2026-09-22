@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Map, Search, Sparkles, Compass, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { DiscoveryOnboardingFlow, DiscoveryAnswers } from './DiscoveryOnboardingFlow';
+
 interface LocationDecisionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,6 +13,7 @@ interface LocationDecisionModalProps {
 export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModalProps) {
   const navigate = useNavigate();
   const [hasMadeChoice, setHasMadeChoice] = useState(false);
+  const [showDiscoveryFlow, setShowDiscoveryFlow] = useState(false);
 
   // Check localStorage on mount
   useEffect(() => {
@@ -30,9 +33,14 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   };
 
   const handleOptionB = () => {
-    // User wants help deciding
+    // User wants help deciding: launch single-focus guided discovery flow
+    setShowDiscoveryFlow(true);
+  };
+
+  const handleDiscoveryComplete = (answers: DiscoveryAnswers) => {
     localStorage.setItem('has_onboarded_lokiva', 'true');
     setHasMadeChoice(true);
+    setShowDiscoveryFlow(false);
     onClose();
     navigate('/discovery-map');
   };
@@ -167,26 +175,26 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  <div className="bg-white border-2 border-paper-400 rounded-2xl p-3.5 sm:p-4 hover:border-teal/50 hover:shadow-md transition-all duration-300 group-hover:bg-teal/5">
+                  <div className="bg-white border-2 border-paper-400 rounded-2xl p-3.5 sm:p-4 hover:border-[#C85A32]/60 hover:shadow-md transition-all duration-300 group-hover:bg-[#FAF5EE]">
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-paper rounded-xl group-hover:bg-white transition-colors shrink-0">
-                        <Map className="w-5 h-5 text-ink group-hover:text-teal transition-colors" />
+                        <Map className="w-5 h-5 text-ink group-hover:text-[#C85A32] transition-colors" />
                       </div>
                       <div className="flex-1 text-left">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="text-sm sm:text-base font-bold text-ink group-hover:text-teal transition-colors">
+                          <h3 className="text-sm sm:text-base font-bold text-ink group-hover:text-[#C85A32] transition-colors">
                             Help me decide / Explore India
                           </h3>
-                          <span className="text-[10px] font-mono font-bold text-dusk bg-paper-200 px-2 py-0.5 rounded-full shrink-0">
-                            Interactive Discovery
+                          <span className="text-[10px] font-mono font-bold text-[#C85A32] bg-[#FAF5EE] border border-[#E8DDD2] px-2 py-0.5 rounded-full shrink-0">
+                            Curated Profiler
                           </span>
                         </div>
                         <p className="text-xs text-dusk-600 mb-2">
-                          Experience India through our interactive map to find hidden gems and plan visually
+                          Personalized 3-step journey profiler and animated vector map of India with live micro-circuits
                         </p>
-                        <div className="flex items-center gap-1 text-xs font-mono text-teal font-bold">
+                        <div className="flex items-center gap-1 text-xs font-mono text-[#C85A32] font-bold">
                           <Sparkles className="w-3 h-3" />
-                          <span>Launch Interactive Map →</span>
+                          <span>Start Discovery Journey →</span>
                         </div>
                       </div>
                     </div>
@@ -222,6 +230,18 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Guided Discovery Onboarding Flow Takeover */}
+      {showDiscoveryFlow && (
+        <DiscoveryOnboardingFlow
+          isOpen={showDiscoveryFlow}
+          onClose={() => {
+            setShowDiscoveryFlow(false);
+            onClose();
+          }}
+          onComplete={handleDiscoveryComplete}
+        />
       )}
     </AnimatePresence>
   );

@@ -1,46 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../../lib/api';
-import { State, City, Experience } from '../../types';
-import { IndiaInteractiveMap } from './IndiaInteractiveMap';
+import React, { useState } from 'react';
+import { InteractiveIndiaMap } from './InteractiveIndiaMap';
+import { DEFAULT_JOURNEY_PREFERENCES } from '../../data/indiaStateMetadata';
 
 export interface IndiaDiscoveryMapProps {
-  initialView?: 'all' | 'state' | 'city';
-  onPlaceSelect?: (place: Experience) => void;
-  enableZoom?: boolean;
-  showControls?: boolean;
   className?: string;
+  onSelectState?: (stateName: string) => void;
 }
 
 export function IndiaDiscoveryMap({
-  initialView = 'all',
-  onPlaceSelect,
   className = '',
+  onSelectState,
 }: IndiaDiscoveryMapProps) {
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-
-  useEffect(() => {
-    Promise.all([
-      api.getStates(),
-      api.getCities({ limit: 150 }),
-      api.getExperiences({ limit: 300 }),
-    ])
-      .then(([stData, ctData, expData]) => {
-        setStates(stData || []);
-        setCities(ctData || []);
-        setExperiences(expData || []);
-      })
-      .catch((err) => console.error('Failed to load IndiaDiscoveryMap data:', err));
-  }, []);
+  const [selectedState, setSelectedState] = useState('Rajasthan');
 
   return (
-    <IndiaInteractiveMap
-      states={states}
-      cities={cities}
-      experiences={experiences}
-      className={className || 'h-full'}
-      initialRegion={initialView === 'state' ? 'north' : 'all'}
+    <InteractiveIndiaMap
+      userPreferences={DEFAULT_JOURNEY_PREFERENCES}
+      selectedState={selectedState}
+      onSelectState={(st) => {
+        setSelectedState(st);
+        if (onSelectState) onSelectState(st);
+      }}
+      className={className}
     />
   );
 }

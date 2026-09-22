@@ -48,11 +48,16 @@ export async function routeVoiceInput(
   try {
     if (auth && auth.currentUser) {
       idToken = await auth.currentUser.getIdToken();
-    } else {
-      idToken = localStorage.getItem('token') || localStorage.getItem('auth_token');
     }
   } catch {
     // Non-blocking fallback
+  }
+
+  if (!idToken) {
+    idToken =
+      localStorage.getItem('lokiva_token') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('auth_token');
   }
 
   const headers: Record<string, string> = {
@@ -63,9 +68,12 @@ export async function routeVoiceInput(
     headers['Authorization'] = `Bearer ${idToken}`;
   }
 
-  // Add session ID header for guest users
-  const sessionId = localStorage.getItem('lokiva_session_id') || `guest_${Date.now()}`;
-  localStorage.setItem('lokiva_session_id', sessionId);
+  // Add session ID header for guest users with stable persistence
+  let sessionId = localStorage.getItem('lokiva_session_id');
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem('lokiva_session_id', sessionId);
+  }
   headers['x-session-id'] = sessionId;
 
   try {

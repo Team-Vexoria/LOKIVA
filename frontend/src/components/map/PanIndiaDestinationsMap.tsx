@@ -1,22 +1,30 @@
-import React from 'react';
-import { City, State, Experience } from '../../types';
-import { IndiaInteractiveMap } from './IndiaInteractiveMap';
+import React, { useState } from 'react';
+import { InteractiveIndiaMap } from './InteractiveIndiaMap';
+import { DEFAULT_JOURNEY_PREFERENCES } from '../../data/indiaStateMetadata';
 
 export interface PanIndiaDestinationsMapProps {
-  cities: City[];
-  states?: State[];
-  experiences?: Experience[];
-  selectedCity?: City | null;
-  selectedState?: State | null;
-  userCoords?: { lat: number; lng: number } | null;
-  onSelectCity?: (city: City) => void;
-  onSelectState?: (state: State) => void;
   className?: string;
-  initialRegion?: string;
+  selectedState?: any;
+  onSelectState?: (state: any) => void;
+  [key: string]: any;
 }
 
 export function PanIndiaDestinationsMap(props: PanIndiaDestinationsMapProps) {
-  return <IndiaInteractiveMap {...props} />;
+  const [selectedState, setSelectedState] = useState(
+    props.selectedState?.name || 'Rajasthan'
+  );
+
+  return (
+    <InteractiveIndiaMap
+      userPreferences={DEFAULT_JOURNEY_PREFERENCES}
+      selectedState={selectedState}
+      onSelectState={(st) => {
+        setSelectedState(st);
+        if (props.onSelectState) props.onSelectState({ name: st });
+      }}
+      className={props.className}
+    />
+  );
 }
 
 export default PanIndiaDestinationsMap;

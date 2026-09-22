@@ -143,6 +143,56 @@ function sanitizeVoiceResponse(text) {
     .trim();
 }
 
+function guessExpenseCategory(text) {
+  const t = (text || '').toLowerCase();
+  if (/lunch|dinner|breakfast|food|chai|tea|coffee|cafe|restaurant|snack|drink|meal|biryani|dosa|thali|samosa|sweets/i.test(t)) return 'food';
+  if (/auto|cab|taxi|uber|ola|metro|rickshaw|bus|train|flight|fare/i.test(t)) return 'transport';
+  if (/ticket|entry|museum|monument|fort|palace|show|safari|guide/i.test(t)) return 'activity';
+  if (/shop|souvenir|dress|clothes|market|bazaar|handicraft|gift/i.test(t)) return 'shopping';
+  return 'other';
+}
+
+function extractLoggedExpense(text) {
+  if (!text) return null;
+  const clean = text.trim();
+
+  // Pattern 1: (spent|spend|paid|kharcha|log expense|bought|cost) [of] [rs|inr|₹] 400 [rs|inr|rupees] [on/for ...]
+  const m1 = clean.match(/(?:spent|spend|paid|kharcha|log expense|bought|cost)\s*(?:of\s*)?(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees)?(?:\s+(?:on|for|in|at)\s+([a-zA-Z\s]+))?/i);
+  if (m1) {
+    const amt = parseFloat(m1[1]);
+    if (!isNaN(amt) && amt > 0) {
+      let note = (m1[2] || '').trim();
+      if (!note || /^(rs|rupees|inr|spent|today|only|here|now)$/i.test(note)) {
+        const parts = clean.split(m1[1]);
+        const after = parts[1] ? parts[1].replace(/(?:rs\.?|inr|rupees|spent|today|only|here|now)/gi, '').trim() : '';
+        note = after.replace(/^(on|for|in|at)\s+/i, '').trim() || 'expense';
+      }
+      return { amount: amt, note, category: guessExpenseCategory(note + ' ' + clean) };
+    }
+  }
+
+  // Pattern 2: 400 [rs] (spent|paid|for|on) ...
+  const m2 = clean.match(/(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees)?\s*(?:spent|paid|for|on)\s*([a-zA-Z\s]+)?/i);
+  if (m2 && !/min|minute|hour|day|km/i.test(clean)) {
+    const amt = parseFloat(m2[1]);
+    if (!isNaN(amt) && amt > 0) {
+      const note = (m2[2] || 'expense').trim();
+      return { amount: amt, note, category: guessExpenseCategory(note + ' ' + clean) };
+    }
+  }
+
+  // Pattern 3: Explicit "spent 400" or "400 spent"
+  const m3 = clean.match(/(?:spent|spend|paid)\s+(\d+(?:\.\d+)?)/i) || clean.match(/(\d+(?:\.\d+)?)\s+(?:spent|spend|paid)/i);
+  if (m3) {
+    const amt = parseFloat(m3[1]);
+    if (!isNaN(amt) && amt > 0) {
+      return { amount: amt, note: 'expense', category: 'other' };
+    }
+  }
+
+  return null;
+}
+
 voiceRouter.post('/route', async (req, res) => {
   try {
     const { transcript, context = {}, current_time } = req.body;
@@ -154,9 +204,59 @@ voiceRouter.post('/route', async (req, res) => {
     const userId = authUser ? authUser.userId : (req.headers['x-session-id'] || context.userId || 'guest_traveler_session');
 
     const nowIso = current_time || new Date().toISOString();
-
-    // Fast-path for common greetings or help to eliminate LLM latency completely
     const cleanLower = transcript.trim().toLowerCase();
+
+    // Fast-path 1: Direct Expense Logging (100% reliable, zero LLM latency)
+    const directExpense = extractLoggedExpense(transcript);
+    if (directExpense) {
+      console.log(`[ROUTER] Direct expense detected: Rs.${directExpense.amount} for ${directExpense.note} (${directExpense.category})`);
+      await logExpenseToFirestore({
+        userId,
+        amount_inr: directExpense.amount,
+        category: directExpense.category,
+        note: directExpense.note,
+        source: 'voice',
+      });
+
+      const summary = await getExpenseSummaryFromFirestore({ userId, period: 'today' });
+      const spoken = `Recorded ${directExpense.amount} rupees for ${directExpense.note}. Your total for today is now ${summary.total_inr} rupees. Where are you heading to next, and what are your interests?`;
+
+      return res.json({
+        intent: 'log_expense',
+        function_call: {
+          name: 'log_expense',
+          args: {
+            amount_inr: directExpense.amount,
+            category: directExpense.category,
+            note: directExpense.note,
+          },
+        },
+        data: {
+          added_amount: directExpense.amount,
+          category: directExpense.category,
+          note: directExpense.note,
+          today_total_inr: summary.total_inr,
+        },
+        spoken_response: sanitizeVoiceResponse(spoken),
+      });
+    }
+
+    // Fast-path 2: Direct Expense Summary Inquiry
+    if (/(how much.*(?:spent|spend)|what is.*spend|expense summary|total spend|today'?s spend|my spending)/i.test(cleanLower)) {
+      const summary = await getExpenseSummaryFromFirestore({ userId, period: 'today' });
+      const spoken = summary.total_inr > 0
+        ? `You have spent ${summary.total_inr} rupees across ${summary.count} items today. Where are you heading to next, and what are your interests?`
+        : `You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?`;
+
+      return res.json({
+        intent: 'get_expense_summary',
+        function_call: { name: 'get_expense_summary', args: { period: 'today' } },
+        data: summary,
+        spoken_response: sanitizeVoiceResponse(spoken),
+      });
+    }
+
+    // Fast-path 3: Common greetings or help
     const isGreetingOrHelp = /^(hello|hi|hey|namaste|help|who are you|what can you do|good morning|good evening|greeting)\b/i.test(cleanLower);
     if (isGreetingOrHelp) {
       return res.json({

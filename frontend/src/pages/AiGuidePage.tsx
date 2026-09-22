@@ -6,6 +6,7 @@ import { ScoredExperience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { routeVoiceInput, UserSessionContext } from '../lib/voiceRouter';
+import { auth } from '../lib/firebase';
 import {
   speakWithElevenLabsOrFallback,
   PlaybackController,
@@ -14,6 +15,8 @@ import {
 } from '../lib/tts';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { VOICE_SUGGESTIONS } from '../data/voiceSuggestions';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { AudioWaveformVisualizer } from '../components/voice/AudioWaveformVisualizer';
 import {
   Sparkles,
   Send,
@@ -32,6 +35,7 @@ import {
   IndianRupee,
   Navigation,
   X,
+  Compass,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -109,15 +113,88 @@ const getChatStorageKey = (user: { id?: string | number; email?: string } | null
 };
 
 // ---------------------------------------------------------------------------
+// Daily Expense Storage & Midnight Reset Helpers
+// ---------------------------------------------------------------------------
+
+const getTodayDateStr = (): string => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getDailySpendStorageKey = (userId?: string | number | null): string => {
+  const identifier = userId || localStorage.getItem('lokiva_session_id') || 'guest';
+  return `lokiva_daily_spend_${identifier}`;
+};
+
+const loadDailySpend = (userId?: string | number | null): number => {
+  try {
+    const key = getDailySpendStorageKey(userId);
+    const raw = localStorage.getItem(key);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    const today = getTodayDateStr();
+    // Only return the spend if it belongs to today. If date passed, it has reset.
+    if (parsed.date === today && typeof parsed.total === 'number') {
+      return parsed.total;
+    }
+    // Day has ended, clear yesterday's spend from storage
+    localStorage.removeItem(key);
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+const saveDailySpend = (
+  userId: string | number | null | undefined,
+  total: number,
+  addedItem?: { amount: number; note: string; category: string }
+) => {
+  try {
+    const key = getDailySpendStorageKey(userId);
+    const today = getTodayDateStr();
+    let items: any[] = [];
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.date === today && Array.isArray(parsed.items)) {
+          items = parsed.items;
+        }
+      }
+    } catch {}
+
+    if (addedItem) {
+      items.push({ ...addedItem, timestamp: new Date().toISOString() });
+    }
+
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        date: today,
+        total: Math.max(0, total),
+        items,
+      })
+    );
+  } catch (err) {
+    console.warn('Failed to save daily spend to localStorage:', err);
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function AiGuidePage() {
-  const { user, isAuthenticated, isLoading: authLoading, demoLogin } = useAuth();
+  const { user, token, isAuthenticated, isLoading: authLoading, demoLogin } = useAuth();
   const [searchParams] = useSearchParams();
   const initialPrompt = searchParams.get('prompt') || '';
 
   const [inputMessage, setInputMessage] = useState(initialPrompt);
+  const shouldReduceMotion = useReducedMotion();
 
   // Synchronously initialize messages from localStorage
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -160,7 +237,15 @@ export function AiGuidePage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [todayTotal, setTodayTotal] = useState<number>(0);
+  // Synchronously initialize todayTotal from today's saved daily ledger
+  const [todayTotal, setTodayTotal] = useState<number>(() => {
+    try {
+      const activeUser = user || JSON.parse(localStorage.getItem('lokiva_user') || 'null');
+      return loadDailySpend(activeUser?.id);
+    } catch {
+      return 0;
+    }
+  });
   const [isTotalLoading, setIsTotalLoading] = useState(false);
   const [ttsActiveMessageId, setTtsActiveMessageId] = useState<string | null>(null);
   const [voiceSpeakingState, setVoiceSpeakingState] = useState(false);
@@ -191,41 +276,94 @@ export function AiGuidePage() {
   });
 
   // ---------------------------------------------------------------------------
-  // Expense total fetch
+  // Expense total fetch & persistence
   // ---------------------------------------------------------------------------
   const fetchTodayTotal = useCallback(async () => {
     setIsTotalLoading(true);
+    const activeUserId = user?.id;
+    const localToday = loadDailySpend(activeUserId);
+
+    // Immediately present any local spending recorded for today
+    if (localToday > 0) {
+      setTodayTotal(localToday);
+    }
+
     try {
-      const sessionId = localStorage.getItem('lokiva_session_id') || `guest_${Date.now()}`;
+      let authToken = token;
+      if (!authToken) {
+        authToken =
+          localStorage.getItem('lokiva_token') ||
+          localStorage.getItem('token') ||
+          localStorage.getItem('auth_token');
+      }
+      if (!authToken && auth && auth.currentUser) {
+        try {
+          authToken = await auth.currentUser.getIdToken();
+        } catch {}
+      }
+
+      let sessionId = localStorage.getItem('lokiva_session_id');
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('lokiva_session_id', sessionId);
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-session-id': sessionId,
+      };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const res = await fetch('/voice/expense-summary', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-session-id': sessionId,
-        },
+        headers,
         body: JSON.stringify({ period: 'today' }),
       });
+
       if (res.ok) {
         const data = await res.json();
-        setTodayTotal(data.total_inr ?? 0);
+        const serverTotal = Number(data.total_inr) || 0;
+        // Keep the higher value between server and local to prevent accidental zeroing
+        const syncedTotal = Math.max(serverTotal, localToday);
+        setTodayTotal(syncedTotal);
+        saveDailySpend(activeUserId, syncedTotal);
+      } else if (localToday > 0) {
+        setTodayTotal(localToday);
       }
     } catch {
-      // Non-blocking: total stays at 0 if backend unreachable
+      if (localToday > 0) {
+        setTodayTotal(localToday);
+      }
     } finally {
       setIsTotalLoading(false);
     }
-  }, []);
+  }, [user, token]);
 
   // ---------------------------------------------------------------------------
   // Effects
   // ---------------------------------------------------------------------------
 
-  // Fetch today's expense total when authenticated
+  // Fetch today's expense total on mount and when authentication or user updates
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchTodayTotal();
-    }
-  }, [isAuthenticated, fetchTodayTotal]);
+    fetchTodayTotal();
+  }, [fetchTodayTotal]);
+
+  // Midnight rollover check: automatically resets spend to 0 once the day ends
+  useEffect(() => {
+    let lastDate = getTodayDateStr();
+    const interval = setInterval(() => {
+      const currentDate = getTodayDateStr();
+      if (currentDate !== lastDate) {
+        lastDate = currentDate;
+        // Day has ended: reset spend for the new day
+        setTodayTotal(0);
+        fetchTodayTotal();
+      }
+    }, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [fetchTodayTotal]);
 
   // Sync chat history when user changes
   useEffect(() => {
@@ -473,10 +611,28 @@ export function AiGuidePage() {
           experienceData = routeResult.data as ExperienceData;
         } else if (routeResult.intent === 'log_expense' && routeResult.data) {
           expenseData = routeResult.data as ExpenseData;
+          const addedAmt = Number(expenseData.added_amount) || 0;
+          const reportedTodayTotal = Number(expenseData.today_total_inr);
+          setTodayTotal((prev) => {
+            const nextTotal = !isNaN(reportedTodayTotal) && reportedTodayTotal > 0
+              ? reportedTodayTotal
+              : prev + addedAmt;
+            saveDailySpend(user?.id, nextTotal, {
+              amount: addedAmt,
+              note: expenseData?.note || 'expense',
+              category: expenseData?.category || 'other',
+            });
+            return nextTotal;
+          });
           fetchTodayTotal();
         } else if (routeResult.intent === 'get_expense_summary' && routeResult.data) {
           expenseData = routeResult.data as ExpenseData;
-          setTodayTotal((routeResult.data as ExpenseData).total_inr ?? 0);
+          const reportedTotal = Number(expenseData.total_inr) || 0;
+          setTodayTotal((prev) => {
+            const nextTotal = Math.max(prev, reportedTotal);
+            saveDailySpend(user?.id, nextTotal);
+            return nextTotal;
+          });
         }
       } else {
         // Direct to cultural concierge for destination exploration, questions, and greetings
@@ -591,21 +747,23 @@ export function AiGuidePage() {
   const inputDisplayValue = isListening ? (interimTranscript || 'Listening to your voice...') : inputMessage;
 
   return (
-    <div className="min-h-screen bg-paper text-ink pb-72 sm:pb-88 pt-6 sm:pt-8">
+    <div className="min-h-screen bg-[#FAF7F2] text-ink pb-72 sm:pb-88 pt-6 sm:pt-8 relative overflow-hidden">
+      {/* Subtle radial warmth behind the concierge header */}
+      <div
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-[#F0A63B]/10 via-[#FAF7F2]/40 to-transparent blur-3xl -z-10"
+        aria-hidden="true"
+      />
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* AI Concierge Header */}
-        <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-[#E5DFD5] border-t-2 border-t-[#F0A63B] p-6 sm:p-8 shadow-xs relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-paper-100 border border-paper-300 text-teal rounded-full text-xs font-mono font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-marigold" />
-                <span>Powered by Gemini AI</span>
-              </div>
               <h1 className="text-2xl sm:text-4xl font-display font-bold text-ink tracking-tight">
-                AI Cultural Concierge
+                LOKIVA Concierge
               </h1>
-              <p className="text-xs sm:text-sm text-dusk-600 font-sans max-w-xl">
+              <p className="text-xs sm:text-sm text-dusk-600 font-sans max-w-xl leading-relaxed">
                 Ask me anything about travel, culture, food, and experiences across India. Use the microphone or type freely.
               </p>
             </div>
@@ -614,10 +772,10 @@ export function AiGuidePage() {
             <div className="flex flex-col sm:items-end gap-3 flex-shrink-0">
               {/* Today's expense total */}
               {isAuthenticated && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-paper-100 border border-paper-300 rounded-2xl">
+                <div className="flex items-center gap-2 px-4 py-2 bg-[#FAF7F2] border border-[#E5DFD5] rounded-2xl shadow-xs">
                   <IndianRupee className="w-3.5 h-3.5 text-[#C1443B] flex-shrink-0" />
                   <div>
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-dusk">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-dusk-600">
                       Today's Spend
                     </div>
                     <div className="text-sm font-mono font-black text-ink">
@@ -636,10 +794,10 @@ export function AiGuidePage() {
                 <button
                   type="button"
                   onClick={handleStartFreshChat}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-paper-100 hover:bg-paper-200 border border-paper-400 hover:border-ink/40 text-ink rounded-2xl text-xs font-mono font-bold transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-[#FAF7F2] border border-[#E5DFD5] hover:border-ink/40 text-ink rounded-2xl text-xs font-heading font-bold transition shadow-xs cursor-pointer"
                   title="Clear conversation and start fresh"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-terracotta" />
+                  <RotateCcw className="w-3.5 h-3.5 text-[#C1443B]" />
                   <span>Start Fresh Chat</span>
                 </button>
               )}
@@ -649,284 +807,256 @@ export function AiGuidePage() {
 
         {/* Auth Loading State */}
         {authLoading && (
-          <div className="bg-white rounded-3xl border border-paper-400 p-8 shadow-sm text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-teal animate-spin mx-auto" />
-            <p className="text-xs font-mono text-dusk">Checking authentication...</p>
+          <div className="bg-white rounded-3xl border border-[#E5DFD5] p-8 shadow-xs text-center space-y-3">
+            <RefreshCw className="w-6 h-6 text-[#C1443B] animate-spin mx-auto" />
+            <p className="text-xs font-mono text-dusk-600">Checking authentication...</p>
           </div>
         )}
 
         {/* Conversation Stream */}
         {!authLoading && (
           <div className="space-y-6">
-            {messages.map((msg, index) => {
-              const isUser = msg.role === 'user';
-              const isLatestReply = !isUser && index === messages.length - 1 && messages.length > 1;
-              const isSpeakingThis = ttsActiveMessageId === msg.id;
+            <AnimatePresence initial={false}>
+              {messages.map((msg, index) => {
+                const isUser = msg.role === 'user';
+                const isLatestReply = !isUser && index === messages.length - 1 && messages.length > 1;
+                const isSpeakingThis = ttsActiveMessageId === msg.id;
 
-              return (
-                <div
-                  key={msg.id}
-                  id={`msg-${msg.id}`}
-                  ref={isLatestReply ? latestReplyRef : undefined}
-                  className={`flex gap-3.5 sm:gap-4 scroll-mt-24 sm:scroll-mt-28 ${isUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  {/* Assistant Avatar */}
-                  {!isUser && (
-                    <div className="w-10 h-10 rounded-2xl bg-white border border-paper-400 text-marigold flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                      <Sparkles className="w-5 h-5 fill-marigold/30 text-marigold" />
-                    </div>
-                  )}
-
-                  {/* Message Body */}
-                  <div className={`space-y-3 max-w-3xl ${isUser ? 'w-auto' : 'w-full'}`}>
-                    <div
-                      className={`rounded-3xl p-5 sm:p-6 shadow-sm border leading-relaxed ${
-                        isUser
-                          ? 'bg-ink text-paper border-ink rounded-tr-xs font-sans text-xs sm:text-sm'
-                          : 'bg-white text-ink border-paper-400 rounded-tl-xs space-y-4 font-sans text-xs sm:text-sm'
-                      }`}
-                    >
-                      {/* Timestamp row with speaker icon for assistant */}
-                      <div className="flex items-center justify-between gap-4 text-[10px] font-mono opacity-70 pb-2 border-b border-paper-200">
-                        <span>{isUser ? 'You (Traveler)' : 'LOKIVA Concierge'}</span>
-                        <div className="flex items-center gap-2">
-                          <span>{msg.timestamp}</span>
-                          {/* Speaker icon: only on assistant messages, only if TTS supported */}
-                          {!isUser && voiceSupported && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                unlockAudio();
-                                handleSpeak(msg.id, msg.spokenText || msg.content);
-                              }}
-                              title={isSpeakingThis ? 'Stop speaking' : 'Listen to voice'}
-                              className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
-                                isSpeakingThis
-                                  ? 'text-[#C1443B] bg-[#C1443B]/10 font-bold animate-pulse'
-                                  : 'text-dusk hover:text-ink hover:bg-paper-200'
-                              } opacity-100`}
-                            >
-                              {isSpeakingThis ? (
-                                <>
-                                  <VolumeX className="w-3.5 h-3.5 text-[#C1443B]" />
-                                  <span className="text-[10px] font-mono text-[#C1443B]">Stop Voice</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 className="w-3.5 h-3.5" />
-                                  <span className="text-[10px] font-mono">Listen</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
+                return (
+                  <motion.div
+                    key={msg.id}
+                    id={`msg-${msg.id}`}
+                    ref={isLatestReply ? latestReplyRef : undefined}
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    className={`flex gap-3.5 sm:gap-4 scroll-mt-24 sm:scroll-mt-28 ${isUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {/* Assistant Avatar */}
+                    {!isUser && (
+                      <div className="w-10 h-10 rounded-2xl bg-white border border-[#E5DFD5] text-[#F0A63B] flex items-center justify-center flex-shrink-0 shadow-xs mt-1 ring-4 ring-[#FAF7F2]">
+                        <Sparkles className="w-5 h-5 fill-[#F0A63B]/20 text-[#F0A63B]" />
                       </div>
+                    )}
 
-                      {/* Text content */}
-                      <p className="whitespace-pre-line text-xs sm:text-sm leading-relaxed">{msg.content}</p>
-
-                      {/* Weather data card */}
-                      {msg.weatherData && (
-                        <div className="mt-1 p-4 bg-paper-50 rounded-2xl border border-paper-300 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-heading font-bold text-ink flex items-center gap-1.5">
-                              <CloudSun className="w-4 h-4 text-[#C1443B]" />
-                              {msg.weatherData.location_name}
-                            </span>
-                            <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                                msg.weatherData.is_live
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                              }`}
-                            >
-                              {msg.weatherData.is_live ? 'Live' : 'Estimated'}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-3">
-                            <span className="text-2xl font-mono font-black text-ink">
-                              {msg.weatherData.temp_c}&deg;C
-                            </span>
-                            <span className="text-xs font-sans capitalize text-dusk-600">
-                              {msg.weatherData.condition}
-                            </span>
-                          </div>
-                          {msg.weatherData.will_rain_soon && (
-                            <div className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
-                              Rain expected soon - carry an umbrella
-                            </div>
-                          )}
-                          {msg.weatherData.humidity !== undefined && (
-                            <div className="text-[10px] font-mono text-dusk-600">
-                              Humidity: {msg.weatherData.humidity}%
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Nearby experience card */}
-                      {msg.experienceData && (
-                        <div className="mt-1 p-4 bg-paper-50 rounded-2xl border border-paper-300 space-y-2">
-                          <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                            Nearby Match
+                    {/* Message Body */}
+                    <div className={`space-y-3 max-w-3xl ${isUser ? 'w-auto' : 'w-full'}`}>
+                      <div
+                        className={`p-5 sm:p-6 shadow-xs border leading-relaxed ${
+                          isUser
+                            ? 'bg-gradient-to-br from-[#FAF5EE] to-[#F3EAE0] text-[#12213B] border-[#E8DDD2] rounded-3xl rounded-tr-xs font-sans text-xs sm:text-sm'
+                            : 'bg-white text-[#12213B] border-[#E5DFD5] border-t-2 border-t-[#F0A63B] rounded-3xl rounded-tl-xs space-y-4 font-sans text-xs sm:text-sm shadow-sm'
+                        }`}
+                      >
+                        {/* Header info row with speaker icon for assistant */}
+                        <div
+                          className={`flex items-center justify-between gap-4 text-[10px] font-mono pb-2 border-b ${
+                            isUser ? 'text-[#8F6343] border-[#E8DDD2]' : 'text-dusk-600 border-[#E5DFD5]'
+                          }`}
+                        >
+                          <span className={`font-bold tracking-wide ${isUser ? 'text-[#C1443B]' : 'text-ink'}`}>
+                            {isUser ? 'You (Traveler)' : 'LOKIVA Concierge'}
                           </span>
-                          <h4 className="text-sm font-display font-bold text-ink leading-snug">
-                            {msg.experienceData.name}
-                          </h4>
-                          <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-dusk-600">
-                            <span className="flex items-center gap-1">
-                              <Navigation className="w-3 h-3" />
-                              {msg.experienceData.distance_meters}m walk
-                            </span>
-                            <span>
-                              {msg.experienceData.price_inr > 0
-                                ? `\u20B9${msg.experienceData.price_inr}`
-                                : 'Free entry'}
-                            </span>
-                            {msg.experienceData.crowd_tag && (
-                              <span className="capitalize">{msg.experienceData.crowd_tag} crowd</span>
+                          <div className="flex items-center gap-2">
+                            <span className={isUser ? 'text-[#8F6343]' : ''}>{msg.timestamp}</span>
+                            {/* Speaker icon: only on assistant messages, only if TTS supported */}
+                            {!isUser && voiceSupported && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  unlockAudio();
+                                  handleSpeak(msg.id, msg.spokenText || msg.content);
+                                }}
+                                title={isSpeakingThis ? 'Stop speaking' : 'Listen to voice'}
+                                className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                                  isSpeakingThis
+                                    ? 'text-[#C1443B] bg-[#C1443B]/10 font-bold animate-pulse'
+                                    : 'text-dusk hover:text-ink hover:bg-[#FAF7F2]'
+                                } opacity-100`}
+                              >
+                                {isSpeakingThis ? (
+                                  <>
+                                    <VolumeX className="w-3.5 h-3.5 text-[#C1443B]" />
+                                    <span className="text-[10px] font-mono text-[#C1443B]">Stop Voice</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-3.5 h-3.5" />
+                                    <span className="text-[10px] font-mono">Listen</span>
+                                  </>
+                                )}
+                              </button>
                             )}
                           </div>
                         </div>
-                      )}
 
-                      {/* Expense recorded chip */}
-                      {msg.expenseData && msg.expenseData.added_amount !== undefined && (
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Recorded +&#x20B9;{msg.expenseData.added_amount}
-                            {msg.expenseData.category ? ` (${msg.expenseData.category})` : ''}
-                          </span>
-                          {msg.expenseData.today_total_inr !== undefined && (
-                            <span className="text-[10px] font-mono text-dusk-600">
-                              Today's total: &#x20B9;{msg.expenseData.today_total_inr.toLocaleString('en-IN')}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        {/* Text content */}
+                        <p className="whitespace-pre-line text-xs sm:text-sm leading-relaxed">{msg.content}</p>
 
-                      {/* Expense summary display */}
-                      {msg.expenseData &&
-                        msg.expenseData.added_amount === undefined &&
-                        msg.expenseData.total_inr !== undefined && (
-                          <div className="mt-1 p-4 bg-paper-50 rounded-2xl border border-paper-300 space-y-1">
-                            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                              Expense Summary
-                            </span>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-xl font-mono font-black text-ink">
-                                &#x20B9;{msg.expenseData.total_inr.toLocaleString('en-IN')}
+                        {/* Weather data card - distinct inset panel */}
+                        {msg.weatherData && (
+                          <motion.div
+                            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.22, delay: 0.12 }}
+                            className="mt-2 p-4 sm:p-5 bg-gradient-to-br from-[#FFFDF9] to-[#FAF7F2] rounded-2xl border border-[#E8DFC8] shadow-xs space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-heading font-bold text-ink flex items-center gap-1.5">
+                                <CloudSun className="w-4 h-4 text-[#C1443B]" />
+                                <span>{msg.weatherData.location_name}</span>
                               </span>
-                              <span className="text-xs font-mono text-dusk-600">
-                                {msg.expenseData.period || 'today'}
+                              <span
+                                className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                                  msg.weatherData.is_live
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}
+                              >
+                                {msg.weatherData.is_live ? 'Live Sensor' : 'Estimated'}
                               </span>
                             </div>
-                            {msg.expenseData.count !== undefined && (
-                              <div className="text-[10px] font-mono text-dusk-600">
-                                {msg.expenseData.count} item{msg.expenseData.count !== 1 ? 's' : ''} logged
+                            <div className="flex items-baseline gap-3">
+                              <span className="text-2xl sm:text-3xl font-mono font-black text-ink">
+                                {msg.weatherData.temp_c}&deg;C
+                              </span>
+                              <span className="text-xs font-sans font-medium capitalize text-dusk-600">
+                                {msg.weatherData.condition}
+                              </span>
+                            </div>
+                            {msg.weatherData.will_rain_soon && (
+                              <div className="text-[11px] font-sans font-semibold text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                                <span>Rain forecast soon: consider carrying an umbrella or visiting indoor heritage spots.</span>
                               </div>
                             )}
-                          </div>
+                            {msg.weatherData.humidity !== undefined && (
+                              <div className="text-[10px] font-mono text-dusk-600 pt-1 border-t border-[#E8DFC8]/60 flex items-center justify-between">
+                                <span>Relative Humidity</span>
+                                <span className="font-bold text-ink">{msg.weatherData.humidity}%</span>
+                              </div>
+                            )}
+                          </motion.div>
                         )}
 
-                      {/* AI Recommended Experiences (cultural concierge results) */}
-                      {msg.recommendations && msg.recommendations.length > 0 && (
-                        <div className="bg-white rounded-3xl border border-paper-400 p-5 sm:p-6 shadow-sm space-y-4">
-                          <div className="pb-3 border-b border-paper-200 text-xs font-mono">
-                            <span className="font-bold text-ink flex items-center gap-1.5">
-                              <CheckCircle2 className="w-4 h-4 text-teal" />
-                              <span>AI Recommended Experiences ({msg.recommendations.length})</span>
-                            </span>
+                        {/* Nearby experience card - distinct inset panel */}
+                        {msg.experienceData && (
+                          <motion.div
+                            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.22, delay: 0.12 }}
+                            className="mt-2 p-4 sm:p-5 bg-gradient-to-br from-[#FFFDF9] to-[#FAF7F2] rounded-2xl border border-[#E5DFD5] shadow-xs space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+                                Nearby Match
+                              </span>
+                              {msg.experienceData.crowd_tag && (
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-100 text-ink border border-paper-300 capitalize">
+                                  {msg.experienceData.crowd_tag} crowd
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-sm sm:text-base font-heading font-bold text-ink leading-snug">
+                              {msg.experienceData.name}
+                            </h4>
+                            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-dusk-600 pt-1">
+                              <span className="flex items-center gap-1 text-[#C1443B] font-bold">
+                                <Navigation className="w-3.5 h-3.5" />
+                                <span>{msg.experienceData.distance_meters}m walk</span>
+                              </span>
+                              <span className="font-bold text-ink">
+                                {msg.experienceData.price_inr > 0 ? `\u20B9${msg.experienceData.price_inr}` : 'Free entry'}
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Expense recorded chip - inset ledger */}
+                        {msg.expenseData && msg.expenseData.added_amount !== undefined && (
+                          <motion.div
+                            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.22, delay: 0.12 }}
+                            className="mt-2 p-3.5 bg-gradient-to-br from-[#F6FBF8] to-[#FAF7F2] rounded-2xl border border-emerald-200/80 shadow-xs flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-mono font-bold text-ink">
+                                  Recorded +&#x20B9;{msg.expenseData.added_amount}
+                                  {msg.expenseData.category ? ` (${msg.expenseData.category})` : ''}
+                                </div>
+                                {msg.expenseData.today_total_inr !== undefined && (
+                                  <div className="text-[10px] font-mono text-dusk-600">
+                                    Today's total spend: &#x20B9;{msg.expenseData.today_total_inr.toLocaleString('en-IN')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Expense summary display */}
+                        {msg.expenseData &&
+                          msg.expenseData.added_amount === undefined &&
+                          msg.expenseData.total_inr !== undefined && (
+                            <motion.div
+                              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.22, delay: 0.12 }}
+                              className="mt-2 p-4 bg-gradient-to-br from-[#FFFDF9] to-[#FAF7F2] rounded-2xl border border-[#E5DFD5] shadow-xs space-y-1.5"
+                            >
+                              <span className="text-[11px] font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+                                Expense Summary
+                              </span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-xl sm:text-2xl font-mono font-black text-ink">
+                                  &#x20B9;{msg.expenseData.total_inr.toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-xs font-mono text-dusk-600">
+                                  ({msg.expenseData.period || 'today'})
+                                </span>
+                              </div>
+                              {msg.expenseData.count !== undefined && (
+                                <div className="text-[10px] font-mono text-dusk-600">
+                                  {msg.expenseData.count} item{msg.expenseData.count !== 1 ? 's' : ''} logged in active session
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+
+                        {/* AI Recommended Experiences (cultural concierge results) */}
+                        {msg.recommendations && msg.recommendations.length > 0 && (
+                          <div className="bg-white rounded-3xl border border-[#E5DFD5] p-5 sm:p-6 shadow-xs space-y-4">
+                            <div className="pb-3 border-b border-[#E5DFD5] text-xs font-mono">
+                              <span className="font-bold text-ink flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-teal" />
+                                <span>AI Recommended Experiences ({msg.recommendations.length})</span>
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {msg.recommendations.map((rec, rIdx) => (
+                                <ExperienceCard key={rIdx} experience={rec.experience} />
+                              ))}
+                            </div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {msg.recommendations.map((rec, rIdx) => (
-                              <ExperienceCard key={rIdx} experience={rec.experience} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* User Avatar */}
-                  {isUser && (
-                    <div className="w-10 h-10 rounded-2xl bg-ink text-paper flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
-                      <User className="w-5 h-5" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Live In-Chat Voice Transcription Bubble while user is speaking */}
-            {isListening && (
-              <div
-                id="live-voice-bubble"
-                className="flex gap-3.5 sm:gap-4 justify-end scroll-mt-24 sm:scroll-mt-28"
-              >
-                <div className="space-y-2 max-w-2xl w-full sm:w-auto">
-                  <div className="rounded-3xl p-5 sm:p-6 shadow-md border border-[#C1443B]/40 bg-ink text-paper rounded-tr-xs space-y-3">
-                    {/* Header with pulsing mic & actions */}
-                    <div className="flex items-center justify-between gap-4 text-[10px] font-mono border-b border-paper/20 pb-2.5">
-                      <div className="flex items-center gap-2 text-[#E5A93C] font-bold">
-                        <span className="relative flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1443B] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C1443B]"></span>
-                        </span>
-                        <span className="uppercase tracking-widest text-[#E5A93C]">Listening... (Speak naturally)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={cancelListening}
-                          className="px-2.5 py-1 rounded-lg bg-paper/10 hover:bg-paper/20 text-paper/70 hover:text-paper text-[11px] font-sans transition cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={submitListening}
-                          disabled={!interimTranscript.trim()}
-                          className="px-3.5 py-1 rounded-lg bg-[#C1443B] hover:bg-[#A33830] text-white text-[11px] font-mono font-bold transition flex items-center gap-1 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <span>Send Now</span>
-                          <Send className="w-3 h-3 text-marigold" />
-                        </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Dynamic live voice transcript */}
-                    <div className="text-xs sm:text-sm font-sans leading-relaxed min-h-[1.75rem]">
-                      {interimTranscript.trim() ? (
-                        <p className="text-paper font-medium whitespace-pre-wrap">{interimTranscript}</p>
-                      ) : (
-                        <p className="text-paper/50 italic">
-                          Listening to your voice... Speak your destination, questions, or requests now.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Waveform audio animation */}
-                    <div className="flex items-center gap-1.5 pt-1 opacity-80">
-                      <div className="w-1 h-3 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-1 h-5 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-1 h-2.5 bg-marigold rounded-full animate-bounce" />
-                      <div className="w-1 h-4 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.2s]" />
-                      <div className="w-1 h-3 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.1s]" />
-                      <span className="text-[10px] font-mono text-paper/60 ml-2">
-                        Live speech-to-text: pause or tap Send to submit
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Mic Avatar */}
-                <div className="w-10 h-10 rounded-2xl bg-[#C1443B] text-paper flex items-center justify-center flex-shrink-0 shadow-sm mt-1 animate-pulse">
-                  <Mic className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            )}
+                    {/* User Avatar */}
+                    {isUser && (
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#C1443B] to-[#D95F56] text-white flex items-center justify-center flex-shrink-0 shadow-xs mt-1 ring-4 ring-[#FAF7F2]">
+                        <User className="w-5 h-5" />
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
 
             {/* Auth Gate Card */}
             {!isAuthenticated && (
@@ -978,31 +1108,49 @@ export function AiGuidePage() {
               </div>
             )}
 
-            {/* Loading Animation */}
+            {/* Brand-Reinforcing Animated Concierge Thinking Indicator */}
             {isLoading && (
-              <div
+              <motion.div
                 ref={loadingRef}
                 id="concierge-loading"
-                className="flex gap-4 max-w-xl scroll-mt-24 sm:scroll-mt-28"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-3.5 sm:gap-4 max-w-xl scroll-mt-24 sm:scroll-mt-28"
               >
-                <div className="w-10 h-10 rounded-2xl bg-white border border-paper-400 text-marigold flex items-center justify-center shadow-sm">
-                  <Sparkles className="w-5 h-5 animate-spin text-marigold" />
+                <div className="w-10 h-10 rounded-2xl bg-white border border-[#E5DFD5] text-[#F0A63B] flex items-center justify-center shadow-xs flex-shrink-0 ring-4 ring-[#FAF7F2]">
+                  <motion.div
+                    animate={shouldReduceMotion ? undefined : { rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+                  >
+                    <Sparkles className="w-5 h-5 fill-[#F0A63B]/25 text-[#F0A63B]" />
+                  </motion.div>
                 </div>
-                <div className="p-5 bg-white border border-paper-400 rounded-3xl rounded-tl-xs text-xs font-mono text-ink space-y-2 shadow-sm flex-1">
-                  <div className="flex items-center gap-2 text-teal font-bold">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <div className="p-4 sm:p-5 bg-white border border-[#E5DFD5] border-t-2 border-t-[#F0A63B] rounded-3xl rounded-tl-xs shadow-xs space-y-2.5 flex-1">
+                  <div className="flex items-center gap-2 text-ink font-heading font-bold text-xs">
+                    <motion.span
+                      animate={shouldReduceMotion ? undefined : { scale: [1, 1.35, 1], opacity: [0.6, 1, 0.6] }}
+                      transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                      className="w-2 h-2 rounded-full bg-[#C1443B]"
+                    />
                     <span>
-                      {voiceSpeakingState ? 'Speaking response...' : 'Thinking about the best experiences for you...'}
+                      {voiceSpeakingState
+                        ? 'Speaking response...'
+                        : 'Curating authentic experiences for you...'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-dusk-600 font-sans">
-                    Please wait while I analyze your request.
+                  <p className="text-[11px] text-dusk-600 font-sans leading-relaxed">
+                    Consulting cultural context, live timings, and local availability across India.
                   </p>
-                  <div className="w-full bg-paper-200 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-marigold h-full w-2/3 animate-pulse rounded-full" />
+                  <div className="w-full bg-[#FAF7F2] border border-[#E5DFD5] h-1.5 rounded-full overflow-hidden">
+                    <motion.div
+                      animate={shouldReduceMotion ? undefined : { x: ['-100%', '100%'] }}
+                      transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+                      className="bg-gradient-to-r from-transparent via-[#F0A63B] to-transparent h-full w-2/3 rounded-full"
+                    />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             <div ref={chatEndRef} className="h-4" />
@@ -1036,30 +1184,35 @@ export function AiGuidePage() {
               </div>
             ) : (
               <>
-                {/* City context header */}
+                {/* Active Destination selector row */}
                 {!currentCity ? (
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch] text-xs">
-                    <span className="text-dusk font-mono text-[10px] uppercase tracking-wider flex-shrink-0">
+                    <span className="text-dusk-600 font-mono text-[10px] uppercase tracking-wider flex-shrink-0 font-bold">
                       Destination:
                     </span>
                     {['Jaipur', 'Varanasi', 'Goa', 'Mumbai', 'Delhi', 'Kochi', 'Udaipur'].map((city) => (
-                      <button
+                      <motion.button
                         key={city}
                         type="button"
+                        whileHover={shouldReduceMotion ? undefined : { y: -1.5, scale: 1.02 }}
+                        whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
                         onClick={() => {
                           unlockAudio();
                           setCurrentCity(city);
                           handleSend(`I want to explore ${city}. What authentic experiences do you recommend?`, false);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-paper-100 border border-paper-400 rounded-full text-xs font-mono font-medium text-ink transition flex-shrink-0 shadow-xs cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-[#FAF7F2] border border-[#E5DFD5] hover:border-[#F0A63B] rounded-full text-xs font-heading font-medium text-ink transition flex-shrink-0 shadow-xs cursor-pointer"
                       >
-                        <MapPin className="w-3 h-3 text-teal flex-shrink-0" />
+                        <span className="w-4 h-4 rounded-full bg-teal-50 text-teal flex items-center justify-center text-[10px]">
+                          <MapPin className="w-2.5 h-2.5" />
+                        </span>
                         <span>{city}</span>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-mono px-1">
                       <span className="flex items-center gap-1.5 text-teal font-bold">
                         <MapPin className="w-3.5 h-3.5 text-teal flex-shrink-0" />
@@ -1070,29 +1223,34 @@ export function AiGuidePage() {
                       <button
                         type="button"
                         onClick={() => setCurrentCity(null)}
-                        className="hover:underline text-[11px] text-terracotta font-medium cursor-pointer"
+                        className="hover:underline text-[11px] text-[#C1443B] font-heading font-bold cursor-pointer"
                       >
-                        Change city
+                        Change destination
                       </button>
                     </div>
                     {/* Interest chips for active city */}
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch] text-xs">
-                      <span className="text-dusk font-mono text-[10px] uppercase tracking-wider flex-shrink-0">
+                      <span className="text-dusk-600 font-mono text-[10px] uppercase tracking-wider flex-shrink-0 font-bold">
                         Interests:
                       </span>
                       {INTEREST_OPTIONS.map((item, i) => (
-                        <button
+                        <motion.button
                           key={i}
                           type="button"
+                          whileHover={shouldReduceMotion ? undefined : { y: -1.5, scale: 1.02 }}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+                          transition={{ duration: 0.15 }}
                           onClick={() => {
                             unlockAudio();
                             handleSend(`Show me ${item.interest} in ${currentCity}`, false);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-full text-[11px] font-sans text-ink transition flex-shrink-0 shadow-xs cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-[#FAF7F2] border border-[#E5DFD5] hover:border-[#F0A63B] rounded-full text-xs font-heading font-medium text-ink transition flex-shrink-0 shadow-xs cursor-pointer"
                         >
-                          <span>{item.icon}</span>
+                          <span className="w-4 h-4 rounded-full bg-paper-100 flex items-center justify-center text-[11px]">
+                            {item.icon}
+                          </span>
                           <span>{item.label}</span>
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -1100,85 +1258,115 @@ export function AiGuidePage() {
 
                 {/* Suggestion chips - horizontally scrollable from central config */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-overflow-scrolling:touch]">
-                  <span className="text-dusk font-mono text-[10px] uppercase tracking-wider flex-shrink-0 hidden sm:block">
+                  <span className="text-dusk-600 font-mono text-[10px] uppercase tracking-wider flex-shrink-0 font-bold hidden sm:block">
                     Try:
                   </span>
                   {VOICE_SUGGESTIONS.map((suggestion, idx) => (
-                    <button
+                    <motion.button
                       key={idx}
                       type="button"
+                      whileHover={shouldReduceMotion ? undefined : { y: -1.5, scale: 1.02 }}
+                      whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
                       onClick={() => {
                         unlockAudio();
                         handleSend(suggestion.query, false);
                       }}
                       disabled={isLoading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-paper-100 border border-paper-300 hover:border-[#C1443B]/40 rounded-full text-[11px] font-sans text-ink transition flex-shrink-0 shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-[#FAF7F2] border border-[#E5DFD5] hover:border-[#C1443B]/60 rounded-full text-xs font-heading font-medium text-ink transition flex-shrink-0 shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {suggestion.icon && <span className="text-xs">{suggestion.icon}</span>}
+                      {suggestion.icon && (
+                        <span className="w-4 h-4 rounded-full bg-paper-100 flex items-center justify-center text-[11px]">
+                          {suggestion.icon}
+                        </span>
+                      )}
                       <span>{suggestion.label}</span>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
-                {/* Live Voice Active Card docked right above input bar */}
-                {isListening && (
-                  <div className="bg-[#FAF8F5] border-2 border-[#C1443B]/40 rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5 animate-fadeIn">
-                    <div className="flex items-center justify-between gap-3 text-xs font-mono border-b border-paper-300 pb-2">
-                      <div className="flex items-center gap-2 text-[#C1443B] font-bold">
-                        <span className="relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1443B] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C1443B]"></span>
-                        </span>
-                        <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                          Listening to your voice
+                {/* Signature Voice Capture Panel docked right above input bar */}
+                <AnimatePresence>
+                  {isListening && (
+                    <motion.div
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="bg-gradient-to-r from-[#FAF8F5] via-[#FFFBF5] to-[#FAF7F2] border-2 border-[#C1443B]/35 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3 relative overflow-hidden"
+                    >
+                      {/* Ambient soft glow */}
+                      <div
+                        className="pointer-events-none absolute -top-10 -right-10 w-36 h-36 bg-[#F0A63B]/15 rounded-full blur-2xl"
+                        aria-hidden="true"
+                      />
+
+                      {/* Header with pulsing mic ring & actions */}
+                      <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#E5DFD5]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative flex items-center justify-center">
+                            <motion.span
+                              animate={shouldReduceMotion ? undefined : { scale: [1, 1.8, 1], opacity: [0.55, 0, 0.55] }}
+                              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                              className="absolute inline-flex h-7 w-7 rounded-full bg-[#C1443B] opacity-40"
+                            />
+                            <span className="relative flex items-center justify-center w-6 h-6 rounded-full bg-[#C1443B] text-white shadow-xs">
+                              <Mic className="w-3.5 h-3.5" />
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+                              Listening to your voice
+                            </span>
+                            <span className="hidden sm:inline-block text-[10px] font-mono text-dusk-600 ml-2">
+                              (Speak naturally in English or Hindi)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={cancelListening}
+                            className="px-3 py-1.5 rounded-xl border border-[#E5DFD5] hover:border-ink/30 bg-white hover:bg-[#FAF7F2] text-dusk-600 hover:text-ink text-xs font-sans font-medium transition cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={submitListening}
+                            disabled={!interimTranscript.trim() && !inputMessage.trim()}
+                            className="px-4 py-1.5 rounded-xl bg-[#C1443B] hover:bg-[#A33830] text-white text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            <span>Send Now</span>
+                            <Send className="w-3 h-3 text-[#F0A63B]" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Live speech transcription text */}
+                      <div className="min-h-[2.25rem] flex items-center px-1">
+                        {interimTranscript.trim() || inputMessage.trim() ? (
+                          <p className="text-sm sm:text-base font-heading font-semibold text-ink leading-relaxed">
+                            "{interimTranscript || inputMessage}"
+                          </p>
+                        ) : (
+                          <p className="text-xs sm:text-sm font-sans italic text-dusk-600">
+                            Speak your destination, questions, or requests now...
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Real-time Web Audio API waveform visualizer */}
+                      <div className="flex items-center justify-between pt-1 border-t border-[#E5DFD5]/70">
+                        <AudioWaveformVisualizer isActive={isListening} barCount={20} />
+                        <span className="text-[10px] font-mono text-dusk-600">
+                          Pause speaking or tap Send Now to submit
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={cancelListening}
-                          className="px-2.5 py-1 rounded-lg bg-paper-200 hover:bg-paper-300 text-ink text-xs font-sans transition cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={submitListening}
-                          disabled={!interimTranscript.trim() && !inputMessage.trim()}
-                          className="px-4 py-1 rounded-lg bg-[#C1443B] hover:bg-[#A33830] text-white text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <span>Send Voice</span>
-                          <Send className="w-3 h-3 text-marigold" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Live speech real-time text */}
-                    <div className="min-h-[2rem] flex items-center">
-                      {interimTranscript.trim() || inputMessage.trim() ? (
-                        <p className="text-sm sm:text-base font-sans font-semibold text-ink leading-relaxed">
-                          "{interimTranscript || inputMessage}"
-                        </p>
-                      ) : (
-                        <p className="text-xs sm:text-sm font-sans italic text-dusk">
-                          Speak now... your words will transcribe live right here as you talk.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Waveform indicator */}
-                    <div className="flex items-center gap-1.5 pt-0.5">
-                      <div className="w-1.5 h-3 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-1.5 h-5 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-1.5 h-2.5 bg-marigold rounded-full animate-bounce" />
-                      <div className="w-1.5 h-4.5 bg-[#E5A93C] rounded-full animate-bounce [animation-delay:-0.2s]" />
-                      <div className="w-1.5 h-3 bg-[#C1443B] rounded-full animate-bounce [animation-delay:-0.1s]" />
-                      <span className="text-[11px] font-mono text-dusk ml-2">
-                        Live speech detected: pause or tap Send Voice when finished
-                      </span>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Text input form with mic button */}
                 <form
@@ -1191,7 +1379,7 @@ export function AiGuidePage() {
                       handleSend();
                     }
                   }}
-                  className="flex items-center gap-1.5 sm:gap-2 bg-white border border-paper-400 rounded-2xl p-1.5 sm:p-2 shadow-xl"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-white border border-[#E5DFD5] rounded-2xl p-1.5 sm:p-2 shadow-lg"
                 >
                   {/* Mic button */}
                   {voiceSupported && (
@@ -1206,16 +1394,16 @@ export function AiGuidePage() {
                         }
                       }}
                       title={isListening ? 'Send voice' : 'Start voice input'}
-                      className={`p-2 rounded-xl transition-all flex-shrink-0 cursor-pointer ${
+                      className={`p-2.5 rounded-xl transition-all flex-shrink-0 cursor-pointer ${
                         isListening
-                          ? 'bg-[#C1443B] text-white animate-pulse shadow-md'
-                          : 'bg-paper-100 hover:bg-paper-200 text-ink border border-paper-300'
+                          ? 'bg-[#C1443B] text-white animate-pulse shadow-md ring-2 ring-[#C1443B]/30'
+                          : 'bg-[#FAF7F2] hover:bg-paper-200 text-ink border border-[#E5DFD5]'
                       }`}
                     >
                       {isListening ? (
                         <MicOff className="w-4 h-4" />
                       ) : (
-                        <Mic className="w-4 h-4" />
+                        <Mic className="w-4 h-4 text-[#C1443B]" />
                       )}
                     </button>
                   )}
@@ -1241,10 +1429,10 @@ export function AiGuidePage() {
                   <button
                     type="submit"
                     disabled={isLoading || (!inputMessage.trim() && !isListening && !interimTranscript.trim())}
-                    className="px-3.5 sm:px-5 py-2 sm:py-2.5 bg-ink hover:bg-ink-800 text-paper rounded-xl text-xs font-mono font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-md flex-shrink-0 cursor-pointer"
+                    className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#12213B] hover:bg-[#1D2E49] text-white rounded-xl text-xs font-heading font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-xs flex-shrink-0 cursor-pointer"
                   >
                     <span>{isListening ? 'Send Voice' : 'Solve'}</span>
-                    <Send className="w-3.5 h-3.5 text-marigold" />
+                    <Send className="w-3.5 h-3.5 text-[#F0A63B]" />
                   </button>
                 </form>
               </>
