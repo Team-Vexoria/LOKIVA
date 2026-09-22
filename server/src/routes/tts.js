@@ -43,10 +43,11 @@ ttsRouter.post(['/synthesize', '/voice/synthesize'], async (req, res) => {
     // Clean text of any markdown symbols
     const cleanText = text.replace(/[\*\#_]/g, '').trim();
 
-    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`;
+    let activeVoiceId = voiceId;
+    const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(activeVoiceId)}`;
 
     console.time('[LATENCY] ElevenLabs generation');
-    const response = await fetch(elevenLabsUrl, {
+    let response = await fetch(elevenLabsUrl, {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
@@ -62,6 +63,28 @@ ttsRouter.post(['/synthesize', '/voice/synthesize'], async (req, res) => {
         },
       }),
     });
+
+    // If custom voice failed (e.g. 402 paid subscription required for library voice), fall back to pre-made voice
+    if (!response.ok && activeVoiceId !== DEFAULT_INDIAN_VOICE_ID && (response.status === 402 || response.status === 400 || response.status === 404)) {
+      console.warn(`[TTS-API] Voice ${activeVoiceId} returned HTTP ${response.status}. Retrying with pre-made voice ${DEFAULT_INDIAN_VOICE_ID}`);
+      activeVoiceId = DEFAULT_INDIAN_VOICE_ID;
+      response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(activeVoiceId)}`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
+        },
+        body: JSON.stringify({
+          text: cleanText,
+          model_id: 'eleven_flash_v2_5',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      });
+    }
 
     if (!response.ok) {
       console.timeEnd('[LATENCY] ElevenLabs generation');

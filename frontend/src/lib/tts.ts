@@ -214,13 +214,24 @@ let cachedHostedConfigured: boolean | null = null;
  */
 export async function checkHostedTTSConfigured(): Promise<boolean> {
   try {
-    const res = await fetch('/voice/synthesize/status');
+    let res = await fetch('/voice/synthesize/status');
+    if (!res.ok) {
+      res = await fetch('http://localhost:4000/voice/synthesize/status');
+    }
     if (res.ok) {
       const data = await res.json();
       cachedHostedConfigured = Boolean(data.configured);
       return cachedHostedConfigured;
     }
   } catch {
+    try {
+      const directRes = await fetch('http://localhost:4000/voice/synthesize/status');
+      if (directRes.ok) {
+        const data = await directRes.json();
+        cachedHostedConfigured = Boolean(data.configured);
+        return cachedHostedConfigured;
+      }
+    } catch {}
     cachedHostedConfigured = false;
   }
   return false;
@@ -443,21 +454,44 @@ export function speakWithElevenLabsOrFallback(options: SpeakOptions): PlaybackCo
     try {
       const timeoutId = setTimeout(() => {
         abortController.abort();
-      }, 7500);
+      }, 15000);
 
-      const response = await fetch('/voice/synthesize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanText }),
-        signal: abortController.signal,
-      });
+      let response: Response | null = null;
+      try {
+        response = await fetch('/voice/synthesize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: cleanText }),
+          signal: abortController.signal,
+        });
+      } catch (proxyErr) {
+        if (isCancelled) return;
+        console.warn('[TTS] Proxy /voice/synthesize failed, trying direct backend port 4000');
+      }
+
+      // If proxy failed, timed out, or returned 500/502/504, attempt direct backend call to port 4000
+      if (!response || !response.ok) {
+        try {
+          const directResponse = await fetch('http://localhost:4000/voice/synthesize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: cleanText }),
+            signal: abortController.signal,
+          });
+          if (directResponse.ok) {
+            response = directResponse;
+          }
+        } catch (directErr) {
+          console.warn('[TTS] Direct port 4000 synthesize error:', directErr);
+        }
+      }
 
       clearTimeout(timeoutId);
 
       if (isCancelled) return;
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!response || !response.ok) {
+        throw new Error(`HTTP ${response ? response.status : 'Network Error'}`);
       }
 
       const contentType = response.headers.get('content-type') || '';

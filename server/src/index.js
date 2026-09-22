@@ -42,11 +42,11 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/reviews', reviewsRouter);
 app.use('/api/v1/ingestion', ingestionRouter);
 app.use('/api/v1/media', mediaRouter);
+app.use('/voice', ttsRouter);
+app.use('/api/v1/voice', ttsRouter);
+app.use('/api/voice', ttsRouter);
 app.use('/api/v1/voice', voiceRouter);
 app.use('/voice', voiceRouter);
-app.use('/api/v1/voice', ttsRouter);
-app.use('/voice', ttsRouter);
-app.use('/api/voice', ttsRouter);
 
 // Root and Health Endpoints
 app.get('/', (req, res) => {
