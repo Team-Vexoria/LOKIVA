@@ -210,9 +210,6 @@ export function HomePage() {
       <section className="relative z-20 bg-[#FAF7F2] pt-8 sm:pt-12 pb-16 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-              VERIFIED GROUND-TRUTH CATALOG
-            </span>
             <h2 className="text-2xl sm:text-4xl font-display font-black text-ink tracking-tight">
               <SplitWords text="Explore Curated Cultural Experiences" />
             </h2>

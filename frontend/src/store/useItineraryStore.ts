@@ -80,7 +80,21 @@ function createInitialState() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed && Array.isArray(parsed.days) && parsed.days.length > 0) {
-        return parsed;
+        const fresh = buildFreshTrip(parsed.tripDetails?.destination || 'Jaipur', parsed.days.length);
+        const metricsMap: Record<number, DayFeasibilityMetrics> = parsed.feasibilityMetrics || {};
+
+        parsed.days.forEach((d: ItineraryDay) => {
+          if (!metricsMap[d.dayNumber]) {
+            const { metrics } = recalculateDaySchedule(d, parsed.tripDetails?.travelers || 2);
+            metricsMap[d.dayNumber] = metrics;
+          }
+        });
+
+        return {
+          ...fresh,
+          ...parsed,
+          feasibilityMetrics: metricsMap,
+        };
       }
     }
   } catch {
@@ -150,6 +164,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
         JSON.stringify({
           tripDetails,
           days: newDays,
+          feasibilityMetrics: newMetrics,
           practicalInfo: get().practicalInfo,
         })
       );
@@ -187,6 +202,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
         JSON.stringify({
           tripDetails,
           days: newDays,
+          feasibilityMetrics: newMetrics,
           practicalInfo: get().practicalInfo,
         })
       );
@@ -230,6 +246,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
         JSON.stringify({
           tripDetails,
           days: newDays,
+          feasibilityMetrics: newMetrics,
           practicalInfo: get().practicalInfo,
         })
       );
@@ -269,6 +286,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
         JSON.stringify({
           tripDetails,
           days: newDays,
+          feasibilityMetrics: newMetrics,
           practicalInfo: get().practicalInfo,
         })
       );
@@ -297,6 +315,20 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
     };
 
     set({ days: newDays, feasibilityMetrics: newMetrics });
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          tripDetails,
+          days: newDays,
+          feasibilityMetrics: newMetrics,
+          practicalInfo: get().practicalInfo,
+        })
+      );
+    } catch {
+      // ignore
+    }
   },
 
   replanDay: (dayNumber: number, condition: ReplanCondition) => {
@@ -331,6 +363,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
         JSON.stringify({
           tripDetails,
           days: newDays,
+          feasibilityMetrics: newMetrics,
           practicalInfo: get().practicalInfo,
         })
       );
@@ -367,6 +400,7 @@ export const useItineraryStore = create<ItineraryState>((set, get) => ({
           JSON.stringify({
             tripDetails: plan.tripDetails,
             days: plan.days,
+            feasibilityMetrics: metricsMap,
             practicalInfo: plan.practicalInfo,
           })
         );

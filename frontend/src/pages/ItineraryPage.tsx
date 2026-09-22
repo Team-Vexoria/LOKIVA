@@ -40,7 +40,7 @@ export function ItineraryPage() {
     activeStopId,
     hoveredStopId,
     viewMode,
-    feasibilityMetrics,
+    feasibilityMetrics = {},
     practicalInfo,
     isGenerating,
     lastReplanMessage,
@@ -65,9 +65,9 @@ export function ItineraryPage() {
   const [addAfterIndex, setAddAfterIndex] = useState<number | undefined>(undefined);
 
   // Generator control bar states
-  const [inputCity, setInputCity] = useState(tripDetails.destination || 'Jaipur');
-  const [inputState, setInputState] = useState(tripDetails.state || 'Rajasthan');
-  const [inputDays, setInputDays] = useState(days.length || 3);
+  const [inputCity, setInputCity] = useState(tripDetails?.destination || 'Jaipur');
+  const [inputState, setInputState] = useState(tripDetails?.state || 'Rajasthan');
+  const [inputDays, setInputDays] = useState(days?.length || 3);
   const [inputPace, setInputPace] = useState<'relaxed' | 'balanced' | 'packed'>('balanced');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -78,7 +78,7 @@ export function ItineraryPage() {
     const daysParam = searchParams.get('days') ? parseInt(searchParams.get('days')!, 10) : null;
     const paceParam = (searchParams.get('pace') as 'relaxed' | 'balanced' | 'packed') || null;
 
-    if (cityParam && cityParam.toLowerCase() !== tripDetails.destination.toLowerCase()) {
+    if (cityParam && cityParam.toLowerCase() !== (tripDetails?.destination || '').toLowerCase()) {
       setInputCity(cityParam);
       if (stateParam) setInputState(stateParam);
       if (daysParam) setInputDays(daysParam);
@@ -89,16 +89,16 @@ export function ItineraryPage() {
         state: stateParam || undefined,
         daysCount: daysParam || 3,
         pace: paceParam || 'balanced',
-        travelers: tripDetails.travelers || 2,
-        budgetLimit: tripDetails.totalBudgetLimit || 25000,
+        travelers: tripDetails?.travelers || 2,
+        budgetLimit: tripDetails?.totalBudgetLimit || 25000,
       });
     }
   }, [searchParams]);
 
   // Active day and its feasibility metrics
-  const activeDayIndex = Math.max(0, Math.min(days.length - 1, selectedDay - 1));
-  const activeDay = days[activeDayIndex] || days[0];
-  const activeMetrics = activeDay ? feasibilityMetrics[activeDay.dayNumber] || null : null;
+  const activeDayIndex = Math.max(0, Math.min((days?.length || 1) - 1, selectedDay - 1));
+  const activeDay = days?.[activeDayIndex] || days?.[0];
+  const activeMetrics = activeDay && feasibilityMetrics ? feasibilityMetrics[activeDay.dayNumber] || null : null;
 
   // Preceding stop for proximity search in Add Activity Modal
   const precedingStop =
@@ -294,7 +294,7 @@ export function ItineraryPage() {
           <nav className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Days">
             {days.map((day) => {
               const isSelected = selectedDay === day.dayNumber;
-              const metric = feasibilityMetrics[day.dayNumber];
+              const metric = feasibilityMetrics?.[day.dayNumber];
               const score = metric ? metric.paceScore : 90;
 
               return (
