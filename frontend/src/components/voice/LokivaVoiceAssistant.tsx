@@ -9,6 +9,12 @@ import {
 } from '../../lib/expenseConversation';
 import { routeVoiceInput, VoiceRouteResponse } from '../../lib/voiceRouter';
 import {
+  loadVoicesAsync,
+  getVoiceStatusLabel,
+  checkHostedTTSConfigured,
+  VoiceStatusInfo,
+} from '../../lib/tts';
+import {
   Mic,
   MicOff,
   X,
@@ -39,8 +45,44 @@ export const LokivaVoiceAssistant: React.FC<LokivaVoiceAssistantProps> = ({
   const [conversationState, setConversationState] = useState<ConversationState>('IDLE');
   const [expenseMessages, setExpenseMessages] = useState<ExpenseMessage[]>([]);
   const [todayTotal, setTodayTotal] = useState<number>(0);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatusInfo>({
+    name: 'Detecting voice...',
+    isIndianAccent: false,
+    isNaturalQuality: false,
+  });
 
   const conversationManagerRef = useRef<ExpenseConversationManager | null>(null);
+
+  // Sync available speech synthesis voices for the status indicator
+  useEffect(() => {
+    let isMounted = true;
+    loadVoicesAsync().then(async () => {
+      if (!isMounted) return;
+      const isConfigured = await checkHostedTTSConfigured();
+      if (!isMounted) return;
+      setVoiceStatus(getVoiceStatusLabel(isConfigured ? 'elevenlabs' : 'browser_fallback'));
+    });
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const handleVoicesChanged = async () => {
+        if (isMounted) {
+          const isConfigured = await checkHostedTTSConfigured();
+          if (isMounted) {
+            setVoiceStatus(getVoiceStatusLabel(isConfigured ? 'elevenlabs' : 'browser_fallback'));
+          }
+        }
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      return () => {
+        isMounted = false;
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      };
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Initialize Voice Input hook
   const {
@@ -284,6 +326,31 @@ export const LokivaVoiceAssistant: React.FC<LokivaVoiceAssistantProps> = ({
                     </p>
                   </div>
                 )}
+
+                {/* Visible Voice Settings Indicator (Step 3 & 4) */}
+                <div className="mt-3 pt-2.5 border-t border-[#E5DFD5] w-full flex items-center justify-center gap-1.5 text-[11px] font-mono">
+                  <Volume2
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      voiceStatus.isNaturalQuality
+                        ? 'text-emerald-600'
+                        : voiceStatus.isIndianAccent
+                        ? 'text-[#C1443B]'
+                        : 'text-dusk-500'
+                    }`}
+                  />
+                  <span
+                    className={`truncate max-w-[360px] ${
+                      voiceStatus.isNaturalQuality
+                        ? 'text-emerald-800 font-semibold'
+                        : voiceStatus.isIndianAccent
+                        ? 'text-amber-800 font-medium'
+                        : 'text-dusk-600'
+                    }`}
+                    title={voiceStatus.name}
+                  >
+                    Voice: {voiceStatus.name}
+                  </span>
+                </div>
               </div>
 
               {/* Spoken Response Playback Widget */}

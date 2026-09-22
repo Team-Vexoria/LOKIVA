@@ -37,13 +37,35 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
   const recognitionRef = useRef<any>(null);
   const latestTranscriptRef = useRef('');
+  const hasDispatchedTranscriptRef = useRef(false);
+  const onFinalTranscriptRef = useRef(onFinalTranscript);
 
   useEffect(() => {
+    onFinalTranscriptRef.current = onFinalTranscript;
+  });
+
+  useEffect(() => {
+    // Check microphone permission explicitly on mount
+    if (navigator?.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'microphone' as any })
+        .then((permissionStatus) => {
+          console.log('[VOICE] permission status:', permissionStatus.state);
+          permissionStatus.onchange = () => {
+            console.log('[VOICE] permission status:', permissionStatus.state);
+          };
+        })
+        .catch((permErr) => {
+          console.warn('[VOICE] Permission query not supported or failed:', permErr);
+        });
+    }
+
     const SpeechRecognitionClass =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognitionClass) {
       setIsSupported(false);
+      console.error('[VOICE] SpeechRecognition API is not supported in this browser environment');
       return;
     }
 
@@ -55,6 +77,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
+        console.log('[VOICE] recognition started');
+        hasDispatchedTranscriptRef.current = false;
+        latestTranscriptRef.current = '';
         setIsListening(true);
         setError(null);
       };
@@ -73,13 +98,20 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
           }
         }
 
+        const transcriptText = (currentFinal || currentInterim).trim();
+        console.log('[VOICE] onresult fired, transcript:', transcriptText);
+
+        if (transcriptText) {
+          latestTranscriptRef.current = transcriptText;
+        }
+
         if (currentFinal) {
           const trimmed = currentFinal.trim();
-          latestTranscriptRef.current = trimmed;
+          hasDispatchedTranscriptRef.current = true;
           setTranscript(trimmed);
           setInterimTranscript('');
-          if (onFinalTranscript) {
-            onFinalTranscript(trimmed);
+          if (onFinalTranscriptRef.current) {
+            onFinalTranscriptRef.current(trimmed);
           }
         } else {
           setInterimTranscript(currentInterim);
@@ -87,6 +119,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.log('[VOICE] error fired:', event.error);
+        console.error('[VOICE] recognition error:', event.error);
         // 'no-speech' is a normal timeout event when user stays quiet
         if (event.error === 'no-speech') {
           setIsListening(false);
@@ -102,13 +136,25 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       };
 
       recognition.onend = () => {
+        console.log('[VOICE] recognition ended');
         setIsListening(false);
         setInterimTranscript('');
+
+        // If speech was captured but ended before isFinal was marked, dispatch it now
+        if (!hasDispatchedTranscriptRef.current && latestTranscriptRef.current) {
+          const captured = latestTranscriptRef.current;
+          hasDispatchedTranscriptRef.current = true;
+          setTranscript(captured);
+          if (onFinalTranscriptRef.current) {
+            onFinalTranscriptRef.current(captured);
+          }
+        }
       };
 
       recognitionRef.current = recognition;
     } catch (err: any) {
       setIsSupported(false);
+      console.error('[VOICE] Failed to initialize speech recognition:', err);
       setError(err?.message || 'Failed to initialize speech recognition');
     }
 
@@ -121,7 +167,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         }
       }
     };
-  }, [lang, onFinalTranscript]);
+  }, [lang]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) {

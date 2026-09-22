@@ -14,6 +14,23 @@ export default defineConfig({
     port: 3000,
     host: true,
     proxy: {
+      '/api/v1/ai': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/ai': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/voice': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/voice/, '/voice'),
+      },
+      '/voice': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

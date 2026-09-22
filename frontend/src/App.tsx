@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './lib/auth-context';
+import { initializeTTS } from './lib/tts';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 
@@ -16,7 +17,6 @@ import { SavedPage } from './pages/SavedPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DiscoveryMapPage } from './pages/DiscoveryMapPage';
 import { LocationDecisionModal, useOnboardingGate } from './components/onboarding/LocationDecisionModal';
-import { LokivaVoiceAssistant } from './components/voice/LokivaVoiceAssistant';
 import { LoginPage } from './pages/LoginPage';
 import { TravelerLoginPage } from './pages/TravelerLoginPage';
 import { ProviderLoginPage } from './pages/ProviderLoginPage';
@@ -29,6 +29,10 @@ import { NotFoundPage } from './pages/NotFoundPage';
 
 export function App() {
   const { showModal, closeModal } = useOnboardingGate();
+
+  useEffect(() => {
+    initializeTTS();
+  }, []);
 
   return (
     <AuthProvider>
@@ -69,8 +73,6 @@ export function App() {
           </main>
           <Footer />
 
-          {/* Global Voice Assistant with Spatiotemporal Solver, Weather, and Expense Logging */}
-          <LokivaVoiceAssistant />
 
           {/* First-visit onboarding modal */}
           <LocationDecisionModal isOpen={showModal} onClose={closeModal} />

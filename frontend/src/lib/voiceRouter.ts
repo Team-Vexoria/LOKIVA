@@ -27,11 +27,13 @@ export async function routeVoiceInput(
   transcript: string,
   context: UserSessionContext = {}
 ): Promise<VoiceRouteResponse> {
+  console.log('[ROUTER] received transcript:', transcript);
+
   if (!transcript || transcript.trim() === '') {
     return {
       intent: 'none',
       spoken_response:
-        'I can help you find nearby experiences, check the weather, or log an expense. What would you like?',
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
     };
   }
 
@@ -61,14 +63,17 @@ export async function routeVoiceInput(
   headers['x-session-id'] = sessionId;
 
   try {
+    const payload = {
+      transcript,
+      context,
+      current_time: new Date().toISOString(),
+    };
+    console.log('[ROUTER] sending to backend with payload:', payload);
+
     const res = await fetch(`${REALTIME_API_URL}/voice/route`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        transcript,
-        context,
-        current_time: new Date().toISOString(),
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -80,7 +85,7 @@ export async function routeVoiceInput(
       intent: json.intent || 'none',
       spoken_response:
         json.spoken_response ||
-        'I can help you find nearby experiences, check the weather, or log an expense. What would you like?',
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
       data: json.data || null,
       is_live: json.is_live,
     };
@@ -89,7 +94,7 @@ export async function routeVoiceInput(
     return {
       intent: 'none',
       spoken_response:
-        'I can help you find nearby experiences, check the weather, or log an expense. What would you like?',
+        'Namaste! I can help you discover experiences, check live weather, or track expenses! Where are you heading to in India, and what are your interests (like heritage, food, or artisan crafts)?',
     };
   }
 }

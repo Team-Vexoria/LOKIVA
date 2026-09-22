@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
+import {
+  getPreferredVoice,
+  loadVoicesAsync,
+  getVoiceStatusLabel,
+  checkHostedTTSConfigured,
+  speakWithElevenLabsOrFallback,
+  PlaybackController,
+  VoiceStatusInfo,
+} from '../../lib/tts';
 
 export interface VoiceResponseProps {
   text: string;
@@ -9,40 +18,7 @@ export interface VoiceResponseProps {
   categoryTag?: string;
 }
 
-/**
- * Selects the highest quality Indian English voice available in the browser.
- */
-export function getIndianEnglishVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
-
-  const voices = window.speechSynthesis.getVoices();
-
-  // Best: exact en-IN locale match
-  let match = voices.find((v) => v.lang === 'en-IN' || v.lang === 'en_IN');
-  if (match) return match;
-
-  // Known Indian-English voice names across platforms
-  const knownNames = [
-    'Microsoft Heera', // Windows, older
-    'Microsoft Neerja', // Windows 10/11, natural-sounding
-    'Google हिन्दी', // Android Chrome, Hindi/Indian
-    'Veena', // macOS/iOS Indian English (female)
-    'Rishi', // macOS Indian English (male)
-  ];
-
-  for (const name of knownNames) {
-    match = voices.find((v) => v.name.includes(name));
-    if (match) return match;
-  }
-
-  // Fallback: natural British English or international English voice
-  return (
-    voices.find((v) => v.lang.startsWith('en-IN')) ||
-    voices.find((v) => v.lang === 'en-GB') ||
-    voices.find((v) => v.lang.startsWith('en')) ||
-    null
-  );
-}
+export { getPreferredVoice as getIndianEnglishVoice };
 
 export const VoiceResponse: React.FC<VoiceResponseProps> = ({
   text,
@@ -53,83 +29,80 @@ export const VoiceResponse: React.FC<VoiceResponseProps> = ({
 }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatusInfo | null>(null);
+  const playbackControllerRef = useRef<PlaybackController | null>(null);
+
+  const speakText = (content: string) => {
+    if (!content || content.trim() === '') return;
+
+    if (playbackControllerRef.current) {
+      playbackControllerRef.current.stop();
+      playbackControllerRef.current = null;
+    }
+
+    playbackControllerRef.current = speakWithElevenLabsOrFallback({
+      text: content,
+      onStart: () => {
+        setIsSpeaking(true);
+      },
+      onEnd: () => {
+        setIsSpeaking(false);
+        playbackControllerRef.current = null;
+        if (onFinishedSpeaking) {
+          onFinishedSpeaking();
+        }
+      },
+      onError: () => {
+        setIsSpeaking(false);
+        playbackControllerRef.current = null;
+      },
+      onEngineUsed: (engine) => {
+        setVoiceStatus(getVoiceStatusLabel(engine));
+      },
+    });
+  };
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (typeof window === 'undefined') {
       setIsSupported(false);
       return;
     }
 
-    // Cancel any previous speech
-    window.speechSynthesis.cancel();
+    let isMounted = true;
+    loadVoicesAsync().then(async () => {
+      if (!isMounted) return;
+      const isConfigured = await checkHostedTTSConfigured();
+      if (!isMounted) return;
+      setVoiceStatus(getVoiceStatusLabel(isConfigured ? 'elevenlabs' : 'browser_fallback'));
 
-    if (!text || text.trim() === '') {
-      return;
-    }
-
-    try {
-      const cleanText = text.replace(/[\*\#_]/g, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.lang = 'en-IN';
-
-      // Pick the best Indian English voice across Windows, macOS, Android, and iOS
-      const preferredVoice = getIndianEnglishVoice();
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      if (autoPlay && text && text.trim() !== '') {
+        speakText(text);
       }
-
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-      };
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        if (onFinishedSpeaking) {
-          onFinishedSpeaking();
-        }
-      };
-
-      utterance.onerror = () => {
-        setIsSpeaking(false);
-      };
-
-      utteranceRef.current = utterance;
-
-      if (autoPlay) {
-        window.speechSynthesis.speak(utterance);
-      }
-    } catch {
-      setIsSpeaking(false);
-    }
+    });
 
     return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+      isMounted = false;
+      if (playbackControllerRef.current) {
+        playbackControllerRef.current.stop();
+        playbackControllerRef.current = null;
       }
     };
-  }, [text, autoPlay, onFinishedSpeaking]);
+  }, [text, autoPlay]);
 
   const handleToggleSpeak = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      if (playbackControllerRef.current) {
+        playbackControllerRef.current.stop();
+        playbackControllerRef.current = null;
+      }
       setIsSpeaking(false);
-    } else if (utteranceRef.current) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utteranceRef.current);
+    } else {
+      speakText(text);
     }
   };
 
   const handleReplay = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    if (utteranceRef.current) {
-      window.speechSynthesis.speak(utteranceRef.current);
-    }
+    speakText(text);
   };
 
   if (!text) return null;
@@ -184,11 +157,18 @@ export const VoiceResponse: React.FC<VoiceResponseProps> = ({
       </p>
 
       {isSpeaking && (
-        <div className="mt-3 flex items-center gap-1.5 pt-2 border-t border-[#E5DFD5]/60">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C1443B] animate-ping" />
-          <span className="text-[11px] font-mono font-medium text-[#C1443B]">
-            Speaking response...
-          </span>
+        <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#E5DFD5]/60">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C1443B] animate-ping" />
+            <span className="text-[11px] font-mono font-medium text-[#C1443B]">
+              Speaking response...
+            </span>
+          </div>
+          {voiceStatus && (
+            <span className="text-[10px] font-mono text-dusk-500">
+              {voiceStatus.name}
+            </span>
+          )}
         </div>
       )}
     </div>
