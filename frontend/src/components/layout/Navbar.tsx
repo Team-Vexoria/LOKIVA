@@ -77,18 +77,18 @@ export function Navbar() {
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Left: Brand Logo & Wordmark */}
           <div className="flex items-center justify-start flex-shrink-0">
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-1.5 group">
               <motion.img
                 src="/logo.png"
                 alt="LOKIVA"
-                animate={{ height: isScrolled ? 24 : 28 }}
+                animate={{ height: isScrolled ? 26 : 31 }}
                 transition={{ type: 'spring', stiffness: 85, damping: 20 }}
-                className="w-auto object-contain shrink-0 group-hover:scale-105 transition-transform"
+                className="w-auto object-contain shrink-0 group-hover:scale-105 transition-transform -mr-0.5"
               />
               <motion.span
-                animate={{ fontSize: isScrolled ? '17px' : '19px' }}
+                animate={{ fontSize: isScrolled ? '19px' : '23px' }}
                 transition={{ type: 'spring', stiffness: 85, damping: 20 }}
-                className="font-bold font-display text-ink tracking-tight leading-none"
+                className="font-bold font-display text-ink tracking-tight leading-none translate-y-[0.5px]"
               >
                 LOKIVA
               </motion.span>

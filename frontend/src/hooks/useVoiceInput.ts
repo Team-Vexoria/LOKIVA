@@ -30,6 +30,75 @@ export interface UseVoiceInputResult {
   isSupported: boolean;
 }
 
+/**
+ * Eliminates consecutive duplicate word sequences of any length (e.g. phrases, words)
+ */
+export function deduplicatePhrases(text: string): string {
+  if (!text) return '';
+  const words = text.trim().split(/\s+/);
+  if (words.length <= 1) return text.trim();
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let phraseLen = Math.floor(words.length / 2); phraseLen >= 1; phraseLen--) {
+      for (let i = 0; i <= words.length - 2 * phraseLen; i++) {
+        let isRepeat = true;
+        for (let j = 0; j < phraseLen; j++) {
+          if (words[i + j].toLowerCase() !== words[i + phraseLen + j].toLowerCase()) {
+            isRepeat = false;
+            break;
+          }
+        }
+        if (isRepeat) {
+          words.splice(i + phraseLen, phraseLen);
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+  }
+
+  return words.join(' ');
+}
+
+/**
+ * Intelligent Speech Transcript Cleaner:
+ * 1. Eliminates consecutive duplicate phrases and word stuttering
+ * 2. Corrects common Indian English travel acoustic homophones
+ * 3. Normalizes spacing and capitalization
+ */
+export function cleanSpeechTranscript(raw: string): string {
+  if (!raw) return '';
+  let text = deduplicatePhrases(raw);
+
+  // Common Indian English travel acoustic & homophone corrections:
+  // "give me identity" / "plan identity" / "2 days identity" -> "itinerary"
+  text = text.replace(
+    /\b(give me|make an?|plan an?|suggest an?|create an?|for an?|the|my|two days|2 days|3 days|three days|4 days|5 days|weekend)\s+identity\b/gi,
+    '$1 itinerary'
+  );
+  text = text.replace(/\bidentity\s+for\s+(?:that|it|this|me)\b/gi, 'itinerary for that');
+  text = text.replace(/\b(?:iterinary|iternary|itinary|itinery)\b/gi, 'itinerary');
+  // "Hello Kiva" / "Hey Kiva" / "Hi Kiva" -> "Hello Lokiva"
+  text = text.replace(/\b(hello|hey|hi)\s+kiva\b/gi, '$1 Lokiva');
+  text = text.replace(/\bkiva\b/gi, 'Lokiva');
+  // "for two version" / "two version" -> "for two persons"
+  text = text.replace(/\b(for\s+)?(two|2|three|3|four|4|five|5)\s+version\b/gi, '$1$2 persons');
+
+  // Normalize spaces
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // Capitalize first letter
+  if (text.length > 0) {
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  return text;
+}
+
+
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
   const { onFinalTranscript, onInterimTranscript, lang = 'en-IN' } = options;
   const [isListening, setIsListening] = useState(false);
@@ -41,8 +110,15 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const recognitionRef = useRef<any>(null);
   const isRecognizingRef = useRef(false);
   const isUserIntentListeningRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+
+  // Cumulative confirmed speech across auto-restarts within the active voice turn
   const accumulatedSpeechRef = useRef('');
+  // Confirmed final speech for the current recognition session
+  const currentSessionConfirmedRef = useRef('');
+  // Latest unified live speech string for the entire voice turn
   const currentLiveSpeechRef = useRef('');
+
   const silenceTimerRef = useRef<any>(null);
   const restartTimerRef = useRef<any>(null);
   const onFinalTranscriptRef = useRef(onFinalTranscript);
@@ -54,6 +130,11 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   });
 
   const finalizeAndSubmit = useCallback((explicitText?: string) => {
+    if (isSubmittingRef.current) return;
+    if (!isUserIntentListeningRef.current && !explicitText) return;
+    isSubmittingRef.current = true;
+    isUserIntentListeningRef.current = false;
+
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
@@ -63,29 +144,34 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       restartTimerRef.current = null;
     }
 
-    isUserIntentListeningRef.current = false;
-    const toSubmit = (explicitText !== undefined ? explicitText : currentLiveSpeechRef.current).trim();
+    const rawToSubmit = (explicitText !== undefined ? explicitText : currentLiveSpeechRef.current).trim();
+    const toSubmit = cleanSpeechTranscript(rawToSubmit);
 
-    if (recognitionRef.current && isRecognizingRef.current) {
+    // Instantly abort recognition to prevent trailing audio from restarting
+    if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.abort();
       } catch {}
       isRecognizingRef.current = false;
     }
 
     setIsListening(false);
     setInterimTranscript('');
+    accumulatedSpeechRef.current = '';
+    currentSessionConfirmedRef.current = '';
+    currentLiveSpeechRef.current = '';
 
     if (toSubmit) {
-      console.log('[VOICE] Finalized speech submitted:', toSubmit);
+      console.log('[VOICE] Finalized clean speech submitted:', toSubmit);
       setTranscript(toSubmit);
       if (onFinalTranscriptRef.current) {
         onFinalTranscriptRef.current(toSubmit);
       }
     }
 
-    accumulatedSpeechRef.current = '';
-    currentLiveSpeechRef.current = '';
+    setTimeout(() => {
+      isSubmittingRef.current = false;
+    }, 400);
   }, []);
 
   useEffect(() => {
@@ -123,46 +209,46 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let sessionFinal = '';
+        let sessionConfirmed = '';
         let sessionInterim = '';
 
+        // Iterate over the complete results list of THIS recognition session
         for (let i = 0; i < event.results.length; i++) {
           const res = event.results[i];
-          const text = res[0]?.transcript || '';
+          const segment = (res[0]?.transcript || '').trim();
+          if (!segment) continue;
+
           if (res.isFinal) {
-            sessionFinal += text + ' ';
+            sessionConfirmed = sessionConfirmed ? `${sessionConfirmed} ${segment}` : segment;
           } else {
-            sessionInterim += text;
+            sessionInterim = sessionInterim ? `${sessionInterim} ${segment}` : segment;
           }
         }
 
-        const combinedConfirmed = (accumulatedSpeechRef.current + ' ' + sessionFinal).trim();
-        const totalFull = (combinedConfirmed + ' ' + sessionInterim).trim();
+        // Keep current session's confirmed text
+        currentSessionConfirmedRef.current = sessionConfirmed;
 
-        if (sessionFinal.trim()) {
-          accumulatedSpeechRef.current = combinedConfirmed;
-        }
+        // Prefix with speech accumulated across earlier restarts in this same turn
+        const prefix = accumulatedSpeechRef.current;
+        const confirmedTurnRaw = prefix
+          ? (sessionConfirmed ? `${prefix} ${sessionConfirmed}` : prefix)
+          : sessionConfirmed;
 
-        if (totalFull) {
-          currentLiveSpeechRef.current = totalFull;
-          setTranscript(combinedConfirmed);
-          setInterimTranscript(totalFull);
+        const liveTurnRaw = sessionInterim
+          ? (confirmedTurnRaw ? `${confirmedTurnRaw} ${sessionInterim}` : sessionInterim)
+          : confirmedTurnRaw;
+
+        // Clean speech through deduplication and Indian travel homophone filter
+        const cleanLive = cleanSpeechTranscript(liveTurnRaw);
+        const cleanConfirmed = cleanSpeechTranscript(confirmedTurnRaw);
+
+        if (cleanLive) {
+          currentLiveSpeechRef.current = cleanLive;
+          setTranscript(cleanConfirmed);
+          setInterimTranscript(cleanLive);
           if (onInterimTranscriptRef.current) {
-            onInterimTranscriptRef.current(totalFull);
+            onInterimTranscriptRef.current(cleanLive);
           }
-        }
-
-        // Reset silence debounce timer on every new vocalization
-        if (silenceTimerRef.current) {
-          clearTimeout(silenceTimerRef.current);
-        }
-
-        // Generous 3500ms pause window before auto-submitting
-        if (totalFull.length > 0 && isUserIntentListeningRef.current) {
-          silenceTimerRef.current = setTimeout(() => {
-            console.log('[VOICE] 3500ms silence detected, auto-submitting:', totalFull);
-            finalizeAndSubmit(totalFull);
-          }, 3500);
         }
       };
 
@@ -181,8 +267,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         isRecognizingRef.current = false;
         console.log('[VOICE] recognition stream ended. userIntent:', isUserIntentListeningRef.current);
 
-        // If user still intends to be recording, auto-restart to prevent Chrome mid-sentence drop
+        // If user still intends to be recording, preserve all live speech captured so far
         if (isUserIntentListeningRef.current) {
+          // Commit everything said up to this point so next session appends to it seamlessly
+          if (currentLiveSpeechRef.current) {
+            accumulatedSpeechRef.current = cleanSpeechTranscript(currentLiveSpeechRef.current);
+            currentSessionConfirmedRef.current = '';
+          }
+
           if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
           restartTimerRef.current = setTimeout(() => {
             if (isUserIntentListeningRef.current && !isRecognizingRef.current) {
@@ -230,8 +322,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     setTranscript('');
     setInterimTranscript('');
     accumulatedSpeechRef.current = '';
+    currentSessionConfirmedRef.current = '';
     currentLiveSpeechRef.current = '';
     isUserIntentListeningRef.current = true;
+    isSubmittingRef.current = false;
 
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
@@ -257,31 +351,44 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     finalizeAndSubmit();
   }, [finalizeAndSubmit]);
 
-  const stopListening = useCallback(() => {
-    finalizeAndSubmit();
-  }, [finalizeAndSubmit]);
-
   const cancelListening = useCallback(() => {
     isUserIntentListeningRef.current = false;
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
-    if (recognitionRef.current && isRecognizingRef.current) {
+    isSubmittingRef.current = false;
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (restartTimerRef.current) {
+      clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
+    if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.abort();
       } catch {}
       isRecognizingRef.current = false;
     }
     setIsListening(false);
-    setTranscript('');
     setInterimTranscript('');
     accumulatedSpeechRef.current = '';
+    currentSessionConfirmedRef.current = '';
     currentLiveSpeechRef.current = '';
   }, []);
+
+  const stopListening = useCallback(() => {
+    if (isSubmittingRef.current) return;
+    if (isUserIntentListeningRef.current && currentLiveSpeechRef.current.trim()) {
+      finalizeAndSubmit();
+    } else {
+      cancelListening();
+    }
+  }, [finalizeAndSubmit, cancelListening]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
     setInterimTranscript('');
     accumulatedSpeechRef.current = '';
+    currentSessionConfirmedRef.current = '';
     currentLiveSpeechRef.current = '';
     setError(null);
   }, []);

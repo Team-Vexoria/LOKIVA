@@ -13,7 +13,7 @@ import {
   checkHostedTTSConfigured,
   unlockAudio,
 } from '../lib/tts';
-import { useVoiceInput } from '../hooks/useVoiceInput';
+import { useVoiceInput, cleanSpeechTranscript } from '../hooks/useVoiceInput';
 import { VOICE_SUGGESTIONS } from '../data/voiceSuggestions';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { AudioWaveformVisualizer } from '../components/voice/AudioWaveformVisualizer';
@@ -112,6 +112,33 @@ const getChatStorageKey = (user: { id?: string | number; email?: string } | null
   return `lokiva_ai_guide_chat_${user.id || user.email}`;
 };
 
+const sanitizeStoredMessages = (rawMessages: any): ChatMessage[] => {
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return [DEFAULT_WELCOME_MESSAGE];
+  }
+  const seenIds = new Set<string>();
+  const cleaned: ChatMessage[] = [];
+  let lastContent = '';
+  for (const m of rawMessages) {
+    if (!m || typeof m.content !== 'string') continue;
+    const trimmed = m.content.trim();
+    if (!trimmed) continue;
+    if (trimmed.includes('Payload Too Large') || trimmed.includes('413') || trimmed.includes('Failed to fetch')) continue;
+    // Suppress consecutive duplicate messages from past loops
+    if (trimmed === lastContent) continue;
+    lastContent = trimmed;
+
+    if (m.id === 'welcome-msg' && cleaned.length > 0) continue;
+    let id = m.id;
+    if (!id || seenIds.has(id)) {
+      id = `${m.role || 'msg'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    }
+    seenIds.add(id);
+    cleaned.push({ ...m, id });
+  }
+  return cleaned.length > 0 ? cleaned.slice(-20) : [DEFAULT_WELCOME_MESSAGE];
+};
+
 // ===========================================================================
 // Daily Expense Storage & Midnight Reset Helpers
 // ===========================================================================
@@ -131,17 +158,29 @@ const getDailySpendStorageKey = (userId?: string | number | null): string => {
 
 const loadDailySpend = (userId?: string | number | null): number => {
   try {
-    const key = getDailySpendStorageKey(userId);
-    const raw = localStorage.getItem(key);
-    if (!raw) return 0;
-    const parsed = JSON.parse(raw);
     const today = getTodayDateStr();
-    // Only return the spend if it belongs to today. If date passed, it has reset.
-    if (parsed.date === today && typeof parsed.total === 'number') {
-      return parsed.total;
+    const primaryKey = getDailySpendStorageKey(userId);
+    const raw = localStorage.getItem(primaryKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.date === today && typeof parsed.total === 'number') {
+        return parsed.total;
+      }
+      localStorage.removeItem(primaryKey);
     }
-    // Day has ended, clear yesterday's spend from storage
-    localStorage.removeItem(key);
+
+    if (userId) {
+      const sessionKey = getDailySpendStorageKey(null);
+      if (sessionKey !== primaryKey) {
+        const sessionRaw = localStorage.getItem(sessionKey);
+        if (sessionRaw) {
+          const parsedSession = JSON.parse(sessionRaw);
+          if (parsedSession.date === today && typeof parsedSession.total === 'number' && parsedSession.total > 0) {
+            return parsedSession.total;
+          }
+        }
+      }
+    }
     return 0;
   } catch {
     return 0;
@@ -154,11 +193,11 @@ const saveDailySpend = (
   addedItem?: { amount: number; note: string; category: string }
 ) => {
   try {
-    const key = getDailySpendStorageKey(userId);
+    const primaryKey = getDailySpendStorageKey(userId);
     const today = getTodayDateStr();
     let items: any[] = [];
     try {
-      const raw = localStorage.getItem(key);
+      const raw = localStorage.getItem(primaryKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed.date === today && Array.isArray(parsed.items)) {
@@ -171,18 +210,112 @@ const saveDailySpend = (
       items.push({ ...addedItem, timestamp: new Date().toISOString() });
     }
 
-    localStorage.setItem(
-      key,
-      JSON.stringify({
-        date: today,
-        total: Math.max(0, total),
-        items,
-      })
-    );
+    const payload = JSON.stringify({
+      date: today,
+      total: Math.max(0, total),
+      items,
+    });
+
+    localStorage.setItem(primaryKey, payload);
+
+    if (userId) {
+      const sessionKey = getDailySpendStorageKey(null);
+      if (sessionKey !== primaryKey) {
+        localStorage.setItem(sessionKey, payload);
+      }
+    }
   } catch (err) {
     console.warn('Failed to save daily spend to localStorage:', err);
   }
 };
+
+function guessExpenseCategory(text: string): string {
+  const t = (text || '').toLowerCase();
+  if (/rickshaw|auto|cab|taxi|uber|ola|metro|bus|train|flight|fare|ride|petrol|fuel|ticket|transit|travelling|travel/i.test(t)) return 'transport';
+  if (/food|lunch|dinner|breakfast|snack|cafe|chai|tea|coffee|thali|biryani|dosa|meal|restaurant|eating|drink|water/i.test(t)) return 'food';
+  if (/hotel|hostel|stay|room|resort|homestay|lodge|night/i.test(t)) return 'stay';
+  if (/ticket|entry|museum|monument|fort|palace|show|safari|guide/i.test(t)) return 'activity';
+  if (/shop|souvenir|dress|clothes|market|bazaar|handicraft|gift/i.test(t)) return 'shopping';
+  return 'other';
+}
+
+interface ParsedExpense {
+  amount: number;
+  note: string;
+  category: string;
+}
+
+function parseExpenseText(text: string): ParsedExpense | null {
+  if (!text) return null;
+  const clean = text.trim();
+
+  // Pattern 1: (i spent / spent / paid / add / added / log / logged / track / bought / cost / kharcha) [of] [rs|inr|₹] 400 [rs|inr|rupees] [on/for ...]
+  const m1 = clean.match(
+    /(?:i\s+)?(?:spent|spend|paid|add|added|log|logged|track|tracked|bought|cost|kharcha)(?:\s+expense)?\s*(?:of\s*)?(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees)?(?:\s+(?:on|for|in|at|to)\s+([a-zA-Z\s]+))?/i
+  );
+  if (m1) {
+    const amt = parseFloat(m1[1]);
+    if (!isNaN(amt) && amt > 0) {
+      let note = (m1[2] || '').trim();
+      note = note.replace(/\b(rn|right now|today|now|only|please|just now)\b/gi, '').trim();
+      if (!note || /^(rs|rupees|inr|spent|today|only|here|now)$/i.test(note)) {
+        const parts = clean.split(m1[1]);
+        const after = parts[1] ? parts[1].replace(/(?:rs\.?|inr|rupees|spent|today|only|here|now|rn|right now)/gi, '').trim() : '';
+        note = after.replace(/^(on|for|in|at|to)\s+/i, '').trim() || 'expense';
+      }
+      return { amount: amt, note, category: guessExpenseCategory(note + ' ' + clean) };
+    }
+  }
+
+  // Pattern 2: [rs|inr|₹] 400 [rs] (spent|paid|for|on) ...
+  const m2 = clean.match(
+    /(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees)?\s*(?:spent|paid|for|on|in|at)\s*([a-zA-Z\s]+)?/i
+  );
+  if (m2 && !/min|minute|hour|day|km|meter|night/i.test(clean)) {
+    const amt = parseFloat(m2[1]);
+    if (!isNaN(amt) && amt > 0) {
+      let note = (m2[2] || 'expense').trim();
+      note = note.replace(/\b(rn|right now|today|now|only|please|just now)\b/gi, '').trim();
+      return { amount: amt, note, category: guessExpenseCategory(note + ' ' + clean) };
+    }
+  }
+
+  // Pattern 3: item name + amount (e.g. "rickshaw 200 rs", "lunch 500 inr")
+  const m3 = clean.match(
+    /^([a-zA-Z\s]{2,25})\s+(?:for|cost|costing|was|of)?\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|inr|rupees)?(?:\s+(?:only|today|rn))?$/i
+  );
+  if (m3 && !/^(what|where|how|when|who|why|which|can|could|will|would|is|are|tell)/i.test(m3[1])) {
+    const amt = parseFloat(m3[2]);
+    if (!isNaN(amt) && amt > 0) {
+      const note = m3[1].trim();
+      return { amount: amt, note, category: guessExpenseCategory(note + ' ' + clean) };
+    }
+  }
+
+  // Pattern 4: Explicit "spent 400" or "400 spent"
+  const m4 = clean.match(/(?:spent|spend|paid|add)\s+(\d+(?:\.\d+)?)/i) || clean.match(/(\d+(?:\.\d+)?)\s+(?:spent|spend|paid)/i);
+  if (m4) {
+    const amt = parseFloat(m4[1]);
+    if (!isNaN(amt) && amt > 0) {
+      return { amount: amt, note: 'expense', category: 'other' };
+    }
+  }
+
+  return null;
+}
+
+function isExpenseInquiry(text: string): boolean {
+  if (!text) return false;
+  const clean = text.trim().toLowerCase();
+  return /(how much.*(?:spent|spend|budget)|what('s|\s+is).*(?:my\s+)?(?:spend|spending|expense|budget)|total\s+(?:spend|budget)|today'?s\s+(?:spend|budget)|budget\s+of\s+today|my\s+spending|show\s+(?:my\s+)?expenses?|check\s+(?:my\s+)?spend)/i.test(
+    clean
+  );
+}
+
+function isWeatherQuery(text: string): boolean {
+  if (!text) return false;
+  return /(^|\b)(what('s| is) the (weather|temperature|forecast)|is it raining in|weather in|how is the weather)(\b|$)/i.test(text);
+}
 
 // ===========================================================================
 // Component
@@ -206,9 +339,7 @@ export function AiGuidePage() {
           const saved = localStorage.getItem(key);
           if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
-              return parsed.messages;
-            }
+            return sanitizeStoredMessages(parsed.messages);
           }
         }
       }
@@ -268,10 +399,10 @@ export function AiGuidePage() {
     isSupported: voiceSupported,
   } = useVoiceInput({
     onInterimTranscript: (liveText: string) => {
-      setInputMessage(liveText);
+      setInputMessage(cleanSpeechTranscript(liveText));
     },
     onFinalTranscript: (text: string) => {
-      handleSend(text, true);
+      handleSend(cleanSpeechTranscript(text), true);
     },
   });
 
@@ -312,6 +443,9 @@ export function AiGuidePage() {
         'Content-Type': 'application/json',
         'x-session-id': sessionId,
       };
+      if (activeUserId) {
+        headers['x-user-id'] = String(activeUserId);
+      }
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
@@ -359,11 +493,36 @@ export function AiGuidePage() {
         lastDate = currentDate;
         // Day has ended: reset spend for the new day
         setTodayTotal(0);
+        saveDailySpend(user?.id, 0);
         fetchTodayTotal();
       }
-    }, 30000); // Check every 30 seconds
+    }, 15000); // Check every 15 seconds
     return () => clearInterval(interval);
-  }, [fetchTodayTotal]);
+  }, [fetchTodayTotal, user?.id]);
+
+  // Cross-component & cross-tab live expense synchronization
+  useEffect(() => {
+    const handleExpenseUpdate = (e: any) => {
+      const detail = e.detail;
+      if (detail && typeof detail.total === 'number') {
+        setTodayTotal(detail.total);
+      } else {
+        fetchTodayTotal();
+      }
+    };
+    window.addEventListener('lokiva_expense_updated', handleExpenseUpdate);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && e.key.startsWith('lokiva_daily_spend_')) {
+        const activeUserId = user?.id;
+        setTodayTotal(loadDailySpend(activeUserId));
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('lokiva_expense_updated', handleExpenseUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [fetchTodayTotal, user?.id]);
 
   // Sync chat history when user changes
   useEffect(() => {
@@ -378,10 +537,9 @@ export function AiGuidePage() {
       const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
-          setMessages(parsed.messages);
-          if (parsed.currentCity) setCurrentCity(parsed.currentCity);
-        }
+        const clean = sanitizeStoredMessages(parsed.messages);
+        setMessages(clean);
+        if (parsed.currentCity) setCurrentCity(parsed.currentCity);
       }
     } catch (err) {
       console.error('Failed to load saved chat from localStorage:', err);
@@ -547,23 +705,28 @@ export function AiGuidePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isSendingRef = useRef(false);
+
   // ===========================================================================
   // Unified send handler (typed, chip tap, voice)
   // ===========================================================================
   const handleSend = async (customText?: string, voiceInitiated = false) => {
     if (!isAuthenticated || !user) return;
-    const textToSend = (customText || inputMessage).trim();
+    if (isSendingRef.current) return;
+    const textToSend = cleanSpeechTranscript(customText || inputMessage).trim();
     if (!textToSend) return;
     // Prevent double submits from typing, but never drop spoken voice input
     if (isLoading && !customText) return;
 
+    isSendingRef.current = true;
+
     // Arm audio context immediately on user gesture
     unlockAudio();
 
-    // Stop mic if listening
-    if (isListening) stopListening();
+    // Safely disarm mic without triggering double-submit recursion
+    cancelListening();
 
-    const userMsgId = `user-${Date.now()}`;
+    const userMsgId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const userMsg: ChatMessage = {
       id: userMsgId,
       role: 'user',
@@ -585,62 +748,121 @@ export function AiGuidePage() {
       let expenseData: ExpenseData | undefined;
       let detectedIntent: ChatMessage['intent'] = 'none';
 
-      // Check if this query is an explicit voice tool command (logging an expense or asking live sensor weather)
-      const isVoiceTool =
-        voiceInitiated &&
-        (/(^|\b)(i (spent|paid|bought)|add expense|log expense|track expense|how much did i spend today|what('s| is) my total spend)(\b|$)/i.test(textToSend) ||
-         /(^|\b)(what('s| is) the (weather|temperature|forecast)|is it raining in)(\b|$)/i.test(textToSend));
+      // 1. Detect Expense Logging (typed or spoken)
+      const parsedExpense = parseExpenseText(textToSend);
+      if (parsedExpense) {
+        detectedIntent = 'log_expense';
+        const { amount, note, category } = parsedExpense;
+        const optimisticTotal = todayTotal + amount;
 
-      if (isVoiceTool) {
-        // Route to the Gemini function-calling router for tool actions
+        // Immediate UI and local persistence update
+        setTodayTotal(optimisticTotal);
+        saveDailySpend(user?.id, optimisticTotal, { amount, note, category });
+        window.dispatchEvent(
+          new CustomEvent('lokiva_expense_updated', {
+            detail: { total: optimisticTotal, amount, note, category },
+          })
+        );
+
+        let finalTotal = optimisticTotal;
+
+        // Sync with backend ledger
+        try {
+          let authToken = token;
+          if (!authToken) {
+            authToken =
+              localStorage.getItem('lokiva_token') ||
+              localStorage.getItem('token') ||
+              localStorage.getItem('auth_token');
+          }
+          let sessionId = localStorage.getItem('lokiva_session_id');
+          if (!sessionId) {
+            sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            localStorage.setItem('lokiva_session_id', sessionId);
+          }
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'x-session-id': sessionId,
+          };
+          if (user?.id) {
+            headers['x-user-id'] = String(user.id);
+          }
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+          }
+
+          const res = await fetch('/voice/log-expense', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              amount_inr: amount,
+              category,
+              note,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const serverReported = Number(data.today_total_inr);
+            if (!isNaN(serverReported) && serverReported > 0) {
+              finalTotal = Math.max(serverReported, optimisticTotal);
+              setTodayTotal(finalTotal);
+              saveDailySpend(user?.id, finalTotal);
+            }
+          }
+        } catch (syncErr) {
+          console.warn('[AiGuide] Server expense sync error:', syncErr);
+        }
+
+        expenseData = {
+          added_amount: amount,
+          category,
+          note,
+          today_total_inr: finalTotal,
+        };
+
+        botContent = `Recorded \u20B9${amount.toLocaleString('en-IN')} for ${note}. Today's total spend is now \u20B9${finalTotal.toLocaleString('en-IN')}.\n\nWhere are you heading to next, and what are your interests?`;
+        spokenText = `Recorded ${amount} rupees for ${note}. Today's total spend is now ${finalTotal} rupees. Where are you heading to next, and what are your interests?`;
+      } else if (isExpenseInquiry(textToSend)) {
+        // 2. Direct Expense Summary Inquiry (typed or spoken)
+        detectedIntent = 'get_expense_summary';
+        const currentSpend = todayTotal;
+
+        expenseData = {
+          total_inr: currentSpend,
+          period: 'today',
+        };
+
+        botContent =
+          currentSpend > 0
+            ? `You have spent \u20B9${currentSpend.toLocaleString('en-IN')} today. Where are you heading to next, and what are your interests?`
+            : 'You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?';
+        spokenText =
+          currentSpend > 0
+            ? `You have spent ${currentSpend} rupees today. Where are you heading to next, and what are your interests?`
+            : 'You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?';
+      } else if (isWeatherQuery(textToSend)) {
+        // 3. Live Weather Sensor Inquiry (typed or spoken)
         const context: UserSessionContext = {
           currentLocationName: currentCity ? currentCity : 'Jaipur',
           activeTripDeadlines: [],
           currentItinerary: null,
         };
-
         const routeResult = await routeVoiceInput(textToSend, context);
         detectedIntent = routeResult.intent;
         botContent = routeResult.spoken_response;
         spokenText = routeResult.spoken_response;
-
-        // Extract structured data from function call results
         if (routeResult.intent === 'get_weather' && routeResult.data) {
           weatherData = routeResult.data as WeatherData;
-        } else if (routeResult.intent === 'find_nearby_experience' && routeResult.data) {
-          experienceData = routeResult.data as ExperienceData;
-        } else if (routeResult.intent === 'log_expense' && routeResult.data) {
-          expenseData = routeResult.data as ExpenseData;
-          const addedAmt = Number(expenseData.added_amount) || 0;
-          const reportedTodayTotal = Number(expenseData.today_total_inr);
-          setTodayTotal((prev) => {
-            const nextTotal = !isNaN(reportedTodayTotal) && reportedTodayTotal > 0
-              ? reportedTodayTotal
-              : prev + addedAmt;
-            saveDailySpend(user?.id, nextTotal, {
-              amount: addedAmt,
-              note: expenseData?.note || 'expense',
-              category: expenseData?.category || 'other',
-            });
-            return nextTotal;
-          });
-          fetchTodayTotal();
-        } else if (routeResult.intent === 'get_expense_summary' && routeResult.data) {
-          expenseData = routeResult.data as ExpenseData;
-          const reportedTotal = Number(expenseData.total_inr) || 0;
-          setTodayTotal((prev) => {
-            const nextTotal = Math.max(prev, reportedTotal);
-            saveDailySpend(user?.id, nextTotal);
-            return nextTotal;
-          });
         }
       } else {
-        // Direct to cultural concierge for destination exploration, questions, and greetings
+        // 4. Cultural Concierge for destination exploration, questions, itineraries, greetings
         try {
           const chatRes = await api.chatWithConcierge({
             message: textToSend,
             city: currentCity || undefined,
-            chat_history: messages.map((m) => ({ role: m.role, content: m.content })),
+            chat_history: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
           });
           if (chatRes.context_destination) setCurrentCity(chatRes.context_destination);
           botContent = chatRes.reply;
@@ -685,7 +907,7 @@ export function AiGuidePage() {
       }
       cleanSpokenText = cleanSpokenText.replace(/[\u2014\u2015]/g, ', ').replace(/--+/g, '-').trim();
 
-      const botMsgId = `bot-${Date.now()}`;
+      const botMsgId = `bot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const botMsg: ChatMessage = {
         id: botMsgId,
         role: 'assistant',
@@ -727,13 +949,14 @@ export function AiGuidePage() {
       setMessages((prev) => [
         ...prev,
         {
-          id: `bot-err-${Date.now()}`,
+          id: `bot-err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           content: friendlyMsg,
         },
       ]);
     } finally {
+      isSendingRef.current = false;
       setIsLoading(false);
       resetTranscript();
     }
@@ -743,8 +966,8 @@ export function AiGuidePage() {
   // Render
   // ===========================================================================
 
-  // Input display: show live voice speech while listening, otherwise normal input value
-  const inputDisplayValue = isListening ? (interimTranscript || 'Listening to your voice...') : inputMessage;
+  // Input display: show real-time live voice translation/speech while listening, otherwise normal input value
+  const inputDisplayValue = isListening ? interimTranscript : inputMessage;
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-ink pb-72 sm:pb-88 pt-6 sm:pt-8 relative overflow-hidden">
@@ -771,23 +994,21 @@ export function AiGuidePage() {
             {/* Right side: expense total + fresh chat */}
             <div className="flex flex-col sm:items-end gap-3 flex-shrink-0">
               {/* Today's expense total */}
-              {isAuthenticated && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-[#FAF7F2] border border-[#E5DFD5] rounded-2xl shadow-xs">
-                  <IndianRupee className="w-3.5 h-3.5 text-[#C1443B] flex-shrink-0" />
-                  <div>
-                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-dusk-600">
-                      Today's Spend
-                    </div>
-                    <div className="text-sm font-mono font-black text-ink">
-                      {isTotalLoading ? (
-                        <span className="animate-pulse text-dusk">...</span>
-                      ) : (
-                        <>&#x20B9;{todayTotal.toLocaleString('en-IN')}</>
-                      )}
-                    </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#FAF7F2] border border-[#E5DFD5] rounded-2xl shadow-xs">
+                <IndianRupee className="w-3.5 h-3.5 text-[#C1443B] flex-shrink-0" />
+                <div>
+                  <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-dusk-600">
+                    Today's Spend
+                  </div>
+                  <div className="text-sm font-mono font-black text-ink">
+                    {isTotalLoading ? (
+                      <span className="animate-pulse text-dusk">...</span>
+                    ) : (
+                      <>&#x20B9;{todayTotal.toLocaleString('en-IN')}</>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Start fresh chat */}
               {isAuthenticated && messages.length > 1 && (
@@ -1361,7 +1582,7 @@ export function AiGuidePage() {
                       <div className="flex items-center justify-between pt-1 border-t border-[#E5DFD5]/70">
                         <AudioWaveformVisualizer isActive={isListening} barCount={20} />
                         <span className="text-[10px] font-mono text-dusk-600">
-                          Pause speaking or tap Send Now to submit
+                          Tap Solve or Send Now when finished speaking
                         </span>
                       </div>
                     </motion.div>
