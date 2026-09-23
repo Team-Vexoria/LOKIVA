@@ -6,6 +6,7 @@ import { HeroScrollExperience } from '../components/landing/HeroScrollExperience
 import { DeviceMockupSection } from '../components/landing/DeviceMockupSection';
 import { PhotosMapsReviewsSection } from '../components/landing/PhotosMapsReviewsSection';
 import { TagUsSection } from '../components/landing/TagUsSection';
+import { TravelBlogsSection } from '../components/landing/TravelBlogsSection';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { SplitWords } from '../components/ui/SplitWords';
 import { FaqSection } from '../components/faq/FaqSection';
@@ -270,7 +271,12 @@ export function HomePage() {
         <TagUsSection />
       </section>
 
-      {/* 7. FREQUENTLY ASKED QUESTIONS */}
+      {/* 7. TRAVEL BLOGS / STORIES FROM THE JOURNEY */}
+      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24">
+        <TravelBlogsSection />
+      </section>
+
+      {/* 8. FREQUENTLY ASKED QUESTIONS */}
       <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24 pb-24">
         <FaqSection />
       </section>
