@@ -71,7 +71,7 @@ export function HomePage() {
         ScrollTrigger.create({
           trigger: panel,
           start: 'top top',
-          end: '+=100vh',
+          end: '+=140vh',
           pin: true,
           pinSpacing: false, // Prevents giant empty blank spaces below
           anticipatePin: 1,
@@ -88,8 +88,8 @@ export function HomePage() {
             force3D: true,
             scrollTrigger: {
               trigger: panel,
-              start: 'top+=60vh top',
-              end: 'top+=140vh top',
+              start: 'top+=90vh top',
+              end: 'top+=170vh top',
               scrub: 0.8, // Smooth rAF interpolation to eliminate lag
               onUpdate: (self) => {
                 const inner = panel.querySelector<HTMLElement>('.panel-content');
@@ -190,7 +190,7 @@ export function HomePage() {
       <div className="card-stack-wrapper relative w-full">
         {/* Section A: Curated Cultural Journeys Showcase */}
         <section className="stack-panel relative z-10 bg-[#E8E2D9] min-h-screen flex flex-col justify-start overflow-hidden">
-          <div className="panel-content w-full max-w-7xl mx-auto pt-4 sm:pt-6 pb-16 px-4">
+          <div className="panel-content w-full max-w-7xl mx-auto pt-8 sm:pt-12 pb-10 px-4 sm:px-6">
             <DeviceMockupSection />
           </div>
         </section>
