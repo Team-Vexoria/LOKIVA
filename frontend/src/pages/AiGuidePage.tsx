@@ -17,6 +17,7 @@ import { useVoiceInput, cleanSpeechTranscript } from '../hooks/useVoiceInput';
 import { VOICE_SUGGESTIONS } from '../data/voiceSuggestions';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { AudioWaveformVisualizer } from '../components/voice/AudioWaveformVisualizer';
+import { VoiceRecordingSheet } from '../components/voice/VoiceRecordingSheet';
 import {
   Sparkles,
   Send,
@@ -392,6 +393,7 @@ export function AiGuidePage() {
   const {
     isListening,
     isTranscribing,
+    recordingDuration,
     interimTranscript,
     startListening,
     stopListening,
@@ -400,9 +402,6 @@ export function AiGuidePage() {
     resetTranscript,
     isSupported: voiceSupported,
   } = useVoiceInput({
-    onInterimTranscript: (liveText: string) => {
-      setInputMessage(cleanSpeechTranscript(liveText));
-    },
     onFinalTranscript: (text: string) => {
       handleSend(cleanSpeechTranscript(text), true);
     },
@@ -824,8 +823,8 @@ export function AiGuidePage() {
           today_total_inr: finalTotal,
         };
 
-        botContent = `Recorded \u20B9${amount.toLocaleString('en-IN')} for ${note}. Today's total spend is now \u20B9${finalTotal.toLocaleString('en-IN')}.`;
-        spokenText = `Recorded ${amount} rupees for ${note}. Today's total spend is now ${finalTotal} rupees.`;
+        botContent = `Recorded \u20B9${amount.toLocaleString('en-IN')} for ${note}. Today's total spend is now \u20B9${finalTotal.toLocaleString('en-IN')}.\n\nWhere are you heading to next, and what are your interests?`;
+        spokenText = `Recorded ${amount} rupees for ${note}. Today's total spend is now ${finalTotal} rupees. Where are you heading to next, and what are your interests?`;
       } else if (isExpenseInquiry(textToSend)) {
         // 2. Direct Expense Summary Inquiry (typed or spoken)
         detectedIntent = 'get_expense_summary';
@@ -838,12 +837,12 @@ export function AiGuidePage() {
 
         botContent =
           currentSpend > 0
-            ? `You have spent \u20B9${currentSpend.toLocaleString('en-IN')} today.`
-            : 'You have not recorded any expenses yet for today.';
+            ? `You have spent \u20B9${currentSpend.toLocaleString('en-IN')} today. Where are you heading to next, and what are your interests?`
+            : 'You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?';
         spokenText =
           currentSpend > 0
-            ? `You have spent ${currentSpend} rupees today.`
-            : 'You have not recorded any expenses yet for today.';
+            ? `You have spent ${currentSpend} rupees today. Where are you heading to next, and what are your interests?`
+            : 'You have not recorded any expenses yet for today. Where in India are you heading to, and what are your interests?';
       } else if (isWeatherQuery(textToSend)) {
         // 3. Live Weather Sensor Inquiry (typed or spoken)
         const context: UserSessionContext = {
@@ -866,15 +865,14 @@ export function AiGuidePage() {
             city: currentCity || undefined,
             chat_history: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
           });
-
           if (chatRes.context_destination) setCurrentCity(chatRes.context_destination);
-          botContent = chatRes.reply || 'No response received from the concierge service.';
-          spokenText = chatRes.reply || 'No response received.';
+          botContent = chatRes.reply;
+          spokenText = chatRes.reply;
           recommendations = chatRes.suggested_experiences || [];
         } catch (conciergeErr: any) {
-          console.warn('[AiGuide] Backend concierge error:', conciergeErr);
-          botContent = 'Could not reach the cultural concierge service. Please check your backend connection.';
-          spokenText = 'Could not reach the concierge service.';
+          console.error('[AiGuide] chatWithConcierge failed:', conciergeErr);
+          botContent = `I could not load recommendations for "${textToSend}": ${conciergeErr.message || 'Service unavailable'}. Please verify backend connection.`;
+          spokenText = 'I could not load recommendations right now. Please try again.';
         }
       }
 
@@ -969,8 +967,8 @@ export function AiGuidePage() {
   // Render
   // ===========================================================================
 
-  // Input display: show real-time live voice translation/speech while listening, otherwise normal input value
-  const inputDisplayValue = isListening ? interimTranscript : (isTranscribing ? 'Processing audio with Whisper AI...' : inputMessage);
+  // Input display: clean input value during normal typing, empty during active voice capture
+  const inputDisplayValue = isListening || isTranscribing ? '' : inputMessage;
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-ink pb-72 sm:pb-88 pt-6 sm:pt-8 relative overflow-hidden">
@@ -1512,99 +1510,19 @@ export function AiGuidePage() {
                 {/* Signature Voice Capture Panel docked right above input bar */}
                 <AnimatePresence>
                   {(isListening || isTranscribing) && (
-                    <motion.div
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.98 }}
-                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                      className="bg-gradient-to-r from-[#FAF8F5] via-[#FFFBF5] to-[#FAF7F2] border-2 border-[#C1443B]/35 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3 relative overflow-hidden"
-                    >
-                      {/* Ambient soft glow */}
-                      <div
-                        className="pointer-events-none absolute -top-10 -right-10 w-36 h-36 bg-[#F0A63B]/15 rounded-full blur-2xl"
-                        aria-hidden="true"
+                    <div id="live-voice-bubble" className="w-full">
+                      <VoiceRecordingSheet
+                        elapsedTime={
+                          recordingDuration
+                            ? `${String(Math.floor(recordingDuration / 60)).padStart(2, '0')}:${String(recordingDuration % 60).padStart(2, '0')}`
+                            : '00:00'
+                        }
+                        interimTranscript={interimTranscript}
+                        isTranscribing={isTranscribing}
+                        onCancel={cancelListening}
+                        onSubmit={submitListening}
                       />
-
-                      {/* Header with pulsing mic ring & actions */}
-                      <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#E5DFD5]">
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative flex items-center justify-center">
-                            {isTranscribing ? (
-                              <span className="relative flex items-center justify-center w-6 h-6 rounded-full bg-[#12213B] text-white shadow-xs">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F0A63B]" />
-                              </span>
-                            ) : (
-                              <>
-                                <motion.span
-                                  animate={shouldReduceMotion ? undefined : { scale: [1, 1.8, 1], opacity: [0.55, 0, 0.55] }}
-                                  transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-                                  className="absolute inline-flex h-7 w-7 rounded-full bg-[#C1443B] opacity-40"
-                                />
-                                <span className="relative flex items-center justify-center w-6 h-6 rounded-full bg-[#C1443B] text-white shadow-xs">
-                                  <Mic className="w-3.5 h-3.5" />
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          <div>
-                            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                              {isTranscribing ? 'Transcribing with Cloud AI' : 'Listening to your voice'}
-                            </span>
-                            <span className="hidden sm:inline-block text-[10px] font-mono text-dusk-600 ml-2">
-                              {isTranscribing ? '(Whisper Neural Speech-to-Text)' : '(Speak naturally in English or Hindi)'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={cancelListening}
-                            disabled={isTranscribing}
-                            className="px-3 py-1.5 rounded-xl border border-[#E5DFD5] hover:border-ink/30 bg-white hover:bg-[#FAF7F2] text-dusk-600 hover:text-ink text-xs font-sans font-medium transition cursor-pointer disabled:opacity-40"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={submitListening}
-                            disabled={isTranscribing}
-                            className="px-4 py-1.5 rounded-xl bg-[#C1443B] hover:bg-[#A33830] text-white text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <span>{isTranscribing ? 'Processing...' : 'Send Now'}</span>
-                            <Send className="w-3 h-3 text-[#F0A63B]" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Live speech transcription text */}
-                      <div className="min-h-[2.25rem] flex items-center px-1">
-                        {isTranscribing ? (
-                          <div className="flex items-center gap-2.5">
-                            <Loader2 className="w-4 h-4 animate-spin text-[#C1443B]" />
-                            <p className="text-sm font-heading font-semibold text-ink">
-                              Transcribing speech with Cloud Whisper AI...
-                            </p>
-                          </div>
-                        ) : interimTranscript.trim() || inputMessage.trim() ? (
-                          <p className="text-sm sm:text-base font-heading font-semibold text-ink leading-relaxed">
-                            "{interimTranscript || inputMessage}"
-                          </p>
-                        ) : (
-                          <p className="text-xs sm:text-sm font-sans italic text-[#C1443B]">
-                            Recording your voice... Speak naturally in Hindi or English, then tap Send Now
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Real-time Web Audio API waveform visualizer */}
-                      <div className="flex items-center justify-between pt-1 border-t border-[#E5DFD5]/70">
-                        <AudioWaveformVisualizer isActive={isListening} barCount={20} />
-                        <span className="text-[10px] font-mono text-dusk-600">
-                          {isTranscribing ? 'Translating audio...' : 'Tap Solve or Send Now when finished speaking'}
-                        </span>
-                      </div>
-                    </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
 
@@ -1625,6 +1543,7 @@ export function AiGuidePage() {
                   {voiceSupported && (
                     <button
                       type="button"
+                      disabled={isTranscribing}
                       onClick={() => {
                         unlockAudio();
                         if (isListening) {
@@ -1637,11 +1556,15 @@ export function AiGuidePage() {
                       className={`p-2.5 rounded-xl transition-all flex-shrink-0 cursor-pointer ${
                         isListening
                           ? 'bg-[#C1443B] text-white animate-pulse shadow-md ring-2 ring-[#C1443B]/30'
+                          : isTranscribing
+                          ? 'bg-[#FAF7F2] text-dusk-400 border border-[#E5DFD5] cursor-not-allowed opacity-60'
                           : 'bg-[#FAF7F2] hover:bg-paper-200 text-ink border border-[#E5DFD5]'
                       }`}
                     >
                       {isListening ? (
                         <MicOff className="w-4 h-4" />
+                      ) : isTranscribing ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#C1443B]" />
                       ) : (
                         <Mic className="w-4 h-4 text-[#C1443B]" />
                       )}
@@ -1655,13 +1578,13 @@ export function AiGuidePage() {
                     onChange={isListening || isTranscribing ? undefined : (e) => setInputMessage(e.target.value)}
                     readOnly={isListening || isTranscribing}
                     placeholder={
-                      isTranscribing
-                        ? 'Transcribing your audio with AI...'
-                        : isListening
-                        ? 'Listening to your voice... Speak now'
+                      isListening
+                        ? 'Listening...'
+                        : isTranscribing
+                        ? 'Translating...'
                         : !currentCity
                         ? 'Where in India are you heading? (e.g., Jaipur, Varanasi, Goa...)'
-                        : `Ask about ${currentCity} - weather, experiences, expenses...`
+                        : `Ask about ${currentCity}: weather, experiences, expenses...`
                     }
                     className={`flex-1 min-w-0 bg-transparent px-2.5 sm:px-3.5 py-2 text-xs sm:text-sm text-ink focus:outline-none placeholder-dusk font-sans ${
                       isListening || isTranscribing ? 'font-medium text-[#C1443B]' : ''
@@ -1670,11 +1593,20 @@ export function AiGuidePage() {
 
                   <button
                     type="submit"
-                    disabled={isLoading || isTranscribing || (!inputMessage.trim() && !isListening && !interimTranscript.trim())}
+                    disabled={isLoading || isTranscribing || (!inputMessage.trim() && !isListening)}
                     className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#12213B] hover:bg-[#1D2E49] text-white rounded-xl text-xs font-heading font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-xs flex-shrink-0 cursor-pointer"
                   >
-                    <span>{isTranscribing ? 'Processing...' : isListening ? 'Send Voice' : 'Solve'}</span>
-                    <Send className="w-3.5 h-3.5 text-[#F0A63B]" />
+                    {isTranscribing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F0A63B]" />
+                        <span>Translating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{isListening ? 'Send' : 'Solve'}</span>
+                        <Send className="w-3.5 h-3.5 text-[#F0A63B]" />
+                      </>
+                    )}
                   </button>
                 </form>
               </>

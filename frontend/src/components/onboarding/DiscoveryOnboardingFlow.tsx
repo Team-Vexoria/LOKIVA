@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -43,13 +44,16 @@ export interface DiscoveryAnswers {
   };
 }
 
+export const DAY_OPTIONS = [1, 3, 5, 7, 10, 14, 21];
+export const BUDGET_OPTIONS = [1000, 3000, 5000, 9000, 15000, 25000];
+
 export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
   destination: 'Smart Match',
   interests: ['heritage', 'crafts', 'food'],
   days: 5,
   time_available_minutes: 2400,
-  budget_daily_inr: 4500,
-  budget_max_inr: 22500,
+  budget_daily_inr: 5000,
+  budget_max_inr: 25000,
   group_type: 'couple',
   group_size: 2,
   pace: 'balanced',
@@ -64,9 +68,30 @@ const DESTINATION_HUBS = [
   {
     id: 'Smart Match',
     title: 'Smart Match for my Vibe',
-    subtitle: 'Recommended • Automatically matches the ideal Indian hub based on your cultural interests',
+    subtitle: 'Recommended: Automatically matches the ideal Indian hub based on your cultural interests',
     badge: 'AI Curated',
     icon: Sparkles,
+  },
+  {
+    id: 'Kochi',
+    title: 'Kochi, Kerala',
+    subtitle: 'Backwater canals, spice warehouses, Kathakali dance & Ayurvedic sanctuaries',
+    badge: 'Wellness & Nature',
+    icon: Mountain,
+  },
+  {
+    id: 'Ladakh',
+    title: 'Leh, Ladakh',
+    subtitle: 'High-altitude monasteries, ancient Silk Route passes & starry mountain valleys',
+    badge: 'Frontiers & Monasteries',
+    icon: Mountain,
+  },
+  {
+    id: 'Mumbai',
+    title: 'Mumbai, Maharashtra',
+    subtitle: 'Art Deco enclaves, colonial architecture, Parsi cafes & coastal bazaars',
+    badge: 'Arts & Culture',
+    icon: Compass,
   },
   {
     id: 'Jaipur',
@@ -83,25 +108,11 @@ const DESTINATION_HUBS = [
     icon: Flame,
   },
   {
-    id: 'Mumbai',
-    title: 'Mumbai, Maharashtra',
-    subtitle: 'Art Deco enclaves, colonial architecture, Parsi cafes & coastal bazaars',
-    badge: 'Arts & Culture',
-    icon: Compass,
-  },
-  {
     id: 'Delhi',
     title: 'Delhi, National Capital',
     subtitle: 'Mughal sandstone masterpieces, spice markets & century-old culinary lanes',
     badge: 'Gastronomy & History',
     icon: Utensils,
-  },
-  {
-    id: 'Kochi',
-    title: 'Kochi, Kerala',
-    subtitle: 'Backwater canals, spice warehouses, Kathakali dance & Ayurvedic sanctuaries',
-    badge: 'Wellness & Nature',
-    icon: Mountain,
   },
   {
     id: 'Udaipur',
@@ -271,13 +282,62 @@ export function DiscoveryOnboardingFlow({
   };
 
   const resolveSmartCity = (dest: string, userInterests: string[]): string => {
-    if (dest && dest !== 'Smart Match') return dest;
-    if (userInterests.includes('rituals')) return 'Varanasi';
-    if (userInterests.includes('wellness') || (userInterests.includes('nature') && !userInterests.includes('heritage'))) return 'Kochi';
-    if (userInterests.includes('food') && !userInterests.includes('crafts')) return 'Delhi';
-    if (userInterests.includes('arts') && !userInterests.includes('monuments')) return 'Mumbai';
-    if (userInterests.includes('monuments') && userInterests.includes('nature')) return 'Udaipur';
-    return 'Jaipur';
+    if (dest && dest !== 'Smart Match') {
+      if (dest === 'Ladakh') return 'Leh';
+      return dest;
+    }
+
+    const validInterests = userInterests && userInterests.length > 0 ? userInterests : ['heritage', 'crafts', 'food'];
+
+    const hubs = [
+      {
+        city: 'Kochi',
+        scores: { wellness: 6, nature: 5, arts: 4, food: 3, offbeat: 3, heritage: 2, crafts: 2 },
+      },
+      {
+        city: 'Leh',
+        scores: { nature: 6, offbeat: 5, monuments: 4, rituals: 3, heritage: 3, crafts: 2 },
+      },
+      {
+        city: 'Mumbai',
+        scores: { arts: 6, markets: 5, food: 5, heritage: 3, offbeat: 4, crafts: 2 },
+      },
+      {
+        city: 'Varanasi',
+        scores: { rituals: 6, crafts: 4, food: 3, heritage: 3, offbeat: 4 },
+      },
+      {
+        city: 'Delhi',
+        scores: { food: 6, monuments: 4, heritage: 4, markets: 4, crafts: 2 },
+      },
+      {
+        city: 'Amritsar',
+        scores: { food: 5, rituals: 5, crafts: 3, heritage: 3, monuments: 2 },
+      },
+      {
+        city: 'Udaipur',
+        scores: { nature: 4, monuments: 4, heritage: 4, arts: 4, crafts: 3 },
+      },
+      {
+        city: 'Jaipur',
+        scores: { crafts: 6, heritage: 4, markets: 4, monuments: 3, food: 2 },
+      },
+    ];
+
+    const scoredHubs = hubs.map((hub) => {
+      let score = 0;
+      for (const interest of validInterests) {
+        score += (hub.scores as Record<string, number>)[interest] || 0;
+      }
+      return { city: hub.city, score };
+    });
+
+    scoredHubs.sort((a, b) => b.score - a.score);
+
+    const highestScore = scoredHubs[0].score;
+    const topContenders = scoredHubs.filter((h) => h.score >= highestScore - 1);
+    const chosen = topContenders[Math.floor(Math.random() * topContenders.length)] || scoredHubs[0];
+    return chosen.city;
   };
 
   const handleStartSynthesis = async () => {
@@ -365,17 +425,19 @@ export function DiscoveryOnboardingFlow({
     maximumFractionDigits: 0,
   }).format(budgetDaily * days);
 
-  return (
+  if (!isOpen) return null;
+
+  const content = (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[9999] bg-[#12213B]/40 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+        className="fixed inset-0 z-[9999] bg-[#12213B]/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
         <motion.div
           className="relative w-full max-w-2xl bg-[#FAF7F2] border border-[#E5DFD5] rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto"
-          style={{ maxHeight: 'calc(100vh - 2rem)' }}
+          style={{ maxHeight: 'min(90vh, 650px)' }}
           initial={{ scale: 0.96, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.96, opacity: 0, y: 15 }}
@@ -443,7 +505,7 @@ export function DiscoveryOnboardingFlow({
           </div>
 
           {/* Central Question Stage */}
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1 min-h-[400px] flex flex-col justify-between">
+          <div className="p-5 sm:p-7 overflow-y-auto flex-1 min-h-[360px] flex flex-col justify-between">
             <AnimatePresence mode="wait" custom={direction}>
               {/* ======================================================= */}
               {/* STEP 1: DESTINATION HUB (NEW: TARGET SPECIFIC REGION)   */}
@@ -643,24 +705,31 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Responsive Slider */}
+                  {/* Responsive Slider with 1:1 Matched Ticks */}
                   <div className="space-y-3 px-2">
                     <input
                       type="range"
-                      min={1}
-                      max={21}
+                      min={0}
+                      max={DAY_OPTIONS.length - 1}
                       step={1}
-                      value={days}
-                      onChange={(e) => setDays(parseInt(e.target.value, 10))}
+                      value={DAY_OPTIONS.indexOf(days) !== -1 ? DAY_OPTIONS.indexOf(days) : 2}
+                      onChange={(e) => setDays(DAY_OPTIONS[parseInt(e.target.value, 10)])}
                       className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
                     />
 
-                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-1">
-                      <span>1 Day</span>
-                      <span>3 Days</span>
-                      <span>7 Days</span>
-                      <span>14 Days</span>
-                      <span>21 Days</span>
+                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-0.5">
+                      {DAY_OPTIONS.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setDays(d)}
+                          className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
+                            days === d ? 'text-[#C85A32] font-bold underline' : ''
+                          }`}
+                        >
+                          {d} {d === 1 ? 'Day' : 'Days'}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -739,23 +808,31 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Responsive Slider */}
+                  {/* Responsive Slider with 1:1 Matched Ticks */}
                   <div className="space-y-3 px-2">
                     <input
                       type="range"
-                      min={1000}
-                      max={25000}
-                      step={500}
-                      value={budgetDaily}
-                      onChange={(e) => setBudgetDaily(parseInt(e.target.value, 10))}
+                      min={0}
+                      max={BUDGET_OPTIONS.length - 1}
+                      step={1}
+                      value={BUDGET_OPTIONS.indexOf(budgetDaily) !== -1 ? BUDGET_OPTIONS.indexOf(budgetDaily) : 2}
+                      onChange={(e) => setBudgetDaily(BUDGET_OPTIONS[parseInt(e.target.value, 10)])}
                       className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
                     />
 
-                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-1">
-                      <span>₹1,000</span>
-                      <span>₹5,000</span>
-                      <span>₹12,000</span>
-                      <span>₹25,000+</span>
+                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-0.5">
+                      {BUDGET_OPTIONS.map((b) => (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setBudgetDaily(b)}
+                          className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
+                            budgetDaily === b ? 'text-[#C85A32] font-bold underline' : ''
+                          }`}
+                        >
+                          ₹{b >= 1000 ? `${b / 1000}k` : b}{b === 25000 ? '+' : ''}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1251,4 +1328,6 @@ export function DiscoveryOnboardingFlow({
       </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }

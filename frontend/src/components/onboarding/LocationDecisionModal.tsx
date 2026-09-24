@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Map, Search, Sparkles, Compass, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useItineraryStore } from '../../store/useItineraryStore';
 
 import { DiscoveryOnboardingFlow, DiscoveryAnswers } from './DiscoveryOnboardingFlow';
 
@@ -61,7 +63,28 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
     setHasMadeChoice(true);
     setShowDiscoveryFlow(false);
     onClose();
-    navigate('/discovery-map');
+
+    const city = answers.destination || 'Jaipur';
+    const stateName =
+      city.toLowerCase().includes('kochi') ? 'Kerala' :
+      city.toLowerCase().includes('mumbai') ? 'Maharashtra' :
+      city.toLowerCase().includes('leh') || city.toLowerCase().includes('ladakh') ? 'Ladakh' :
+      city.toLowerCase().includes('varanasi') ? 'Uttar Pradesh' :
+      city.toLowerCase().includes('delhi') ? 'Delhi' :
+      city.toLowerCase().includes('amritsar') ? 'Punjab' :
+      city.toLowerCase().includes('udaipur') || city.toLowerCase().includes('jaipur') ? 'Rajasthan' : 'Rajasthan';
+
+    useItineraryStore.getState().generateTrip({
+      city,
+      state: stateName,
+      daysCount: answers.days,
+      pace: answers.pace,
+      budgetLimit: answers.budget_max_inr,
+      travelers: answers.group_size,
+      focusCategory: answers.interests[0] || 'heritage',
+    });
+
+    navigate('/itinerary');
   };
 
   const handleSkip = () => {
@@ -111,12 +134,11 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
 
   if (!isOpen || hasMadeChoice) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-ink/80 backdrop-blur-md overflow-y-auto"
-          style={{ padding: '3rem 1rem' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#12213B]/60 backdrop-blur-md overflow-y-auto p-4 sm:p-6"
           variants={overlayVariants}
           initial="hidden"
           animate="visible"
@@ -124,7 +146,7 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
         >
           <motion.div
             className="relative w-full max-w-md mx-auto my-auto flex flex-col"
-            style={{ maxHeight: 'min(580px, calc(100vh - 6rem))' }}
+            style={{ maxHeight: 'min(580px, calc(100vh - 3rem))' }}
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -267,6 +289,8 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 // Hook to check if user has onboarded and control modal

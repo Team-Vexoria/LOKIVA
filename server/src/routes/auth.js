@@ -82,7 +82,7 @@ authRouter.post('/register', async (req, res) => {
   }
 });
 
-// 3. Firebase Login / Sync — identity comes only from a verified ID token.
+// 3. Firebase Login / Sync: identity comes only from a verified ID token.
 authRouter.post('/firebase-login', async (req, res) => {
   try {
     const { id_token, role: requestedRole = 'traveler', full_name } = req.body;

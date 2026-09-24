@@ -81,16 +81,28 @@ const KNOWN_CITIES = [
   'Pondicherry', 'Puducherry', 'Hampi', 'Rishikesh', 'Haridwar', 'Shimla',
   'Darjeeling', 'Srinagar', 'Lucknow', 'Bhopal', 'Bhubaneswar', 'Mysore',
   'Mysuru', 'Jodhpur', 'Puri', 'Shillong', 'Gangtok', 'Munnar', 'Khajuraho',
-  'Mathura', 'Bodh Gaya', 'Mahabalipuram', 'Leh', 'Ujjain', 'Patan',
-  'Kerala', 'Karnataka', 'Tamil Nadu', 'Rajasthan', 'Himachal Pradesh',
-  'Uttarakhand', 'Punjab', 'Maharashtra', 'West Bengal', 'Gujarat', 'Kashmir', 'Ladakh'
+  'Mathura', 'Bodh Gaya', 'Mahabalipuram', 'Leh', 'Ujjain', 'Patan'
 ];
 
 function detectCityFromText(text) {
   if (!text || typeof text !== 'string') return null;
+  const lower = text.toLowerCase();
+
+  // If user is asking a broad regional or state-level decision question, do not force a single city
+  if (/(which state|what state|suggest a state|south india|north india|east india|west india|where to go in india|where should i go|compare)/i.test(lower)) {
+    return null;
+  }
+
   for (const city of KNOWN_CITIES) {
+    // Check if city name is mentioned
     const regex = new RegExp(`\\b${city}\\b`, 'i');
     if (regex.test(text)) {
+      // Check if city was mentioned negatively (e.g., "already visited Kerala", "already been to Kochi", "outside of Goa")
+      const negativeRegex = new RegExp(`(already visited|already been to|not interested in|other than|except|outside of|excluding|leaving)\\s+([\\w\\s]*\\b)?${city}\\b`, 'i');
+      if (negativeRegex.test(text)) {
+        continue;
+      }
+
       if (/bangalore/i.test(city)) return 'Bengaluru';
       if (/puducherry/i.test(city)) return 'Pondicherry';
       if (/calcutta/i.test(city)) return 'Kolkata';
@@ -98,15 +110,6 @@ function detectCityFromText(text) {
       if (/cochin/i.test(city)) return 'Kochi';
       if (/mysuru/i.test(city)) return 'Mysore';
       if (/new delhi/i.test(city)) return 'Delhi';
-      if (/kerala/i.test(city)) return 'Kochi';
-      if (/karnataka/i.test(city)) return 'Mysore';
-      if (/tamil nadu|tamil/i.test(city)) return 'Chennai';
-      if (/rajasthan/i.test(city)) return 'Jaipur';
-      if (/punjab/i.test(city)) return 'Amritsar';
-      if (/himachal/i.test(city)) return 'Shimla';
-      if (/uttarakhand/i.test(city)) return 'Rishikesh';
-      if (/west bengal/i.test(city)) return 'Kolkata';
-      if (/maharashtra/i.test(city)) return 'Mumbai';
       return city;
     }
   }
@@ -173,7 +176,10 @@ aiRouter.post('/concierge', async (req, res) => {
       ? requestedCity.trim()
       : null;
 
-    let activeCity = mentionedInMessage || cleanRequestedCity || cityInUserHistory || null;
+    // If the message is asking about a region, multi-state comparison, or general advice across India, don't lock to a single city
+    const isRegionalOrGeneral = /(which state|suggest.*state|what state|south india|north india|east india|west india|where to go in india|where should i go|already visited|other than|except|outside of|compare)/i.test(cleanMsg);
+
+    let activeCity = isRegionalOrGeneral ? null : (mentionedInMessage || cleanRequestedCity || cityInUserHistory || null);
     const intent = parseIntentFromPrompt(message);
 
     // 2. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
