@@ -1,16 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Browser SpeechRecognition interface compatibility
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-  message?: string;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
 export interface UseVoiceInputOptions {
   onFinalTranscript?: (text: string) => void;
   onInterimTranscript?: (text: string) => void;
@@ -19,6 +8,7 @@ export interface UseVoiceInputOptions {
 
 export interface UseVoiceInputResult {
   isListening: boolean;
+  isTranscribing: boolean;
   transcript: string;
   interimTranscript: string;
   startListening: () => void;
@@ -30,97 +20,62 @@ export interface UseVoiceInputResult {
   isSupported: boolean;
 }
 
-/**
- * Eliminates consecutive duplicate word sequences of any length (e.g. phrases, words)
- */
-export function deduplicatePhrases(text: string): string {
-  if (!text) return '';
-  const words = text.trim().split(/\s+/);
-  if (words.length <= 1) return text.trim();
 
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (let phraseLen = Math.floor(words.length / 2); phraseLen >= 1; phraseLen--) {
-      for (let i = 0; i <= words.length - 2 * phraseLen; i++) {
-        let isRepeat = true;
-        for (let j = 0; j < phraseLen; j++) {
-          if (words[i + j].toLowerCase() !== words[i + phraseLen + j].toLowerCase()) {
-            isRepeat = false;
-            break;
-          }
-        }
-        if (isRepeat) {
-          words.splice(i + phraseLen, phraseLen);
-          changed = true;
-          break;
-        }
-      }
-      if (changed) break;
-    }
-  }
-
-  return words.join(' ');
-}
 
 /**
- * Intelligent Speech Transcript Cleaner:
- * 1. Eliminates consecutive duplicate phrases and word stuttering
- * 2. Corrects common Indian English travel acoustic homophones
- * 3. Normalizes spacing and capitalization
+ * Cleans extra whitespace from speech transcript
  */
 export function cleanSpeechTranscript(raw: string): string {
   if (!raw) return '';
-  let text = deduplicatePhrases(raw);
-
-  // Common Indian English travel acoustic & homophone corrections:
-  // "give me identity" / "plan identity" / "2 days identity" -> "itinerary"
-  text = text.replace(
-    /\b(give me|make an?|plan an?|suggest an?|create an?|for an?|the|my|two days|2 days|3 days|three days|4 days|5 days|weekend)\s+identity\b/gi,
-    '$1 itinerary'
-  );
-  text = text.replace(/\bidentity\s+for\s+(?:that|it|this|me)\b/gi, 'itinerary for that');
-  text = text.replace(/\b(?:iterinary|iternary|itinary|itinery)\b/gi, 'itinerary');
-  // "Hello Kiva" / "Hey Kiva" / "Hi Kiva" -> "Hello Lokiva"
-  text = text.replace(/\b(hello|hey|hi)\s+kiva\b/gi, '$1 Lokiva');
-  text = text.replace(/\bkiva\b/gi, 'Lokiva');
-  // "for two version" / "two version" -> "for two persons"
-  text = text.replace(/\b(for\s+)?(two|2|three|3|four|4|five|5)\s+version\b/gi, '$1$2 persons');
-
-  // Normalize spaces
-  text = text.replace(/\s+/g, ' ').trim();
-
-  // Capitalize first letter
-  if (text.length > 0) {
-    text = text.charAt(0).toUpperCase() + text.slice(1);
-  }
-
-  return text;
+  return raw.replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Transcribes audio via FastAPI faster-whisper backend
+ */
+async function transcribeWithFasterWhisper(blob: Blob): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    const isMp4 = blob.type.includes('mp4');
+    const filename = isMp4 ? 'recording.mp4' : 'recording.webm';
+    formData.append('file', blob, filename);
+
+    console.log(`[VOICE] Submitting audio to /stt?task=translate (type: ${blob.type}, size: ${blob.size} bytes)...`);
+    const res = await fetch('/stt?task=translate', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.text === 'string') {
+        const text = data.text.trim();
+        console.log(`[VOICE] faster-whisper translated result (${data.provider || 'local'}):`, text);
+        return text;
+      }
+    } else {
+      console.warn('[VOICE] /stt response status:', res.status);
+    }
+  } catch (err: any) {
+    console.warn('[VOICE] faster-whisper request error:', err?.message || err);
+  }
+  return null;
+}
 
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
-  const { onFinalTranscript, onInterimTranscript, lang = 'en-IN' } = options;
+  const { onFinalTranscript, onInterimTranscript } = options;
   const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(true);
 
-  const recognitionRef = useRef<any>(null);
-  const isRecognizingRef = useRef(false);
-  const isUserIntentListeningRef = useRef(false);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const isSubmittingRef = useRef(false);
 
-  // Cumulative confirmed speech across auto-restarts within the active voice turn
-  const accumulatedSpeechRef = useRef('');
-  // Confirmed final speech for the current recognition session
-  const currentSessionConfirmedRef = useRef('');
-  // Latest unified live speech string for the entire voice turn
-  const currentLiveSpeechRef = useRef('');
-
-  const silenceTimerRef = useRef<any>(null);
-  const restartTimerRef = useRef<any>(null);
   const onFinalTranscriptRef = useRef(onFinalTranscript);
   const onInterimTranscriptRef = useRef(onInterimTranscript);
 
@@ -129,272 +84,148 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     onInterimTranscriptRef.current = onInterimTranscript;
   });
 
-  const finalizeAndSubmit = useCallback((explicitText?: string) => {
-    if (isSubmittingRef.current) return;
-    if (!isUserIntentListeningRef.current && !explicitText) return;
-    isSubmittingRef.current = true;
-    isUserIntentListeningRef.current = false;
-
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (restartTimerRef.current) {
-      clearTimeout(restartTimerRef.current);
-      restartTimerRef.current = null;
-    }
-
-    const rawToSubmit = (explicitText !== undefined ? explicitText : currentLiveSpeechRef.current).trim();
-    const toSubmit = cleanSpeechTranscript(rawToSubmit);
-
-    // Instantly abort recognition to prevent trailing audio from restarting
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch {}
-      isRecognizingRef.current = false;
-    }
-
-    setIsListening(false);
-    setInterimTranscript('');
-    accumulatedSpeechRef.current = '';
-    currentSessionConfirmedRef.current = '';
-    currentLiveSpeechRef.current = '';
-
-    if (toSubmit) {
-      console.log('[VOICE] Finalized clean speech submitted:', toSubmit);
-      setTranscript(toSubmit);
-      if (onFinalTranscriptRef.current) {
-        onFinalTranscriptRef.current(toSubmit);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasMedia = Boolean(navigator?.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined');
+      if (!hasMedia) {
+        setIsSupported(false);
       }
     }
-
-    setTimeout(() => {
-      isSubmittingRef.current = false;
-    }, 400);
   }, []);
 
-  useEffect(() => {
-    // Check microphone permission
-    if (navigator?.permissions?.query) {
-      navigator.permissions
-        .query({ name: 'microphone' as any })
-        .then((permissionStatus) => {
-          console.log('[VOICE] Microphone permission state:', permissionStatus.state);
-        })
-        .catch(() => {});
+  const cleanupMedia = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
     }
+    mediaRecorderRef.current = null;
 
-    const SpeechRecognitionClass =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognitionClass) {
-      setIsSupported(false);
-      console.error('[VOICE] SpeechRecognition API is not supported in this browser');
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognitionClass();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = lang;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        console.log('[VOICE] SpeechRecognition engine started');
-        isRecognizingRef.current = true;
-        setIsListening(true);
-        setError(null);
-      };
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let sessionConfirmed = '';
-        let sessionInterim = '';
-
-        // Iterate over the complete results list of THIS recognition session
-        for (let i = 0; i < event.results.length; i++) {
-          const res = event.results[i];
-          const segment = (res[0]?.transcript || '').trim();
-          if (!segment) continue;
-
-          if (res.isFinal) {
-            sessionConfirmed = sessionConfirmed ? `${sessionConfirmed} ${segment}` : segment;
-          } else {
-            sessionInterim = sessionInterim ? `${sessionInterim} ${segment}` : segment;
-          }
-        }
-
-        // Keep current session's confirmed text
-        currentSessionConfirmedRef.current = sessionConfirmed;
-
-        // Prefix with speech accumulated across earlier restarts in this same turn
-        const prefix = accumulatedSpeechRef.current;
-        const confirmedTurnRaw = prefix
-          ? (sessionConfirmed ? `${prefix} ${sessionConfirmed}` : prefix)
-          : sessionConfirmed;
-
-        const liveTurnRaw = sessionInterim
-          ? (confirmedTurnRaw ? `${confirmedTurnRaw} ${sessionInterim}` : sessionInterim)
-          : confirmedTurnRaw;
-
-        // Clean speech through deduplication and Indian travel homophone filter
-        const cleanLive = cleanSpeechTranscript(liveTurnRaw);
-        const cleanConfirmed = cleanSpeechTranscript(confirmedTurnRaw);
-
-        if (cleanLive) {
-          currentLiveSpeechRef.current = cleanLive;
-          setTranscript(cleanConfirmed);
-          setInterimTranscript(cleanLive);
-          if (onInterimTranscriptRef.current) {
-            onInterimTranscriptRef.current(cleanLive);
-          }
-        }
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.log('[VOICE] recognition error status:', event.error);
-        if (event.error === 'no-speech' || event.error === 'aborted') {
-          return;
-        }
-        setError(event.message || `Microphone error: ${event.error}`);
-        isUserIntentListeningRef.current = false;
-        isRecognizingRef.current = false;
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        isRecognizingRef.current = false;
-        console.log('[VOICE] recognition stream ended. userIntent:', isUserIntentListeningRef.current);
-
-        // If user still intends to be recording, preserve all live speech captured so far
-        if (isUserIntentListeningRef.current) {
-          // Commit everything said up to this point so next session appends to it seamlessly
-          if (currentLiveSpeechRef.current) {
-            accumulatedSpeechRef.current = cleanSpeechTranscript(currentLiveSpeechRef.current);
-            currentSessionConfirmedRef.current = '';
-          }
-
-          if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
-          restartTimerRef.current = setTimeout(() => {
-            if (isUserIntentListeningRef.current && !isRecognizingRef.current) {
-              try {
-                console.log('[VOICE] Restarting recognition stream to continue capturing speech');
-                recognition.start();
-                isRecognizingRef.current = true;
-              } catch (startErr) {
-                console.warn('[VOICE] Safe restart note:', startErr);
-              }
-            }
-          }, 80);
-          return;
-        }
-
-        setIsListening(false);
-        setInterimTranscript('');
-      };
-
-      recognitionRef.current = recognition;
-    } catch (err: any) {
-      setIsSupported(false);
-      console.error('[VOICE] Speech recognition init error:', err);
-      setError(err?.message || 'Failed to initialize speech recognition');
-    }
-
-    return () => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
-      if (recognitionRef.current) {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
         try {
-          recognitionRef.current.abort();
+          track.stop();
         } catch {}
-      }
-      isRecognizingRef.current = false;
-    };
-  }, [lang, finalizeAndSubmit]);
-
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current) {
-      setError('Speech recognition is not supported in this browser.');
-      return;
+      });
+      mediaStreamRef.current = null;
     }
+  }, []);
+
+  const processAndSubmitAudio = useCallback(async (audioBlob: Blob) => {
+    setIsListening(false);
+    setIsTranscribing(true);
+
+    let extractedText = '';
+
+    if (audioBlob && audioBlob.size > 500) {
+      const whisperText = await transcribeWithFasterWhisper(audioBlob);
+      if (whisperText && whisperText.trim()) {
+        extractedText = whisperText.trim();
+      }
+    } else {
+      console.warn('[VOICE] Audio blob is empty or too short:', audioBlob?.size);
+    }
+
+    const clean = cleanSpeechTranscript(extractedText);
+    console.log('[VOICE] Final clean transcript resolved:', clean);
+
+    setTranscript(clean);
+    setInterimTranscript(clean);
+    setIsTranscribing(false);
+    isSubmittingRef.current = false;
+
+    if (clean && onFinalTranscriptRef.current) {
+      onFinalTranscriptRef.current(clean);
+    } else if (!clean) {
+      setError('Could not recognize speech. Please speak closer to your microphone and try again.');
+    }
+  }, []);
+
+  const startListening = useCallback(async () => {
     setError(null);
     setTranscript('');
     setInterimTranscript('');
-    accumulatedSpeechRef.current = '';
-    currentSessionConfirmedRef.current = '';
-    currentLiveSpeechRef.current = '';
-    isUserIntentListeningRef.current = true;
+    chunksRef.current = [];
     isSubmittingRef.current = false;
 
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      mediaStreamRef.current = stream;
 
-    if (!isRecognizingRef.current) {
-      try {
-        recognitionRef.current.start();
-        isRecognizingRef.current = true;
-        setIsListening(true);
-      } catch (err: any) {
-        console.warn('[VOICE] startListening caught:', err);
-        if (err?.name === 'InvalidStateError') {
-          isRecognizingRef.current = true;
-          setIsListening(true);
-        }
+      let mimeType = 'audio/webm;codecs=opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
       }
-    } else {
+
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const finalBlob = new Blob(chunksRef.current, {
+          type: recorder.mimeType || 'audio/webm',
+        });
+        cleanupMedia();
+        processAndSubmitAudio(finalBlob);
+      };
+
+      // Request data in 100ms intervals
+      recorder.start(100);
       setIsListening(true);
+      console.log('[VOICE] MediaRecorder voice recording active with mimeType:', recorder.mimeType);
+    } catch (err: any) {
+      console.error('[VOICE] Microphone initialization error:', err);
+      setError(err?.message || 'Could not open microphone. Please allow microphone access in browser settings.');
+      setIsListening(false);
     }
-  }, []);
-
-  const submitListening = useCallback(() => {
-    finalizeAndSubmit();
-  }, [finalizeAndSubmit]);
-
-  const cancelListening = useCallback(() => {
-    isUserIntentListeningRef.current = false;
-    isSubmittingRef.current = false;
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    if (restartTimerRef.current) {
-      clearTimeout(restartTimerRef.current);
-      restartTimerRef.current = null;
-    }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch {}
-      isRecognizingRef.current = false;
-    }
-    setIsListening(false);
-    setInterimTranscript('');
-    accumulatedSpeechRef.current = '';
-    currentSessionConfirmedRef.current = '';
-    currentLiveSpeechRef.current = '';
-  }, []);
+  }, [cleanupMedia, processAndSubmitAudio]);
 
   const stopListening = useCallback(() => {
     if (isSubmittingRef.current) return;
-    if (isUserIntentListeningRef.current && currentLiveSpeechRef.current.trim()) {
-      finalizeAndSubmit();
+    isSubmittingRef.current = true;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
     } else {
-      cancelListening();
+      cleanupMedia();
+      setIsListening(false);
     }
-  }, [finalizeAndSubmit, cancelListening]);
+  }, [cleanupMedia]);
+
+  const submitListening = useCallback(() => {
+    stopListening();
+  }, [stopListening]);
+
+  const cancelListening = useCallback(() => {
+    isSubmittingRef.current = false;
+    cleanupMedia();
+    chunksRef.current = [];
+    setIsListening(false);
+    setIsTranscribing(false);
+    setInterimTranscript('');
+  }, [cleanupMedia]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
     setInterimTranscript('');
-    accumulatedSpeechRef.current = '';
-    currentSessionConfirmedRef.current = '';
-    currentLiveSpeechRef.current = '';
     setError(null);
   }, []);
 
   return {
     isListening,
+    isTranscribing,
     transcript,
     interimTranscript,
     startListening,

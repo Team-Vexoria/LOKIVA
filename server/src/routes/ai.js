@@ -176,32 +176,7 @@ aiRouter.post('/concierge', async (req, res) => {
     let activeCity = mentionedInMessage || cleanRequestedCity || cityInUserHistory || null;
     const intent = parseIntentFromPrompt(message);
 
-    // 2. CASE: Pure Greeting without content ("hi", "hello", "namaste")
-    if (isGreeting) {
-      if (!activeCity) {
-        return res.json({
-          reply: sanitizeAiText(`Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nI am here to help you experience the living soul of India, from timeless heritage monuments and sacred rituals to generational street food stalls and hands-on master artisan workshops.\n\nTo tailor the most authentic recommendations for you:\n• **Which destination or region in India are you considering?** (e.g., South India backwaters, Rajasthan royal palaces, Varanasi ghats, or Mumbai coastal trails?)\n• **How many days or hours do you have for your trip?**\n• **Who is traveling and what's your preferred vibe?** (Historic architecture, hands-on craft workshops, or culinary trails?)\n\nShare what you have in mind and I will curate a personalized plan for you!`),
-          tokens_used: 25,
-          model: 'lokiva-instant',
-          extracted_intent: intent,
-          suggested_experiences: [],
-          context_destination: null,
-          state: 'India',
-        });
-      } else {
-        return res.json({
-          reply: sanitizeAiText(`Hello! Namaste 🙏 Ready to explore **${activeCity}**?\n\nBefore I recommend places, tell me a bit about your travel plans so I can tailor them for you:\n• **How many hours or days do you have available?**\n• **What is your rough budget, and are you traveling solo, as a couple, or with family?**\n• **What kind of experiences do you prefer?** (Living history & monuments, hands-on craft workshops, or generational street food?)\n\nShare where you are heading next and what your interests are, and I'll recommend the top signature cultural spots for you!`),
-          tokens_used: 20,
-          model: 'lokiva-instant',
-          extracted_intent: intent,
-          suggested_experiences: [],
-          context_destination: activeCity,
-          state,
-        });
-      }
-    }
-
-    // 3. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
+    // 2. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
     if (!activeCity) {
       const aiResponse = await chatWithCulturalConcierge({
         userMessage: message,
@@ -392,41 +367,7 @@ aiRouter.post('/chat', async (req, res) => {
   }
 });
 
-// Rule-based fallback responses (when OpenAI is not configured)
-function getRuleBasedResponse(message, city) {
-  const msg = message.toLowerCase();
 
-  if (msg.includes('rain') || msg.includes('weather') || msg.includes('monsoon')) {
-    return `In case of unexpected rain in **${city}**, I recommend prioritizing sheltered artisan studios like traditional blue pottery, haveli heritage walks, or culinary tea tastings which remain 100% comfortable!`;
-  }
-
-  if (msg.includes('food') || msg.includes('eat') || msg.includes('restaurant') || msg.includes('street')) {
-    return `For food lovers in **${city}**, you can explore authentic generational sweet-makers, clay-cup chai in bazaar alleys, and heritage cooking workshops with local families! Would you like me to build a specific food itinerary?`;
-  }
-
-  if (msg.includes('budget') || msg.includes('cheap') || msg.includes('affordable')) {
-    return `For budget travelers in **${city}**, you can enjoy free heritage walks, community cooking classes, temple visits, and local street food markets. I can create a cost-optimized itinerary for you!`;
-  }
-
-  if (msg.includes('family') || msg.includes('kids') || msg.includes('children')) {
-    return `For families in **${city}**, I recommend interactive craft workshops, gentle heritage walks, and kid-friendly cultural experiences with storytelling. What age range are your kids?`;
-  }
-
-  if (msg.includes('solo') || msg.includes('solo traveler')) {
-    return `Solo travelers in **${city}** will love intimate craft workshops, small-group cooking classes, and walking tours where you can connect deeply with local culture. Would you prefer cultural immersion or quiet reflection?`;
-  }
-
-  if (msg.includes('craft') || msg.includes('pottery') || msg.includes('art')) {
-    return `**${city}** has incredible traditional crafts! From hand-block printing to blue pottery and metalwork, you can join hands-on workshops with master artisans. What craft interests you?`;
-  }
-
-  if (msg.includes('time') || msg.includes('hours') || msg.includes('duration')) {
-    return `I can create optimized itineraries for any time frame - whether you have just 2 hours or a full day in **${city}**. How much time do you have available?`;
-  }
-
-  // Default generic response
-  return `Namaste! I'm your LOKIVA Cultural Concierge in **${city}**.\n\nTell me about your travel situation - how many hours you have, your budget, who you're traveling with, and what interests you most. I'll build you a perfectly paced cultural itinerary!`;
-}
 
 // GET /recommendations - multi-factor scored recommendations
 aiRouter.get('/recommendations', async (req, res) => {

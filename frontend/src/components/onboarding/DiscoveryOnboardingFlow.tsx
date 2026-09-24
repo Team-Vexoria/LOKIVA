@@ -306,6 +306,7 @@ export function DiscoveryOnboardingFlow({
     try {
       localStorage.setItem('lokiva_discovery_answers', JSON.stringify(answers));
       localStorage.setItem('has_onboarded_lokiva', 'true');
+      localStorage.setItem('lokiva_onboarding_last_shown', Date.now().toString());
     } catch {}
 
     // Honest progression of synthesis stages

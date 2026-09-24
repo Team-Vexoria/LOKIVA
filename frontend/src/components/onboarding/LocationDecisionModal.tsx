@@ -5,6 +5,22 @@ import { useNavigate } from 'react-router-dom';
 
 import { DiscoveryOnboardingFlow, DiscoveryAnswers } from './DiscoveryOnboardingFlow';
 
+export const ONBOARDING_COMPLETED_KEY = 'has_onboarded_lokiva';
+export const ONBOARDING_LAST_SHOWN_KEY = 'lokiva_onboarding_last_shown';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+export function wasOnboardingShownToday(lastShownStr: string | null): boolean {
+  if (!lastShownStr) return false;
+  const lastShownTime = parseInt(lastShownStr, 10);
+  if (isNaN(lastShownTime)) return false;
+
+  const now = Date.now();
+  const isSameCalendarDay = new Date(lastShownTime).toDateString() === new Date(now).toDateString();
+  const isWithin24Hours = (now - lastShownTime) < ONE_DAY_MS;
+
+  return isSameCalendarDay || isWithin24Hours;
+}
+
 interface LocationDecisionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,18 +31,18 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   const [hasMadeChoice, setHasMadeChoice] = useState(false);
   const [showDiscoveryFlow, setShowDiscoveryFlow] = useState(false);
 
-  // Check localStorage on mount
+  // Sync state when modal is opened manually
   useEffect(() => {
-    const hasOnboarded = localStorage.getItem('has_onboarded_lokiva');
-    if (hasOnboarded) {
-      // User has already onboarded, but modal might be shown manually
-      setHasMadeChoice(true);
+    if (isOpen) {
+      setHasMadeChoice(false);
     }
-  }, []);
+  }, [isOpen]);
 
   const handleOptionA = () => {
-    // User knows where they want to go
-    localStorage.setItem('has_onboarded_lokiva', 'true');
+    try {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     onClose();
     navigate('/explore');
@@ -38,7 +54,10 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   };
 
   const handleDiscoveryComplete = (answers: DiscoveryAnswers) => {
-    localStorage.setItem('has_onboarded_lokiva', 'true');
+    try {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     setShowDiscoveryFlow(false);
     onClose();
@@ -46,7 +65,10 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   };
 
   const handleSkip = () => {
-    // Skip onboarding but don't mark as completed (user can reopen)
+    // Record that the modal was dismissed today so it will not show on reloads
+    try {
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     onClose();
   };
@@ -252,17 +274,36 @@ export function useOnboardingGate() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // Check if user has already onboarded
-    const hasOnboarded = localStorage.getItem('has_onboarded_lokiva');
-
-    // Small delay to ensure page is loaded
-    const timer = setTimeout(() => {
-      if (!hasOnboarded) {
-        setShowModal(true);
+    try {
+      // Check if user has already permanently onboarded
+      const hasOnboarded = localStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      if (hasOnboarded === 'true') {
+        return;
       }
-    }, 1000);
 
-    return () => clearTimeout(timer);
+      // Check if modal was already shown today (only once a day)
+      const lastShown = localStorage.getItem(ONBOARDING_LAST_SHOWN_KEY);
+      if (wasOnboardingShownToday(lastShown)) {
+        return;
+      }
+
+      // Small delay to ensure page is loaded before presenting modal
+      const timer = setTimeout(() => {
+        try {
+          const currentOnboarded = localStorage.getItem(ONBOARDING_COMPLETED_KEY);
+          const currentLastShown = localStorage.getItem(ONBOARDING_LAST_SHOWN_KEY);
+          if (currentOnboarded === 'true' || wasOnboardingShownToday(currentLastShown)) {
+            return;
+          }
+          localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+        } catch {}
+        setShowModal(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } catch {
+      // Fallback in case localStorage is unavailable
+    }
   }, []);
 
   const openModal = () => {
@@ -270,6 +311,9 @@ export function useOnboardingGate() {
   };
 
   const closeModal = () => {
+    try {
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setShowModal(false);
   };
 

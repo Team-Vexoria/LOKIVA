@@ -257,6 +257,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           <video
             ref={videoRef}
             src="/landing_video.mp4"
+            poster="/lokiva_background.avif"
             playsInline
             muted
             loop

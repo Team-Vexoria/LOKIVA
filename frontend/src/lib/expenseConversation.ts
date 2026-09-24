@@ -142,7 +142,7 @@ export class ExpenseConversationManager {
   public onAssistantFinishedSpeaking() {
     if (this.state === 'ACTIVE_SESSION') {
       if (this.turnCount <= this.maxTurns) {
-        // Automatically re-arm SpeechRecognition
+        // Automatically re-arm voice recording
         this.resetSilenceTimer();
         this.callbacks.onRequestListen();
       } else {
