@@ -22,6 +22,11 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
+      '/api/v1/voice': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/v1\/voice/, '/voice'),
+      },
       '/api/voice': {
         target: 'http://localhost:4000',
         changeOrigin: true,

@@ -6,253 +6,130 @@ import {
   ChevronRight,
   ArrowRight,
   MapPin,
-  Compass,
   Building2,
-  Play,
-  Pause,
+  Sparkles,
+  Layers,
+  X,
+  Camera,
 } from 'lucide-react';
 import { SHOWCASE_DESTINATIONS, ShowcaseDestination } from '../data/destinationsShowcaseData';
+
+// 4 Primary destinations with dedicated full-screen video assets
+const VIDEO_DESTINATIONS: ShowcaseDestination[] = SHOWCASE_DESTINATIONS.filter((d) =>
+  ['rajasthan', 'kerala', 'maharashtra', 'ladakh'].includes(d.id)
+);
+
+// Companion destinations without video assets (photo canvas mode)
+const OTHER_DESTINATIONS: ShowcaseDestination[] = SHOWCASE_DESTINATIONS.filter(
+  (d) => !['rajasthan', 'kerala', 'maharashtra', 'ladakh'].includes(d.id)
+);
 
 export function DestinationsPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [timerProgress, setTimerProgress] = useState(0);
+  const [isShowingDirectory, setIsShowingDirectory] = useState(false);
+  const [selectedOtherDestination, setSelectedOtherDestination] = useState<ShowcaseDestination | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentDestination = SHOWCASE_DESTINATIONS[activeIndex];
-  const incomingDestination = incomingIndex !== null ? SHOWCASE_DESTINATIONS[incomingIndex] : null;
 
-  // Queue cards: next 4 destinations wrapped with modulo arithmetic
-  const queueCards = [1, 2, 3, 4].map((offset) => {
-    const idx = (activeIndex + offset) % SHOWCASE_DESTINATIONS.length;
-    return {
-      destination: SHOWCASE_DESTINATIONS[idx],
-      index: idx,
-      offset,
-    };
-  });
+  // Currently active destination
+  const activeVideoDestination = VIDEO_DESTINATIONS[activeIndex];
+  const currentDestination = selectedOtherDestination || activeVideoDestination;
+  const incomingDestination =
+    incomingIndex !== null ? VIDEO_DESTINATIONS[incomingIndex] : null;
 
-  // GSAP Transition Next
+  // Next State Transition
   const handleNext = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
+    setSelectedOtherDestination(null);
+    setIsShowingDirectory(false);
 
-    const nextIndex = (activeIndex + 1) % SHOWCASE_DESTINATIONS.length;
+    const nextIndex = (activeIndex + 1) % VIDEO_DESTINATIONS.length;
     setIncomingIndex(nextIndex);
 
     const tl = gsap.timeline({
       onComplete: () => {
         setActiveIndex(nextIndex);
         setIncomingIndex(null);
-        gsap.set(
-          '.destination-title, .destination-tagline, .destination-desc, .destination-telemetry, .destination-actions, .destination-watermark',
-          { y: 0, opacity: 1, clearProps: 'transform,opacity' }
-        );
-        gsap.set('.queue-card', { xPercent: 0, clearProps: 'transform' });
+        gsap.set('.destination-card-panel', { opacity: 1, y: 0, clearProps: 'transform,opacity' });
         setIsAnimating(false);
       },
     });
 
-    // 1. Text Exit (Slide up and fade out)
-    tl.to(
-      '.destination-title',
-      { y: -50, opacity: 0, duration: 0.35, ease: 'power2.in' },
-      0
-    )
-      .to(
-        '.destination-tagline, .destination-desc, .destination-telemetry, .destination-actions',
-        { y: -30, opacity: 0, duration: 0.3, stagger: 0.04, ease: 'power2.in' },
-        0
-      )
-      .to(
-        '.destination-watermark',
-        { y: -60, opacity: 0, duration: 0.4, ease: 'power2.in' },
-        0
-      );
-
-    // 2. Queue Cards Slide Left in unison
-    tl.to(
-      '.queue-card',
-      { xPercent: -110, duration: 0.75, ease: 'power3.inOut', stagger: 0.04 },
-      0.08
-    );
-
-    // 3. Background crossfade and subtle zoom
+    tl.to('.destination-card-panel', { y: 16, opacity: 0, duration: 0.22, ease: 'power2.in' }, 0);
     tl.fromTo(
       '.incoming-bg',
-      { opacity: 0, scale: 1.06 },
-      { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' },
-      0.1
+      { opacity: 0, scale: 1.02 },
+      { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' },
+      0.05
     );
-
-    // 4. Incoming Text Entrance (Slide up from below)
     tl.fromTo(
-      '.destination-title-incoming',
-      { y: 60, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' },
-      0.35
-    )
-      .fromTo(
-        '.destination-tagline-incoming, .destination-desc-incoming, .destination-telemetry-incoming, .destination-actions-incoming',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: 'power3.out' },
-        0.42
-      )
-      .fromTo(
-        '.destination-watermark-incoming',
-        { y: 60, opacity: 0 },
-        { y: 0, opacity: 0.04, duration: 0.6, ease: 'power3.out' },
-        0.4
-      );
+      '.destination-card-panel',
+      { y: 24, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' },
+      0.25
+    );
   }, [activeIndex, isAnimating]);
 
-  // GSAP Transition Prev
+  // Prev State Transition
   const handlePrev = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
+    setSelectedOtherDestination(null);
+    setIsShowingDirectory(false);
 
     const prevIndex =
-      (activeIndex - 1 + SHOWCASE_DESTINATIONS.length) % SHOWCASE_DESTINATIONS.length;
+      (activeIndex - 1 + VIDEO_DESTINATIONS.length) % VIDEO_DESTINATIONS.length;
     setIncomingIndex(prevIndex);
 
     const tl = gsap.timeline({
       onComplete: () => {
         setActiveIndex(prevIndex);
         setIncomingIndex(null);
-        gsap.set(
-          '.destination-title, .destination-tagline, .destination-desc, .destination-telemetry, .destination-actions, .destination-watermark',
-          { y: 0, opacity: 1, clearProps: 'transform,opacity' }
-        );
-        gsap.set('.queue-card', { xPercent: 0, clearProps: 'transform' });
+        gsap.set('.destination-card-panel', { opacity: 1, y: 0, clearProps: 'transform,opacity' });
         setIsAnimating(false);
       },
     });
 
-    // 1. Text Exit (Slide down and fade out)
-    tl.to(
-      '.destination-title',
-      { y: 50, opacity: 0, duration: 0.35, ease: 'power2.in' },
-      0
-    )
-      .to(
-        '.destination-tagline, .destination-desc, .destination-telemetry, .destination-actions',
-        { y: 30, opacity: 0, duration: 0.3, stagger: 0.04, ease: 'power2.in' },
-        0
-      )
-      .to(
-        '.destination-watermark',
-        { y: 60, opacity: 0, duration: 0.4, ease: 'power2.in' },
-        0
-      );
-
-    // 2. Queue Cards Slide Right
-    tl.to(
-      '.queue-card',
-      { xPercent: 110, duration: 0.75, ease: 'power3.inOut', stagger: 0.04 },
-      0.08
-    );
-
-    // 3. Background crossfade and subtle zoom
+    tl.to('.destination-card-panel', { y: -16, opacity: 0, duration: 0.22, ease: 'power2.in' }, 0);
     tl.fromTo(
       '.incoming-bg',
-      { opacity: 0, scale: 0.96 },
-      { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' },
-      0.1
+      { opacity: 0, scale: 0.98 },
+      { opacity: 1, scale: 1, duration: 0.6, ease: 'power2.out' },
+      0.05
     );
-
-    // 4. Incoming Text Entrance (Slide down from above)
     tl.fromTo(
-      '.destination-title-incoming',
-      { y: -60, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' },
-      0.35
-    )
-      .fromTo(
-        '.destination-tagline-incoming, .destination-desc-incoming, .destination-telemetry-incoming, .destination-actions-incoming',
-        { y: -35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: 'power3.out' },
-        0.42
-      )
-      .fromTo(
-        '.destination-watermark-incoming',
-        { y: -60, opacity: 0 },
-        { y: 0, opacity: 0.04, duration: 0.6, ease: 'power3.out' },
-        0.4
-      );
+      '.destination-card-panel',
+      { y: -24, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.4, ease: 'power3.out' },
+      0.25
+    );
   }, [activeIndex, isAnimating]);
 
-  // Jump to specific index
-  const jumpToIndex = (targetIndex: number) => {
-    if (targetIndex === activeIndex || isAnimating) return;
-    setIsAnimating(true);
-    setIncomingIndex(targetIndex);
+  // Select an un-filmed destination from the directory
+  const handleSelectOtherDestination = (destination: ShowcaseDestination) => {
+    setSelectedOtherDestination(destination);
+    setIsShowingDirectory(false);
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setActiveIndex(targetIndex);
-        setIncomingIndex(null);
-        gsap.set(
-          '.destination-title, .destination-tagline, .destination-desc, .destination-telemetry, .destination-actions, .destination-watermark',
-          { y: 0, opacity: 1, clearProps: 'transform,opacity' }
-        );
-        gsap.set('.queue-card', { xPercent: 0, clearProps: 'transform' });
-        setIsAnimating(false);
-      },
-    });
-
-    tl.to(
-      '.destination-title, .destination-tagline, .destination-desc, .destination-telemetry, .destination-actions',
-      { opacity: 0, y: -40, duration: 0.3, ease: 'power2.in' },
-      0
-    );
-
-    tl.fromTo(
-      '.incoming-bg',
-      { opacity: 0, scale: 1.05 },
-      { opacity: 1, scale: 1, duration: 0.7, ease: 'power2.out' },
-      0.1
-    );
-
-    tl.fromTo(
-      '.destination-title-incoming',
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
-      0.35
-    ).fromTo(
-      '.destination-tagline-incoming, .destination-desc-incoming, .destination-telemetry-incoming, .destination-actions-incoming',
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: 'power3.out' },
-      0.4
+    gsap.fromTo(
+      '.destination-card-panel',
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' }
     );
   };
 
-  // 10-Second Auto-Advance Interval with smooth progress
+  // Hands-free 12-second slideshow interval (only runs during video showcase mode)
   useEffect(() => {
-    if (isPaused) return;
-
-    const tickMs = 50;
-    const totalMs = 10000;
-    const increment = (tickMs / totalMs) * 100;
+    if (isShowingDirectory || selectedOtherDestination) return;
 
     const timer = setInterval(() => {
-      setTimerProgress((prev) => {
-        if (prev >= 100) {
-          handleNext();
-          return 0;
-        }
-        return prev + increment;
-      });
-    }, tickMs);
+      handleNext();
+    }, 12000);
 
     return () => clearInterval(timer);
-  }, [isPaused, handleNext]);
-
-  // Reset timer progress whenever slide changes
-  useEffect(() => {
-    setTimerProgress(0);
-  }, [activeIndex]);
+  }, [handleNext, isShowingDirectory, selectedOtherDestination]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -263,14 +140,17 @@ export function DestinationsPage() {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         handlePrev();
+      } else if (e.key === 'Escape' && isShowingDirectory) {
+        setIsShowingDirectory(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrev]);
+  }, [handleNext, handlePrev, isShowingDirectory]);
 
-  // Seconds remaining for countdown label
-  const secondsRemaining = Math.max(1, Math.ceil(((100 - timerProgress) / 100) * 10));
+  // Active display destination
+  const displayDestination = incomingDestination || currentDestination;
+  const isVideoMode = Boolean(displayDestination.bgVideo);
 
   return (
     <div
@@ -281,20 +161,23 @@ export function DestinationsPage() {
       <div className="fixed inset-0 w-screen h-screen overflow-hidden -z-10 pointer-events-none">
         {/* Active Background Layer */}
         <div className="absolute inset-0 w-full h-full">
-          {currentDestination.bgVideo && activeIndex === 0 ? (
+          {displayDestination.bgVideo ? (
             <video
+              key={displayDestination.id}
               autoPlay
               loop
               muted
               playsInline
               className="w-full h-full object-cover filter contrast-105"
-              src={currentDestination.bgVideo}
-              poster={currentDestination.bgMedia}
-            />
+              poster={displayDestination.bgMedia}
+            >
+              <source src={displayDestination.bgVideo} type="video/mp4" />
+            </video>
           ) : (
             <img
-              src={currentDestination.bgMedia}
-              alt={currentDestination.name}
+              key={displayDestination.id}
+              src={displayDestination.bgMedia}
+              alt={displayDestination.name}
               className="w-full h-full object-cover filter contrast-105"
             />
           )}
@@ -303,235 +186,228 @@ export function DestinationsPage() {
         {/* Incoming Background Layer during active transition */}
         {incomingDestination && (
           <div className="incoming-bg absolute inset-0 w-full h-full z-10 opacity-0">
-            <img
-              src={incomingDestination.bgMedia}
-              alt={incomingDestination.name}
-              className="w-full h-full object-cover filter contrast-105"
-            />
+            {incomingDestination.bgVideo ? (
+              <video
+                key={`incoming-${incomingDestination.id}`}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover filter contrast-105"
+                poster={incomingDestination.bgMedia}
+              >
+                <source src={incomingDestination.bgVideo} type="video/mp4" />
+              </video>
+            ) : (
+              <img
+                src={incomingDestination.bgMedia}
+                alt={incomingDestination.name}
+                className="w-full h-full object-cover filter contrast-105"
+              />
+            )}
           </div>
         )}
 
-        {/* Cinematic Scrim Gradient: ensures text readability on left while keeping right visible */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/25 z-20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 z-20" />
+        {/* Minimal Transparent Scrim: leaves 90% of the video bright and vivid */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 z-20" />
       </div>
 
-      {/* ─── 2. PAUSE / PLAY OPTION ON TOP ──────────────────────────────────── */}
-      <div className="fixed top-4 sm:top-5 right-4 sm:right-8 z-40 flex items-center gap-2 pointer-events-auto">
-        <button
-          onClick={() => setIsPaused((prev) => !prev)}
-          className="flex items-center gap-2.5 px-4 py-2 rounded-full border border-white/20 bg-black/60 hover:bg-black/85 hover:border-[#FFC067] text-white text-xs font-mono font-bold tracking-wider backdrop-blur-md transition-all cursor-pointer shadow-xl hover:scale-105 active:scale-95"
-          title={isPaused ? 'Resume auto slideshow (10s)' : 'Pause auto slideshow'}
-        >
-          {isPaused ? (
-            <>
-              <Play className="w-3.5 h-3.5 text-[#FFC067] fill-[#FFC067]" />
-              <span className="uppercase text-[11px] text-[#FFC067]">Resume</span>
-            </>
-          ) : (
-            <>
-              {/* Circular 10s progress countdown ring */}
-              <div className="relative w-4 h-4 flex items-center justify-center">
-                <svg className="w-4 h-4 -rotate-90">
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-white/20"
-                    fill="none"
-                  />
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6"
-                    stroke="#FFC067"
-                    strokeWidth="2"
-                    strokeDasharray={37.7}
-                    strokeDashoffset={37.7 - (37.7 * timerProgress) / 100}
-                    strokeLinecap="round"
-                    fill="none"
-                    className="transition-[stroke-dashoffset] duration-75"
-                  />
-                </svg>
+      {/* ─── 2. REFINED TRANSPARENT GLASSMORPHIC CARD (BORDERED) ────────────── */}
+      <div className="absolute right-4 sm:right-8 lg:right-12 bottom-6 sm:bottom-8 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2 z-20 pointer-events-auto">
+        <div className="destination-card-panel w-[320px] sm:w-[370px] lg:w-[395px] rounded-3xl bg-black/25 backdrop-blur-xl border border-white/30 p-5 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] transition-all">
+          {!isShowingDirectory ? (
+            /* ── VIEW A: ACTIVE DESTINATION SPOTLIGHT CARD ── */
+            <div className="space-y-3.5">
+              {/* Header: State Counter & Live Indicator Badge */}
+              <div className="flex items-center justify-between pb-2 border-b border-white/15">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-white/70 tracking-wider">
+                    {selectedOtherDestination
+                      ? 'OTHER DESTINATIONS'
+                      : `STATE ${String(activeIndex + 1).padStart(2, '0')} OF ${String(VIDEO_DESTINATIONS.length).padStart(2, '0')}`}
+                  </span>
+                </div>
+
+                {isVideoMode ? (
+                  <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#C1443B]/80 border border-white/20 text-white text-[10px] font-heading font-extrabold uppercase tracking-widest shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                    <span>Live Video</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[#FFC067] text-[10px] font-heading font-extrabold uppercase tracking-widest backdrop-blur-sm">
+                    <Camera className="w-3 h-3 text-[#FFC067]" />
+                    <span>Photo Canvas</span>
+                  </span>
+                )}
               </div>
-              <Pause className="w-3.5 h-3.5 text-white/90" />
-              <span className="uppercase text-[11px] text-white/90">
-                Pause ({secondsRemaining}s)
-              </span>
-            </>
-          )}
-        </button>
-      </div>
 
-      {/* ─── 3. WATERMARK HOLLOW TYPOGRAPHY (BOTTOM-LEFT) ───────────────────── */}
-      <div className="destination-watermark absolute left-6 sm:left-12 lg:left-20 bottom-8 sm:bottom-12 text-[13vw] font-display font-black uppercase text-white/[0.04] pointer-events-none select-none tracking-widest leading-none z-10 whitespace-nowrap overflow-hidden">
-        {currentDestination.name}
-      </div>
-      {incomingDestination && (
-        <div className="destination-watermark-incoming absolute left-6 sm:left-12 lg:left-20 bottom-8 sm:bottom-12 text-[13vw] font-display font-black uppercase text-white/[0.04] pointer-events-none select-none tracking-widest leading-none z-10 whitespace-nowrap overflow-hidden opacity-0">
-          {incomingDestination.name}
-        </div>
-      )}
+              {/* Photography Thumbnail with Border */}
+              <div className="relative h-36 sm:h-40 rounded-2xl overflow-hidden border border-white/20 shadow-sm">
+                <img
+                  src={displayDestination.cardThumbnail}
+                  alt={displayDestination.name}
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80';
+                  }}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <span className="absolute bottom-2 left-3 text-[10px] font-heading font-extrabold uppercase tracking-widest text-[#FFC067] drop-shadow">
+                  {displayDestination.region}
+                </span>
+              </div>
 
-      {/* ─── 4. LEFT-SIDE CONTENT REVEAL ────────────────────────────────────── */}
-      <div className="absolute left-6 sm:left-12 lg:left-20 top-[48%] -translate-y-1/2 max-w-xl z-20 pointer-events-auto pr-4">
-        {/* Active Content Block */}
-        {!incomingDestination ? (
-          <div className="space-y-3 sm:space-y-4">
-            <h1 className="destination-title text-5xl sm:text-7xl lg:text-8xl font-display font-black text-white uppercase tracking-tight leading-[0.92] drop-shadow-2xl">
-              {currentDestination.name}
-            </h1>
+              {/* Title & Editorial Tagline */}
+              <div className="space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-display font-black text-white uppercase tracking-tight leading-tight drop-shadow-sm">
+                  {displayDestination.name}
+                </h2>
+                <p className="text-xs sm:text-sm font-sans text-white/85 line-clamp-2 leading-relaxed drop-shadow-xs">
+                  {displayDestination.tagline}
+                </p>
+              </div>
 
-            <h3 className="destination-tagline text-lg sm:text-2xl font-heading font-bold text-[#FFC067] tracking-tight leading-snug drop-shadow">
-              {currentDestination.tagline}
-            </h3>
+              {/* Telemetry Chips */}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-white/90">
+                <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 px-2.5 py-1 rounded-xl backdrop-blur-sm">
+                  <Building2 className="w-3 h-3 text-[#FFC067]" />
+                  <span>{displayDestination.capitalCity}</span>
+                </span>
+                <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 px-2.5 py-1 rounded-xl backdrop-blur-sm">
+                  <MapPin className="w-3 h-3 text-[#FFC067]" />
+                  <span>{displayDestination.cityCount} Cities</span>
+                </span>
+              </div>
 
-            <p className="destination-desc text-sm sm:text-base font-sans text-white/85 leading-relaxed max-w-lg">
-              {currentDestination.description}
-            </p>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <Link
+                  to={`/explore?state=${encodeURIComponent(displayDestination.name)}`}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#C1443B] hover:bg-[#A8362E] text-white font-heading font-bold text-xs tracking-wider uppercase transition shadow-md hover:shadow-lg cursor-pointer"
+                >
+                  <span>Explore State</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
 
-            {/* Telemetry Bar */}
-            <div className="destination-telemetry flex flex-wrap items-center gap-4 pt-2 text-xs font-mono text-white/70">
-              <span className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
-                <Building2 className="w-3.5 h-3.5 text-[#FFC067]" />
-                <span>Capital: {currentDestination.capitalCity}</span>
-              </span>
+                <Link
+                  to={`/itinerary?city=${encodeURIComponent(displayDestination.primaryCity)}`}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-heading font-bold text-xs tracking-wider uppercase transition backdrop-blur-md cursor-pointer"
+                >
+                  <span>Build Itinerary</span>
+                </Link>
+              </div>
 
-              <span className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
-                <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
-                <span>{currentDestination.cityCount} Mapped Districts</span>
-              </span>
-
-              <span className="hidden sm:flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
-                <Compass className="w-3.5 h-3.5 text-white/60" />
-                <span>{currentDestination.coordinates}</span>
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="destination-actions flex items-center gap-3 pt-4">
-              <Link
-                to={`/explore?state=${encodeURIComponent(currentDestination.name)}`}
-                className="destination-btn inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#C1443B] hover:bg-[#a8362e] text-white font-heading font-bold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+              {/* Directory Trigger: Explore 10 More States */}
+              <button
+                type="button"
+                onClick={() => setIsShowingDirectory(true)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-white/20 hover:border-[#FFC067] bg-white/5 hover:bg-white/15 text-xs font-heading font-semibold text-white/90 hover:text-white transition cursor-pointer backdrop-blur-sm"
               >
-                <span>Explore {currentDestination.name}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                to={`/itinerary?city=${encodeURIComponent(currentDestination.primaryCity)}`}
-                className="destination-btn inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-heading font-bold text-xs sm:text-sm tracking-wider uppercase transition-all backdrop-blur-md hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <span>Build Itinerary</span>
-              </Link>
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#FFC067]" />
+                  <span>Browse 10 More States</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-white/15 px-2 py-0.5 rounded border border-white/20 text-white">
+                  +{OTHER_DESTINATIONS.length}
+                </span>
+              </button>
             </div>
-          </div>
-        ) : (
-          /* Incoming Content Block (during GSAP transition) */
-          <div className="space-y-3 sm:space-y-4">
-            <h1 className="destination-title-incoming text-5xl sm:text-7xl lg:text-8xl font-display font-black text-white uppercase tracking-tight leading-[0.92] drop-shadow-2xl">
-              {incomingDestination.name}
-            </h1>
+          ) : (
+            /* ── VIEW B: ALL OTHER STATES DIRECTORY CARD ── */
+            <div className="space-y-3.5 max-h-[440px] flex flex-col">
+              {/* Directory Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-white/15">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#FFC067]" />
+                  <h3 className="text-sm font-heading font-bold text-white uppercase tracking-wider">
+                    Select Indian State
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsShowingDirectory(false)}
+                  className="p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/15 border border-transparent hover:border-white/20 transition cursor-pointer"
+                  title="Close directory"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-            <h3 className="destination-tagline-incoming text-lg sm:text-2xl font-heading font-bold text-[#FFC067] tracking-tight leading-snug drop-shadow">
-              {incomingDestination.tagline}
-            </h3>
-
-            <p className="destination-desc-incoming text-sm sm:text-base font-sans text-white/85 leading-relaxed max-w-lg">
-              {incomingDestination.description}
-            </p>
-
-            <div className="destination-telemetry-incoming flex flex-wrap items-center gap-4 pt-2 text-xs font-mono text-white/70">
-              <span className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
-                <Building2 className="w-3.5 h-3.5 text-[#FFC067]" />
-                <span>Capital: {incomingDestination.capitalCity}</span>
-              </span>
-
-              <span className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
-                <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
-                <span>{incomingDestination.cityCount} Mapped Districts</span>
-              </span>
-            </div>
-
-            <div className="destination-actions-incoming flex items-center gap-3 pt-4">
-              <Link
-                to={`/explore?state=${encodeURIComponent(incomingDestination.name)}`}
-                className="destination-btn inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#C1443B] text-white font-heading font-bold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-xl"
-              >
-                <span>Explore {incomingDestination.name}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ─── 5. RIGHT-SIDE CARD CAROUSEL (TRANSLATING QUEUE) ───────────────── */}
-      <div className="absolute right-4 sm:right-10 lg:right-16 top-[48%] -translate-y-1/2 z-20 flex gap-4 sm:gap-6 items-center pointer-events-auto">
-        {queueCards.map(({ destination, index, offset }) => (
-          <div
-            key={destination.id}
-            onClick={() => jumpToIndex(index)}
-            className={`queue-card relative w-36 sm:w-52 lg:w-60 h-[240px] sm:h-[340px] lg:h-[380px] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/25 hover:border-[#FFC067] shadow-2xl transition-all duration-300 group cursor-pointer flex-shrink-0 backdrop-blur-sm bg-black/30 ${
-              offset > 3 ? 'hidden xl:block' : ''
-            }`}
-          >
-            {/* Thumbnail Image with error fallback */}
-            <img
-              src={destination.cardThumbnail}
-              alt={destination.name}
-              onError={(e) => {
-                e.currentTarget.src =
-                  'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80';
-              }}
-              className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-            />
-
-            {/* Gradient Scrim on Card */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-
-            {/* Top Numeric Index */}
-            <span className="absolute top-3 left-3 text-[10px] sm:text-xs font-mono font-bold text-[#FFC067] bg-black/60 px-2 py-0.5 rounded border border-white/20 backdrop-blur-md">
-              {String(index + 1).padStart(2, '0')}
-            </span>
-
-            {/* Bottom Card Title & Region */}
-            <div className="absolute inset-x-0 bottom-0 p-4 space-y-1">
-              <span className="text-[10px] font-heading font-extrabold uppercase tracking-widest text-[#FFC067]">
-                {destination.region}
-              </span>
-              <h4 className="text-base sm:text-xl font-display font-black text-white uppercase tracking-tight group-hover:text-[#FFC067] transition-colors line-clamp-1">
-                {destination.name}
-              </h4>
-              <p className="text-[11px] font-mono text-white/75 truncate">
-                {destination.primaryCity} • {destination.cityCount} Cities
+              <p className="text-[11px] font-sans text-white/80 leading-snug">
+                Click any state below to view its heritage card and full-screen photography canvas:
               </p>
+
+              {/* Scrollable State List */}
+              <div className="overflow-y-auto space-y-2 pr-1 max-h-[290px] scrollbar-thin">
+                {OTHER_DESTINATIONS.map((dest) => (
+                  <div
+                    key={dest.id}
+                    onClick={() => handleSelectOtherDestination(dest)}
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-white/15 hover:border-[#FFC067] bg-white/10 hover:bg-white/20 transition cursor-pointer group backdrop-blur-sm"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img
+                        src={dest.cardThumbnail}
+                        alt={dest.name}
+                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-heading font-bold text-white group-hover:text-[#FFC067] transition-colors truncate">
+                          {dest.name}
+                        </div>
+                        <div className="text-[10px] font-mono text-white/70 truncate">
+                          {dest.primaryCity} • {dest.region}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-mono font-bold text-[#FFC067] bg-white/10 px-2.5 py-1 rounded-md flex-shrink-0 border border-white/15 group-hover:bg-[#FFC067] group-hover:text-black transition">
+                      View
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Return to Video States */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOtherDestination(null);
+                  setIsShowingDirectory(false);
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-heading font-bold text-white transition text-center cursor-pointer backdrop-blur-sm"
+              >
+                Return to 4 Video Showcase States
+              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
 
-      {/* ─── 6. BOTTOM NAVIGATION CHEVRONS ─────────────────────────────────── */}
-      <div className="absolute bottom-8 sm:bottom-12 right-6 sm:right-12 z-30 flex items-center gap-3 pointer-events-auto">
-        <button
-          onClick={handlePrev}
-          disabled={isAnimating}
-          className="w-12 h-12 rounded-full border border-white/30 bg-black/50 hover:bg-black/80 hover:border-[#FFC067] text-white hover:text-[#FFC067] flex items-center justify-center transition-all cursor-pointer backdrop-blur-md hover:scale-105 active:scale-95 disabled:opacity-50"
-          aria-label="Previous Destination"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        {/* ─── 3. MINIMAL NAVIGATION: PREV & NEXT BUTTONS ────────────────────── */}
+        <div className="flex items-center justify-between pt-3.5">
+          <button
+            onClick={handlePrev}
+            disabled={isAnimating}
+            className="w-11 h-11 rounded-full border border-white/25 bg-black/35 hover:bg-black/60 text-white hover:text-[#FFC067] shadow-lg backdrop-blur-xl flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+            aria-label="Previous Destination"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
 
-        <button
-          onClick={handleNext}
-          disabled={isAnimating}
-          className="w-12 h-12 rounded-full border border-white/30 bg-black/50 hover:bg-black/80 hover:border-[#FFC067] text-white hover:text-[#FFC067] flex items-center justify-center transition-all cursor-pointer backdrop-blur-md hover:scale-105 active:scale-95 disabled:opacity-50"
-          aria-label="Next Destination"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+          <span className="text-xs font-mono font-bold text-white/70 bg-black/35 px-3 py-1.5 rounded-full border border-white/20 backdrop-blur-xl">
+            {selectedOtherDestination ? 'PHOTO' : `${String(activeIndex + 1).padStart(2, '0')} / ${String(VIDEO_DESTINATIONS.length).padStart(2, '0')}`}
+          </span>
+
+          <button
+            onClick={handleNext}
+            disabled={isAnimating}
+            className="w-11 h-11 rounded-full border border-white/25 bg-black/35 hover:bg-black/60 text-white hover:text-[#FFC067] shadow-lg backdrop-blur-xl flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+            aria-label="Next Destination"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

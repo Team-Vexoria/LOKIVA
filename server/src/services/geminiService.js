@@ -11,10 +11,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ordered list, remember the first one that works, and fall back to asking the API
 // what this key can actually reach.
 const DEFAULT_MODEL_CANDIDATES = [
-  'gemini-3.1-flash-lite',
-  'gemini-3.6-flash',
+  'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
   'gemini-flash-lite-latest',
+  'gemini-3.6-flash',
 ];
 
 const MODEL_CANDIDATES = process.env.GEMINI_MODEL
@@ -101,11 +101,11 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
     throw new Error('Quota temporarily exceeded; routing directly to intelligent cultural engine.');
   }
 
-  // Allow up to 4 models to try. 12 seconds per model - enough for Gemini Flash to respond.
+  // Allow up to 4 models to try. 28 seconds per model allows Gemini free-tier to return full responses.
   const queue = candidateOrder().slice(0, 4);
   const tried = new Set();
   let lastError = null;
-  const timeoutMs = 12000;
+  const timeoutMs = 28000;
 
   while (queue.length > 0) {
     const modelName = queue.shift();
@@ -212,42 +212,23 @@ export async function chatWithCulturalConcierge({
   city = null,
   availableExperiences = [],
 }) {
-  let systemPrompt = '';
+  const experiencesContext = availableExperiences.length > 0
+    ? availableExperiences.slice(0, 5)
+        .map((exp, idx) => `${idx + 1}. **${exp.title}** (${exp.category}) - Rs.${exp.price}, ~${exp.approx_duration_mins} mins: ${exp.tagline || exp.description || ''}`)
+        .join('\n')
+    : '';
 
-  if (!city) {
-    systemPrompt = `You are LOKIVA's AI Cultural Concierge - a warm, knowledgeable guide for authentic cultural travel across India.
+  const systemPrompt = `You are LOKIVA's AI Cultural Concierge, an expert and welcoming cultural travel guide across all of India${city ? `, currently assisting with a focus on ${city}` : ''}.
 
-Your job is to answer EXACTLY what the user asks - nothing more, nothing less.
-
-Rules:
-1. If the user says something unrelated to travel (e.g. "what are you doing right now", "I just had tea"), respond naturally and conversationally. Do NOT force travel recommendations on them.
-2. If the user mentions an expense (e.g. "I spent 200rs on rickshaw"), acknowledge it casually - do NOT launch into a travel budget breakdown.
-3. If the user asks about a destination, provide accurate and specific information about that destination.
-4. If you do not know something, say so honestly. Never fabricate facts.
-5. Keep replies concise (2-3 short paragraphs max). No essays.`;
-  } else {
-    const experiencesContext = availableExperiences.length > 0
-      ? availableExperiences.slice(0, 5)
-          .map((exp, idx) => `${idx + 1}. **${exp.title}** (${exp.category}) - Rs.${exp.price}, ~${exp.approx_duration_mins} mins: ${exp.tagline || exp.description || ''}`)
-          .join('\n')
-      : 'No specific experiences loaded yet.';
-
-    systemPrompt = `You are LOKIVA's AI Cultural Concierge for ${city}, India.
-
-Available cultural experiences in ${city}:
-${experiencesContext}
-
-Your job is to answer EXACTLY what the user asks - nothing more, nothing less.
-
-Rules:
-1. If the user says something unrelated to travel (e.g. "what are you doing right now", "I just had tea", "I spent 200rs"), respond naturally and conversationally. Do NOT force destination recommendations on them.
-2. If the user mentions an expense casually, acknowledge it - do NOT generate a full budget breakdown unless they explicitly asked for one.
-3. If the user asks for recommendations or places to visit, mention up to 2 experiences from the list above that best match.
-4. If you do not know something, say so honestly. Never fabricate facts.
-5. Keep replies concise (2-3 short paragraphs max). No essays.
-
-Current city context: ${city}, India`;
-  }
+${experiencesContext ? `Curated verified experiences in ${city}:\n${experiencesContext}\n` : ''}
+Your Core Rules:
+1. DIRECTLY and HELPFULLY answer whatever the traveler asks.
+   - If they ask about South India or choosing between states (e.g., after already visiting Kerala), recommend incredible alternatives like Karnataka (Hampi, Mysore, Coorg) or Tamil Nadu (Madurai, Thanjavur, Chettinad) with specific cultural highlights, vibe differences, and practical tips.
+   - Never say "I can only help with a specific city" or "I don't have information on other states". You are an expert guide covering all 36 states and union territories of India.
+2. If the user mentions an expense (e.g., "I spent 200rs on rickshaw"), acknowledge it naturally and conversationally without generating an unsolicited trip budget breakdown.
+3. If the user asks an off-topic or greeting question, reply warmly and naturally without forcing travel recommendations.
+4. If the traveler is specifically asking about things to do in ${city || 'their destination'} and experiences are provided above, weave in 1 or 2 relevant experiences naturally.
+5. Keep your tone culturally authentic, warm, and concise (2 to 4 readable paragraphs max). Avoid filler or repetitive generic scripts.`;
 
   try {
     const history = sanitizeHistory(chatHistory);

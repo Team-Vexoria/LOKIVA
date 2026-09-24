@@ -28,8 +28,8 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   } | null>(null);
   const handlePlanGenerated = (answers: TripContextAnswers, plan: DayPlanResponse) => {
     setSolvedPlan({ answers, plan });
-    // Navigate to discovery map carrying the solved plan so user sees their curated results
-    navigate('/discovery-map', { state: { solvedPlan: plan, solvedAnswers: answers } });
+    // Navigate directly to /itinerary so user sees and edits their curated plan
+    navigate('/itinerary');
   };
 
   // ─── GSAP refs ─────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           {/* ── HERO CONTENT (fades out / floats up during scrub) ─────────────── */}
           <div
             ref={heroContentRef}
-            className="absolute inset-x-0 top-0 z-10 flex flex-col items-center text-center pt-8 sm:pt-10 px-4 pointer-events-auto"
+            className="absolute inset-x-0 top-0 z-10 flex flex-col items-center text-center pt-20 sm:pt-24 px-4 pointer-events-auto"
           >
           {/* Decorative monument cutouts - background layer */}
           <div
