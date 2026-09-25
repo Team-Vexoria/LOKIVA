@@ -91,6 +91,7 @@ export function ItineraryPage() {
         pace: paceParam || 'balanced',
         travelers: tripDetails?.travelers || 2,
         budgetLimit: tripDetails?.totalBudgetLimit || 25000,
+        interests: getSavedInterests(),
       });
     }
   }, [searchParams]);
@@ -106,6 +107,19 @@ export function ItineraryPage() {
       ? activeDay.activities[addAfterIndex]
       : activeDay?.activities[activeDay.activities.length - 1] || null;
 
+  const getSavedInterests = (): string[] => {
+    try {
+      const raw = localStorage.getItem('lokiva_discovery_answers');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.interests) && parsed.interests.length > 0) {
+          return parsed.interests;
+        }
+      }
+    } catch {}
+    return ['heritage', 'crafts', 'food'];
+  };
+
   const handleGenerateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     generateTrip({
@@ -115,6 +129,7 @@ export function ItineraryPage() {
       pace: inputPace,
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
+      interests: getSavedInterests(),
     });
     setSearchParams({ city: inputCity, days: String(inputDays), pace: inputPace });
   };
@@ -132,6 +147,7 @@ export function ItineraryPage() {
       pace: inputPace,
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
+      interests: getSavedInterests(),
     });
     setSearchParams({ city: cityName, days: String(inputDays), pace: inputPace });
   };
@@ -146,15 +162,17 @@ export function ItineraryPage() {
     setIsAddActivityModalOpen(true);
   };
 
-  // Compute Grand Total for Header
-  const allActivities = days.flatMap((d) => d.activities);
-  const totalExperiencesCost = allActivities.reduce(
-    (sum, act) => sum + (act.costPerPerson || 0) * (tripDetails.travelers || 2),
-    0
-  );
-  const totalTransitCost = allActivities.reduce((sum, act) => sum + (act.transitCost || 0), 0);
-  const totalMealsCost = days.length * 800 * (tripDetails.travelers || 2);
-  const grandTotal = totalExperiencesCost + totalTransitCost + totalMealsCost;
+  // Compute Grand Total for Header directly from day metrics or calibrated components
+  const grandTotal = days.reduce((sum, d) => {
+    if (d.metrics?.costBreakdown?.totalCost) {
+      return sum + d.metrics.costBreakdown.totalCost;
+    }
+    const dayActs = d.activities || [];
+    const tCost = dayActs.reduce((s, a) => s + (a.costPerPerson || 0) * (tripDetails.travelers || 2), 0);
+    const trCost = dayActs.reduce((s, a) => s + (a.transitCost || 0), 0);
+    const mCost = (d.mealBudgetPerPerson || 350) * (tripDetails.travelers || 2);
+    return sum + tCost + trCost + mCost;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-paper text-ink pb-20 pt-4 sm:pt-6">

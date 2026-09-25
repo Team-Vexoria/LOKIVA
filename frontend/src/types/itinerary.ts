@@ -91,6 +91,8 @@ export interface ItineraryDay {
   dayStartTime?: string;
   activeFilter?: ReplanCondition;
   originalActivities?: ItineraryActivity[];
+  mealBudgetPerPerson?: number;
+  metrics?: DayFeasibilityMetrics;
 }
 
 export interface ItineraryTripDetails {

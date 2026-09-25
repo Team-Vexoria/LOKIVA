@@ -243,3 +243,29 @@ export const POPULAR_CITIES_LIST = [
   'Shimla',
   'Rishikesh',
 ];
+
+export function getStateForCity(cityName: string): string {
+  if (!cityName) return 'India';
+  const clean = cityName.trim().toLowerCase();
+  if (clean.includes('ladakh') || clean.includes('leh')) return 'Ladakh';
+  if (clean.includes('goa')) return 'Goa';
+  if (clean.includes('delhi')) return 'Delhi';
+  if (clean.includes('puducherry') || clean.includes('pondicherry')) return 'Puducherry';
+  if (clean.includes('chandigarh')) return 'Chandigarh';
+
+  for (const item of INDIAN_STATES_AND_CITIES) {
+    if (item.state.toLowerCase() === clean) return item.state;
+    if (
+      item.cities.some(
+        (c) =>
+          c.toLowerCase() === clean ||
+          clean.includes(c.toLowerCase()) ||
+          c.toLowerCase().includes(clean)
+      )
+    ) {
+      return item.state;
+    }
+  }
+  return 'India';
+}
+

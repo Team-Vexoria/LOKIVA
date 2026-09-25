@@ -7,6 +7,7 @@ import {
   DiscoveryOnboardingFlow,
   DiscoveryAnswers,
 } from './DiscoveryOnboardingFlow';
+import { getStateForCity } from '../../data/places';
 
 export interface TripContextAnswers {
   city: string;
@@ -505,14 +506,7 @@ export function TripOnboardingTakeover({
 
   const handleComplete = async (answers: DiscoveryAnswers) => {
     const city = answers.destination || 'Jaipur';
-    const stateName =
-      city.toLowerCase().includes('kochi') ? 'Kerala' :
-      city.toLowerCase().includes('mumbai') ? 'Maharashtra' :
-      city.toLowerCase().includes('leh') || city.toLowerCase().includes('ladakh') ? 'Ladakh' :
-      city.toLowerCase().includes('varanasi') ? 'Uttar Pradesh' :
-      city.toLowerCase().includes('delhi') ? 'Delhi' :
-      city.toLowerCase().includes('amritsar') ? 'Punjab' :
-      city.toLowerCase().includes('udaipur') || city.toLowerCase().includes('jaipur') ? 'Rajasthan' : 'Rajasthan';
+    const stateName = getStateForCity(city);
 
     // 1. Immediately synchronize with the central Zustand itinerary store
     useItineraryStore.getState().generateTrip({
@@ -523,6 +517,7 @@ export function TripOnboardingTakeover({
       budgetLimit: answers.budget_max_inr,
       travelers: answers.group_size,
       focusCategory: answers.interests[0] || 'heritage',
+      interests: answers.interests,
     });
 
     const mappedAnswers: TripContextAnswers = {
