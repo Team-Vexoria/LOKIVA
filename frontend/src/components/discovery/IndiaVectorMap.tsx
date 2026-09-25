@@ -7,79 +7,127 @@ import {
   RotateCcw,
   Landmark,
   Scissors,
-  MapPin,
   Sparkles,
 } from 'lucide-react';
 import { getStateDossier } from '../../data/stateDossiersData';
 
-// Official TopoJSON containing strictly 36 State / UT geometries (no district clutter)
+// Official TopoJSON containing strictly 36 State / UT geometries
 const INDIA_TOPO_JSON = '/data/india-states.topo.json';
 
-const REGIONS = [
+export const REGIONS = [
   'All India',
   'North India',
-  'South India',
   'West India',
-  'East India',
+  'South India',
+  'East & Central',
   'Northeast',
 ] as const;
 
-type RegionType = (typeof REGIONS)[number];
+export type RegionType = (typeof REGIONS)[number];
 
-const REGION_STATES: Record<RegionType, string[]> = {
-  'All India': [],
-  'North India': [
-    'Jammu and Kashmir',
-    'Ladakh',
-    'Himachal Pradesh',
-    'Punjab',
-    'Uttarakhand',
-    'Haryana',
-    'Delhi',
-    'Chandigarh',
-    'Uttar Pradesh',
-    'Rajasthan',
-  ],
-  'South India': [
-    'Andhra Pradesh',
-    'Karnataka',
-    'Kerala',
-    'Tamil Nadu',
-    'Telangana',
-    'Puducherry',
-    'Lakshadweep',
-  ],
-  'West India': [
-    'Gujarat',
-    'Maharashtra',
-    'Goa',
-    'Dadra and Nagar Haveli and Daman and Diu',
-  ],
-  'East India': [
-    'Bihar',
-    'Jharkhand',
-    'Odisha',
-    'West Bengal',
-    'Andaman and Nicobar Islands',
-  ],
-  'Northeast': [
-    'Arunachal Pradesh',
-    'Assam',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Sikkim',
-    'Tripura',
-  ],
-};
+export interface RegionColorConfig {
+  region: string;
+  fill: string;
+  hover: string;
+}
+
+/**
+ * Vibrant regional color-coding based on authentic heritage palette:
+ * - North India (Himachal, Punjab, Uttarakhand, J&K, Delhi, UP, etc.): Royal Amber / Sandstone (#E89A3C, hover: #D6882A)
+ * - West India (Rajasthan, Gujarat, Maharashtra, Goa): Warm Terracotta / Desert Ochre (#D96B43, hover: #C4552D)
+ * - South India (Kerala, Tamil Nadu, Karnataka, AP, Telangana): Lush Emerald / Heritage Sage (#3D7A5A, hover: #2E6246)
+ * - East & Central India (MP, Chhattisgarh, Bengal, Odisha, Bihar, Jharkhand): Antique Bronze / Rust (#B26E45, hover: #9B5C35)
+ * - Northeast India (Assam, Meghalaya, Sikkim, etc.): Deep Jade / Forest Mineral (#2C5E55, hover: #1F4740)
+ */
+export function getStateRegionAndColors(stateName: string): RegionColorConfig {
+  const norm = stateName.toLowerCase();
+
+  // North India
+  if (
+    norm.includes('himachal') ||
+    norm.includes('punjab') ||
+    norm.includes('uttarakhand') ||
+    norm.includes('jammu') ||
+    norm.includes('kashmir') ||
+    norm.includes('ladakh') ||
+    norm.includes('delhi') ||
+    norm.includes('uttar pradesh') ||
+    norm.includes('haryana') ||
+    norm.includes('chandigarh')
+  ) {
+    return {
+      region: 'North India',
+      fill: '#E89A3C',
+      hover: '#D6882A',
+    };
+  }
+
+  // West India
+  if (
+    norm.includes('rajasthan') ||
+    norm.includes('gujarat') ||
+    norm.includes('maharashtra') ||
+    norm.includes('goa') ||
+    norm.includes('dadra') ||
+    norm.includes('daman') ||
+    norm.includes('diu')
+  ) {
+    return {
+      region: 'West India',
+      fill: '#D96B43',
+      hover: '#C4552D',
+    };
+  }
+
+  // South India
+  if (
+    norm.includes('kerala') ||
+    norm.includes('tamil') ||
+    norm.includes('karnataka') ||
+    norm.includes('andhra') ||
+    norm.includes('telangana') ||
+    norm.includes('puducherry') ||
+    norm.includes('lakshadweep')
+  ) {
+    return {
+      region: 'South India',
+      fill: '#3D7A5A',
+      hover: '#2E6246',
+    };
+  }
+
+  // Northeast India
+  if (
+    norm.includes('assam') ||
+    norm.includes('meghalaya') ||
+    norm.includes('sikkim') ||
+    norm.includes('arunachal') ||
+    norm.includes('manipur') ||
+    norm.includes('mizoram') ||
+    norm.includes('nagaland') ||
+    norm.includes('tripura')
+  ) {
+    return {
+      region: 'Northeast',
+      fill: '#2C5E55',
+      hover: '#1F4740',
+    };
+  }
+
+  // East & Central India (MP, Chhattisgarh, Bengal, Odisha, Bihar, Jharkhand, Andaman)
+  return {
+    region: 'East & Central',
+    fill: '#B26E45',
+    hover: '#9B5C35',
+  };
+}
 
 const REGION_VIEWPORTS: Record<RegionType, { coordinates: [number, number]; zoom: number }> = {
   'All India': { coordinates: [82.8, 22.0], zoom: 1 },
-  'North India': { coordinates: [77.2, 29.2], zoom: 2.1 },
-  'South India': { coordinates: [77.8, 13.5], zoom: 2.3 },
+  'North India': { coordinates: [77.2, 29.5], zoom: 2.1 },
   'West India': { coordinates: [72.8, 21.0], zoom: 2.3 },
-  'East India': { coordinates: [85.8, 22.8], zoom: 2.3 },
+  'South India': { coordinates: [77.8, 13.5], zoom: 2.3 },
+  'East & Central': { coordinates: [84.8, 22.8], zoom: 2.2 },
   'Northeast': { coordinates: [93.2, 25.8], zoom: 2.7 },
 };
 
@@ -148,25 +196,19 @@ export function IndiaVectorMap({
     setZoomPosition(REGION_VIEWPORTS['All India']);
   };
 
-  // Fast set lookup for region cluster highlights
-  const highlightedRegionStates = useMemo(() => {
-    if (activeRegion === 'All India') return new Set<string>();
-    return new Set(REGION_STATES[activeRegion].map((s) => s.toLowerCase()));
-  }, [activeRegion]);
-
   return (
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className={`relative w-full h-full bg-[#F5EFE6] overflow-hidden select-none flex flex-col items-center justify-center ${className}`}
+      className={`relative w-full h-full bg-[#FAF7F2] overflow-hidden select-none flex flex-col items-center justify-center ${className}`}
       style={{
-        backgroundImage: `radial-gradient(#D5CAB8 0.75px, transparent 0.75px)`,
+        backgroundImage: `radial-gradient(#E5DFD5 0.8px, transparent 0.8px)`,
         backgroundSize: '24px 24px',
       }}
     >
-      {/* ── Top Bar: Quick Region Filter Pills ─────────────────────────── */}
-      <div className="absolute top-4 inset-x-4 sm:top-5 z-20 flex items-center justify-center pointer-events-none">
-        <div className="flex items-center gap-1.5 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl border border-[#E5DFD5] shadow-sm overflow-x-auto max-w-full pointer-events-auto scrollbar-none">
+      {/* ── Top Bar: Floating Centered Region Filter Pills ─────────────── */}
+      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none w-full px-4">
+        <div className="flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E5DFD5] shadow-md overflow-x-auto max-w-full pointer-events-auto scrollbar-none">
           {REGIONS.map((region) => {
             const isActive = activeRegion === region;
             return (
@@ -174,7 +216,7 @@ export function IndiaVectorMap({
                 key={region}
                 type="button"
                 onClick={() => handleRegionSelect(region)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-extrabold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   isActive
                     ? 'bg-[#C85A32] text-white shadow-xs'
                     : 'bg-transparent text-[#12213B] hover:bg-[#FAF7F2] hover:text-[#C85A32]'
@@ -199,11 +241,11 @@ export function IndiaVectorMap({
               left: tooltipPos.x + 16,
               top: tooltipPos.y - 12,
               transform:
-                tooltipPos.x > (containerRef.current?.clientWidth || 600) - 220
+                tooltipPos.x > (containerRef.current?.clientWidth || 700) - 220
                   ? 'translate(-115%, 0)'
                   : 'none',
             }}
-            className="absolute z-30 pointer-events-none bg-white/95 backdrop-blur-md border border-[#E5DFD5] px-3.5 py-2.5 rounded-xl shadow-lg min-w-[170px]"
+            className="absolute z-30 pointer-events-none bg-white/95 backdrop-blur-md border border-[#E5DFD5] px-3.5 py-2.5 rounded-xl shadow-xl min-w-[170px]"
           >
             <div className="flex items-center justify-between gap-2 mb-0.5">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
@@ -230,7 +272,7 @@ export function IndiaVectorMap({
       </AnimatePresence>
 
       {/* ── Floating Zoom Controls ─────────────────────────────────────── */}
-      <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
+      <div className="absolute top-20 right-4 sm:top-24 sm:right-6 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
         <button
           type="button"
           onClick={handleZoomIn}
@@ -257,19 +299,31 @@ export function IndiaVectorMap({
         </button>
       </div>
 
-      {/* ── Floating Map Legend ────────────────────────────────────────── */}
-      <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-20 hidden md:flex items-center gap-3.5 px-3.5 py-2 bg-white/90 backdrop-blur-md rounded-2xl border border-[#E5DFD5] text-[11px] font-mono text-[#12213B] shadow-2xs">
+      {/* ── Regional Palette Legend (Bottom Left) ──────────────────────── */}
+      <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-20 hidden md:flex items-center gap-3 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E5DFD5] text-[10px] font-mono text-[#12213B] shadow-sm">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#C85A32]" />
-          <span className="font-semibold">Selected State</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#E89A3C]" />
+          <span>North</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#F3DEC9] border border-[#E5B582]" />
-          <span>Region Cluster</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#D96B43]" />
+          <span>West</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#FAF5EE] border border-[#D5CAB8]" />
-          <span>All States</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3D7A5A]" />
+          <span>South</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#B26E45]" />
+          <span>East &amp; Central</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#2C5E55]" />
+          <span>Northeast</span>
+        </div>
+        <div className="flex items-center gap-1.5 border-l border-[#E5DFD5] pl-2 font-bold text-[#C85A32]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B35] border border-white" />
+          <span>Selected</span>
         </div>
       </div>
 
@@ -277,7 +331,7 @@ export function IndiaVectorMap({
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{
-          scale: 1040,
+          scale: 1060,
           center: [82.8, 22.0],
         }}
         className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -290,7 +344,7 @@ export function IndiaVectorMap({
               setZoomPosition({ coordinates: pos.coordinates, zoom: pos.zoom });
             }
           }}
-          maxZoom={5}
+          maxZoom={5.5}
           minZoom={1}
         >
           <Geographies geography={INDIA_TOPO_JSON}>
@@ -303,63 +357,56 @@ export function IndiaVectorMap({
                   'India';
 
                 const isSelected = selectedState.toLowerCase() === stateName.toLowerCase();
-                const isInRegionCluster = highlightedRegionStates.has(stateName.toLowerCase());
+                const regionMeta = getStateRegionAndColors(stateName);
 
-                // Palette specification:
-                // Base state fill: #FAF5EE (warm linen parchment)
-                // Border: #D5CAB8 (1px stroke)
-                // Region cluster highlight: #F3DEC9
-                // Selected state: #C85A32 (vibrant terracotta)
-                let fill = '#FAF5EE';
-                if (isSelected) {
-                  fill = '#C85A32';
-                } else if (isInRegionCluster) {
-                  fill = '#F3DEC9';
-                }
-
-                let hoverFill = '#EFE3D0';
-                if (isSelected) {
-                  hoverFill = '#B34E28';
-                } else if (isInRegionCluster) {
-                  hoverFill = '#E8C5A5';
-                }
+                // Set explicit SVG fill attribute and stroke attribute to ensure no black fallback
+                const baseFill = isSelected ? '#FF6B35' : regionMeta.fill;
+                const baseStroke = isSelected ? '#FFFFFF' : '#FAF7F2';
+                const baseStrokeWidth = isSelected ? 2.0 : 0.8;
 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
+                    fill={baseFill}
+                    stroke={baseStroke}
+                    strokeWidth={baseStrokeWidth}
                     onMouseEnter={() => {
                       const dossier = getStateDossier(stateName);
                       setHoveredState({
                         name: dossier.name,
                         siteCount: dossier.siteCount,
                         guildCount: dossier.guildCount,
-                        region: dossier.region,
+                        region: regionMeta.region,
                       });
                     }}
                     onMouseLeave={() => setHoveredState(null)}
                     onClick={() => onSelectState(stateName)}
                     style={{
                       default: {
-                        fill,
-                        stroke: isSelected ? '#8C2E15' : '#D5CAB8',
-                        strokeWidth: isSelected ? 1.5 : 1.0,
+                        fill: baseFill,
+                        stroke: baseStroke,
+                        strokeWidth: baseStrokeWidth,
                         outline: 'none',
-                        transition: 'fill 200ms ease, stroke 200ms ease',
+                        transition: 'all 250ms cubic-bezier(0.16, 1, 0.3, 1)',
                         filter: isSelected
-                          ? 'drop-shadow(0 4px 10px rgba(200, 90, 50, 0.35))'
+                          ? 'drop-shadow(0 6px 16px rgba(255, 107, 53, 0.55))'
                           : 'none',
                       },
                       hover: {
-                        fill: hoverFill,
-                        stroke: '#C85A32',
-                        strokeWidth: 1.5,
-                        cursor: 'pointer',
+                        fill: '#FF6B35',
+                        stroke: '#FFFFFF',
+                        strokeWidth: 2.0,
                         outline: 'none',
-                        filter: 'drop-shadow(0 2px 8px rgba(200, 90, 50, 0.25))',
+                        cursor: 'pointer',
+                        filter: 'drop-shadow(0 4px 12px rgba(217, 107, 67, 0.45))',
+                        transform: 'translateY(-2px)',
+                        transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
                       },
                       pressed: {
-                        fill: '#9E3F1E',
+                        fill: '#B84E26',
+                        stroke: '#FFFFFF',
+                        strokeWidth: 2.0,
                         outline: 'none',
                       },
                     } as any}
