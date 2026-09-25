@@ -45,6 +45,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
     if (video) {
       video.muted = true;
       video.defaultMuted = true;
+      video.pause();
     }
 
     const checkPlayback = () => {
@@ -53,9 +54,9 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       const vh = window.innerHeight;
 
-      // Start playing as soon as user scrolls a little past hero top (scrollY > 15px)
+      // Start playing only when user scrolls down into expanding media view (scrollY > 60px)
       // Keep playing through fullscreen and until half of next section (scrollY < vh * 2.2)
-      if (scrollY > 15 && scrollY < vh * 2.2) {
+      if (scrollY > 60 && scrollY < vh * 2.2) {
         if (vid.paused) {
           vid.muted = true;
           const playPromise = vid.play();
@@ -253,12 +254,11 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             boxShadow: '0 -8px 30px rgba(18, 33, 59, 0.12)',
           }}
         >
-          {/* Autoplay Landing Video */}
+          {/* Scroll-activated Landing Video */}
           <video
             ref={videoRef}
             src="/landing_video.mp4"
             poster="/lokiva_background.avif"
-            autoPlay
             playsInline
             muted
             loop

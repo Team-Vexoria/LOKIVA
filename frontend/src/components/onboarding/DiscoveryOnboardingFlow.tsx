@@ -44,8 +44,12 @@ export interface DiscoveryAnswers {
   };
 }
 
-export const DAY_OPTIONS = [1, 3, 5, 7, 10, 14, 21];
-export const BUDGET_OPTIONS = [1000, 3000, 5000, 9000, 15000, 25000];
+export const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+export const DAY_MILESTONES = [1, 3, 5, 7, 10, 14, 21];
+
+export const BUDGET_VALUES = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000];
+export const BUDGET_MILESTONES = [1000, 3000, 5000, 10000, 15000, 25000];
+export const BUDGET_OPTIONS = BUDGET_VALUES;
 
 export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
   destination: 'Smart Match',
@@ -413,17 +417,21 @@ export function DiscoveryOnboardingFlow({
     }),
   };
 
-  const formattedBudgetDaily = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(budgetDaily);
+  const formattedBudgetDaily = budgetDaily >= 25000
+    ? '₹25,000+'
+    : new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(budgetDaily);
 
-  const formattedTotalBudget = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(budgetDaily * days);
+  const formattedTotalBudget = budgetDaily >= 25000
+    ? `₹${(25000 * days).toLocaleString('en-IN')}+`
+    : new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(budgetDaily * days);
 
   if (!isOpen) return null;
 
@@ -705,26 +713,36 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Responsive Slider with 1:1 Matched Ticks */}
+                  {/* Days Slider - slider index maps 1:1 to milestone array, labels evenly distributed */}
                   <div className="space-y-3 px-2">
                     <input
                       type="range"
                       min={0}
-                      max={DAY_OPTIONS.length - 1}
+                      max={DAY_MILESTONES.length - 1}
                       step={1}
-                      value={DAY_OPTIONS.indexOf(days) !== -1 ? DAY_OPTIONS.indexOf(days) : 2}
-                      onChange={(e) => setDays(DAY_OPTIONS[parseInt(e.target.value, 10)])}
+                      value={(() => {
+                        const exact = DAY_MILESTONES.indexOf(days);
+                        if (exact !== -1) return exact;
+                        return DAY_MILESTONES.reduce(
+                          (best, val, idx) =>
+                            Math.abs(val - days) < Math.abs(DAY_MILESTONES[best] - days) ? idx : best,
+                          0
+                        );
+                      })()}
+                      onChange={(e) => setDays(DAY_MILESTONES[parseInt(e.target.value, 10)])}
                       className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
+                      aria-label="Trip duration in days"
                     />
 
-                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-0.5">
-                      {DAY_OPTIONS.map((d) => (
+                    {/* flex justify-between works perfectly because slider steps equal label count */}
+                    <div className="flex justify-between text-[11px] font-mono font-semibold">
+                      {DAY_MILESTONES.map((d) => (
                         <button
                           key={d}
                           type="button"
                           onClick={() => setDays(d)}
                           className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
-                            days === d ? 'text-[#C85A32] font-bold underline' : ''
+                            days === d ? 'text-[#C85A32] font-bold underline' : 'text-dusk-600'
                           }`}
                         >
                           {d} {d === 1 ? 'Day' : 'Days'}
@@ -808,29 +826,39 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Responsive Slider with 1:1 Matched Ticks */}
+                  {/* Budget Slider - slider index maps 1:1 to milestone array, labels evenly distributed */}
                   <div className="space-y-3 px-2">
                     <input
                       type="range"
                       min={0}
-                      max={BUDGET_OPTIONS.length - 1}
+                      max={BUDGET_MILESTONES.length - 1}
                       step={1}
-                      value={BUDGET_OPTIONS.indexOf(budgetDaily) !== -1 ? BUDGET_OPTIONS.indexOf(budgetDaily) : 2}
-                      onChange={(e) => setBudgetDaily(BUDGET_OPTIONS[parseInt(e.target.value, 10)])}
+                      value={(() => {
+                        const exact = BUDGET_MILESTONES.indexOf(budgetDaily);
+                        if (exact !== -1) return exact;
+                        return BUDGET_MILESTONES.reduce(
+                          (best, val, idx) =>
+                            Math.abs(val - budgetDaily) < Math.abs(BUDGET_MILESTONES[best] - budgetDaily) ? idx : best,
+                          0
+                        );
+                      })()}
+                      onChange={(e) => setBudgetDaily(BUDGET_MILESTONES[parseInt(e.target.value, 10)])}
                       className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
+                      aria-label="Daily budget in INR"
                     />
 
-                    <div className="flex justify-between text-[11px] font-mono text-dusk-600 font-semibold px-0.5">
-                      {BUDGET_OPTIONS.map((b) => (
+                    {/* flex justify-between works perfectly because slider steps equal label count */}
+                    <div className="flex justify-between text-[11px] font-mono font-semibold">
+                      {BUDGET_MILESTONES.map((b) => (
                         <button
                           key={b}
                           type="button"
                           onClick={() => setBudgetDaily(b)}
                           className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
-                            budgetDaily === b ? 'text-[#C85A32] font-bold underline' : ''
+                            budgetDaily === b ? 'text-[#C85A32] font-bold underline' : 'text-dusk-600'
                           }`}
                         >
-                          ₹{b >= 1000 ? `${b / 1000}k` : b}{b === 25000 ? '+' : ''}
+                          ₹{b >= 1000 ? `${b / 1000}k` : b}{b >= 25000 ? '+' : ''}
                         </button>
                       ))}
                     </div>
