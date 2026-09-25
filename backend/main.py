@@ -5,7 +5,10 @@ import logging
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from faster_whisper import WhisperModel
+try:
+    from faster_whisper import WhisperModel
+except ImportError:
+    WhisperModel = None
 from backend.app.core.config import settings
 from backend.app.core.database import Base, engine
 from backend.app.api import auth, experiences, recommendations, ai, itineraries, providers, admin, reviews, destinations, voice_solver
@@ -66,6 +69,8 @@ _whisper_model = None
 
 def get_whisper_model():
     global _whisper_model
+    if WhisperModel is None:
+        return None
     if _whisper_model is None:
         try:
             _whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
@@ -146,6 +151,11 @@ async def stt(file: UploadFile = File(...), task: str = Query("translate")):
 
     # 2. Local faster-whisper model
     model = get_whisper_model()
+    if model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Speech-to-Text model not loaded. Please set GROQ_API_KEY or install faster-whisper."
+        )
     try:
         segments, info = model.transcribe(
             tmp_path,
