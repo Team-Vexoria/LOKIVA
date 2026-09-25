@@ -189,13 +189,17 @@ export function Navbar() {
                 <div className="flex items-center gap-1.5 text-xs">
                   <Link
                     to="/profile"
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-marigold/50 text-ink font-semibold text-xs transition group"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-[#FFC067]/50 text-ink font-semibold text-xs transition group"
                     title="View Profile & Settings"
                   >
-                    <div className="w-5 h-5 rounded-full bg-[#D85A38] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
-                      {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                    <div className="w-5 h-5 rounded-full bg-[#C1443B] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs overflow-hidden">
+                      {user.avatar || user.avatar_url ? (
+                        <img src={user.avatar || user.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'
+                      )}
                     </div>
-                    <span className="max-w-[90px] truncate text-[11px] group-hover:text-[#D85A38] transition-colors">
+                    <span className="max-w-[90px] truncate text-[11px] group-hover:text-[#C1443B] transition-colors">
                       {user.full_name?.split(' ')[0]}
                     </span>
                   </Link>

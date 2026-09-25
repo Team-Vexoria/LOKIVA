@@ -32,17 +32,62 @@ export function ExperienceCard({
   const [isSaved, setIsSaved] = React.useState(initialIsSaved);
   const [isSaving, setIsSaving] = React.useState(false);
 
+  // Synchronize initial saved state
+  React.useEffect(() => {
+    if (initialIsSaved) {
+      setIsSaved(true);
+      return;
+    }
+    try {
+      const local = JSON.parse(localStorage.getItem('lokiva_saved_items') || '[]');
+      if (Array.isArray(local) && local.some((item: any) => item.id === experience.id)) {
+        setIsSaved(true);
+      }
+    } catch {}
+  }, [experience.id, initialIsSaved]);
+
   const handleToggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsSaving(true);
     try {
-      await api.toggleFavorite(experience.id);
-      const newState = !isSaved;
+      const res = await api.toggleFavorite(experience.id);
+      const newState = res && typeof res.favorited === 'boolean' ? res.favorited : !isSaved;
       setIsSaved(newState);
+
+      // Keep local cache synchronized
+      try {
+        const local = JSON.parse(localStorage.getItem('lokiva_saved_items') || '[]');
+        let updated = Array.isArray(local) ? [...local] : [];
+        if (newState) {
+          if (!updated.some((item: any) => item.id === experience.id)) {
+            updated.push(experience);
+          }
+        } else {
+          updated = updated.filter((item: any) => item.id !== experience.id);
+        }
+        localStorage.setItem('lokiva_saved_items', JSON.stringify(updated));
+      } catch {}
+
       onBookmarkChange?.(newState);
     } catch (err) {
       console.error('Bookmark error:', err);
+      // Fallback to local toggle if network issue
+      const newState = !isSaved;
+      setIsSaved(newState);
+      try {
+        const local = JSON.parse(localStorage.getItem('lokiva_saved_items') || '[]');
+        let updated = Array.isArray(local) ? [...local] : [];
+        if (newState) {
+          if (!updated.some((item: any) => item.id === experience.id)) {
+            updated.push(experience);
+          }
+        } else {
+          updated = updated.filter((item: any) => item.id !== experience.id);
+        }
+        localStorage.setItem('lokiva_saved_items', JSON.stringify(updated));
+      } catch {}
+      onBookmarkChange?.(newState);
     } finally {
       setIsSaving(false);
     }

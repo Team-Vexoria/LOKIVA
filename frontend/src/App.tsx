@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './lib/auth-context';
 import { initializeTTS } from './lib/tts';
 import { Navbar } from './components/layout/Navbar';
@@ -25,11 +25,77 @@ import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
 import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { GroupTripHubPage } from './pages/GroupTripHubPage';
+import { RequireAuth } from './components/auth/RequireAuth';
 import { NotFoundPage } from './pages/NotFoundPage';
 
-export function App() {
+function AppShell() {
+  const location = useLocation();
   const { showModal, closeModal } = useOnboardingGate();
+  const isFullBleedPage = location.pathname === '/' || location.pathname === '/destinations';
 
+  return (
+    <div className="flex flex-col min-h-screen bg-paper text-ink font-sans selection:bg-marigold selection:text-ink">
+      <Navbar />
+      <main className={`flex-1 ${isFullBleedPage ? 'pt-0' : 'pt-16 sm:pt-20'}`}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/destinations" element={<DestinationsPage />} />
+          <Route path="/destination/:state" element={<DestinationDetailPage />} />
+          <Route path="/destination/:state/:city" element={<DestinationDetailPage />} />
+          <Route path="/experience/:id" element={<ExperienceDetailPage />} />
+          <Route path="/ai-guide" element={<AiGuidePage />} />
+          <Route path="/itinerary" element={<ItineraryPage />} />
+          <Route path="/saved" element={<SavedPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/discovery-map" element={<DiscoveryMapPage />} />
+
+          {/* Lokiva Group Hub Routes - Protected by RequireAuth */}
+          <Route
+            path="/group/new"
+            element={
+              <RequireAuth>
+                <GroupTripHubPage mode="create" />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/group/:groupId"
+            element={
+              <RequireAuth>
+                <GroupTripHubPage mode="room" />
+              </RequireAuth>
+            }
+          />
+
+          {/* Auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/traveler" element={<TravelerLoginPage />} />
+          <Route path="/login/provider" element={<ProviderLoginPage />} />
+          <Route path="/login/admin" element={<AdminLoginPage />} />
+          <Route path="/register/traveler" element={<TravelerRegisterPage />} />
+          <Route path="/register/provider" element={<ProviderRegisterPage />} />
+
+          {/* Portal routes */}
+          <Route path="/provider" element={<ProviderDashboardPage />} />
+          <Route path="/provider/*" element={<ProviderDashboardPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/*" element={<AdminDashboardPage />} />
+
+          {/* 404 Catch-all */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
+      <Footer />
+
+      {/* First-visit onboarding modal */}
+      <LocationDecisionModal isOpen={showModal} onClose={closeModal} />
+    </div>
+  );
+}
+
+export function App() {
   useEffect(() => {
     initializeTTS();
   }, []);
@@ -37,46 +103,7 @@ export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="flex flex-col min-h-screen bg-paper text-ink font-sans selection:bg-marigold selection:text-ink">
-          <Navbar />
-          <main className="flex-1 pt-16 sm:pt-20">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/explore" element={<ExplorePage />} />
-              <Route path="/destinations" element={<DestinationsPage />} />
-              <Route path="/destination/:state" element={<DestinationDetailPage />} />
-              <Route path="/destination/:state/:city" element={<DestinationDetailPage />} />
-              <Route path="/experience/:id" element={<ExperienceDetailPage />} />
-              <Route path="/ai-guide" element={<AiGuidePage />} />
-              <Route path="/itinerary" element={<ItineraryPage />} />
-              <Route path="/saved" element={<SavedPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/discovery-map" element={<DiscoveryMapPage />} />
-
-              {/* Auth routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/login/traveler" element={<TravelerLoginPage />} />
-              <Route path="/login/provider" element={<ProviderLoginPage />} />
-              <Route path="/login/admin" element={<AdminLoginPage />} />
-              <Route path="/register/traveler" element={<TravelerRegisterPage />} />
-              <Route path="/register/provider" element={<ProviderRegisterPage />} />
-
-              {/* Portal routes */}
-              <Route path="/provider" element={<ProviderDashboardPage />} />
-              <Route path="/provider/*" element={<ProviderDashboardPage />} />
-              <Route path="/admin" element={<AdminDashboardPage />} />
-              <Route path="/admin/*" element={<AdminDashboardPage />} />
-
-              {/* 404 Catch-all */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </main>
-          <Footer />
-
-
-          {/* First-visit onboarding modal */}
-          <LocationDecisionModal isOpen={showModal} onClose={closeModal} />
-        </div>
+        <AppShell />
       </BrowserRouter>
     </AuthProvider>
   );

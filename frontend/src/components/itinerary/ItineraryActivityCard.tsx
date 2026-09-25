@@ -121,20 +121,20 @@ export function ItineraryActivityCard({
     >
       {/* Top Row: Stop Number, Time Range, Category & Status */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E5DFD5]">
-        <div className="flex items-center gap-2 font-mono text-xs text-ink font-bold">
+        <div className="flex flex-wrap items-center gap-2 font-meta text-xs font-semibold tracking-normal text-neutral-700">
           {/* Stop Number Badge */}
-          <span className="w-6 h-6 rounded-full bg-[#12213B] text-[#FFC067] text-[11px] font-mono font-bold flex items-center justify-center shrink-0 shadow-2xs">
+          <span className="w-6 h-6 rounded-full bg-[#C85A32] text-white text-[11px] font-heading font-extrabold flex items-center justify-center shrink-0 shadow-2xs">
             {index + 1}
           </span>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF7F2] rounded-lg text-ink border border-[#E5DFD5]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF7F2] rounded-lg text-neutral-800 border border-[#E5DFD5]">
             <Clock className="w-3.5 h-3.5 text-[#C1443B]" />
             <span>{activity.timeRange}</span>
           </div>
 
-          <span className="text-dusk font-normal">·</span>
-          <span className="text-dusk font-medium">{activity.duration}</span>
-          <span className="text-dusk font-normal">·</span>
+          <span className="text-neutral-400 font-normal">·</span>
+          <span className="text-neutral-600 font-medium">{activity.duration}</span>
+          <span className="text-neutral-400 font-normal">·</span>
           <span className="text-[#C1443B] font-semibold">{activity.category}</span>
         </div>
 
@@ -193,7 +193,7 @@ export function ItineraryActivityCard({
         {/* Details Column */}
         <div className={`${photo ? 'sm:col-span-8' : 'sm:col-span-12'} space-y-2.5`}>
           <div>
-            <h4 className="text-base sm:text-lg font-heading font-bold text-ink leading-snug">
+            <h4 className="text-lg sm:text-xl font-display font-bold text-neutral-900 leading-snug tracking-tight">
               {activity.title}
             </h4>
             <div className="flex items-center gap-1.5 text-xs text-dusk font-sans mt-0.5">
@@ -212,7 +212,7 @@ export function ItineraryActivityCard({
               {activity.includes.slice(0, 3).map((inc, i) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 rounded-md bg-[#FAF7F2] border border-[#E5DFD5] text-[10px] font-mono text-ink"
+                  className="px-2 py-0.5 rounded-md bg-[#FAF7F2] border border-[#E5DFD5] text-[10px] font-meta text-ink"
                 >
                   ✓ {inc}
                 </span>
@@ -221,7 +221,7 @@ export function ItineraryActivityCard({
           )}
 
           {/* Pricing & Duration Adjust */}
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono border-t border-[#E5DFD5]">
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs font-meta border-t border-[#E5DFD5]">
             <div className="flex items-center gap-2">
               <span className="text-dusk text-[11px]">Est. Access:</span>
               <span className="font-bold text-ink">
@@ -240,12 +240,12 @@ export function ItineraryActivityCard({
                     step="15"
                     value={durationValue}
                     onChange={(e) => setDurationValue(parseInt(e.target.value, 10) || 60)}
-                    className="w-16 px-1.5 py-0.5 border border-ink rounded text-xs font-mono text-center"
+                    className="w-16 px-1.5 py-0.5 border border-ink rounded text-xs font-meta text-center"
                   />
                   <span className="text-[10px] text-dusk">mins</span>
                   <button
                     onClick={handleSaveDuration}
-                    className="px-2 py-0.5 bg-ink text-white rounded text-[10px] font-bold"
+                    className="px-2 py-0.5 bg-[#C85A32] text-white rounded text-[10px] font-bold"
                   >
                     Save
                   </button>
@@ -256,7 +256,7 @@ export function ItineraryActivityCard({
                     e.stopPropagation();
                     setIsEditingDuration(true);
                   }}
-                  className="text-[11px] text-[#C1443B] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-[#C1443B] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
                 >
                   <Pencil className="w-3 h-3" />
                   <span>Adjust ({activity.visitDurationMinutes || 60}m)</span>
@@ -269,7 +269,7 @@ export function ItineraryActivityCard({
 
       {/* Transit Connector to Next Activity */}
       {!isLast && (
-        <div className="mt-3 pt-3 border-t border-dashed border-[#E5DFD5] flex items-center justify-between gap-2 text-[11px] font-mono text-dusk bg-[#FAF7F2] p-2.5 rounded-xl">
+        <div className="mt-3 pt-3 border-t border-dashed border-[#E5DFD5] flex items-center justify-between gap-2 font-meta text-xs font-medium tracking-wide text-neutral-600 bg-[#FAF7F2] p-2.5 rounded-xl">
           <div className="flex items-center gap-2">
             {activity.transitMode === 'walking' ? (
               <Footprints className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -279,7 +279,7 @@ export function ItineraryActivityCard({
             <span>{activity.gettingThere}</span>
           </div>
           {activity.transitCost > 0 && (
-            <span className="font-bold text-ink shrink-0">~₹{activity.transitCost}</span>
+            <span className="font-bold text-neutral-900 shrink-0">~₹{activity.transitCost}</span>
           )}
         </div>
       )}

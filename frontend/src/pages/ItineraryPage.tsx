@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useItineraryStore } from '../store/useItineraryStore';
+import { useGroupTripStore } from '../store/useGroupTripStore';
 import { TripHeaderOverview } from '../components/itinerary/TripHeaderOverview';
 import { ItineraryViewTabs } from '../components/itinerary/ItineraryViewTabs';
 import { DayCardTimeline } from '../components/itinerary/DayCardTimeline';
 import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
 import { TripSummarySidebar } from '../components/itinerary/TripSummarySidebar';
+import { RouteDispatchSidebar } from '../components/itinerary/RouteDispatchSidebar';
 import { ItineraryMapView } from '../components/itinerary/ItineraryMapView';
 import { ItineraryListView } from '../components/itinerary/ItineraryListView';
 import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView';
@@ -27,6 +29,9 @@ import {
   Layers,
   CheckCircle2,
   X,
+  Users,
+  Wallet,
+  ArrowLeft,
 } from 'lucide-react';
 
 export function ItineraryPage() {
@@ -71,6 +76,21 @@ export function ItineraryPage() {
   const [inputPace, setInputPace] = useState<'relaxed' | 'balanced' | 'packed'>('balanced');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
+  // Group trip mode query parameters (passed from Lokiva Group Hub)
+  const groupId = searchParams.get('groupId');
+  const isGroupMode = searchParams.get('groupMode') === 'true' || Boolean(groupId);
+  const groupTravelersParam = searchParams.get('travelers') ? parseInt(searchParams.get('travelers')!, 10) : null;
+  const groupBudgetParam = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : null;
+  const groupPerPersonParam = searchParams.get('perPersonBudget') ? parseInt(searchParams.get('perPersonBudget')!, 10) : null;
+  const groupInterestsParam = searchParams.get('interests') ? searchParams.get('interests')!.split(',') : null;
+
+  const { sessions } = useGroupTripStore();
+  const groupSession = groupId ? sessions[groupId] : undefined;
+
+  const displayTravelers = groupTravelersParam || tripDetails?.travelers || 2;
+  const displayTotalBudget = groupBudgetParam || tripDetails?.totalBudgetLimit || 25000;
+  const displayPerPersonBudget = groupPerPersonParam || Math.round(displayTotalBudget / displayTravelers);
+
   // Auto-generate if URL query parameters change (e.g. /itinerary?city=Varanasi&days=3)
   useEffect(() => {
     const cityParam = searchParams.get('city');
@@ -78,7 +98,7 @@ export function ItineraryPage() {
     const daysParam = searchParams.get('days') ? parseInt(searchParams.get('days')!, 10) : null;
     const paceParam = (searchParams.get('pace') as 'relaxed' | 'balanced' | 'packed') || null;
 
-    if (cityParam && cityParam.toLowerCase() !== (tripDetails?.destination || '').toLowerCase()) {
+    if (cityParam && (cityParam.toLowerCase() !== (tripDetails?.destination || '').toLowerCase() || isGroupMode)) {
       setInputCity(cityParam);
       if (stateParam) setInputState(stateParam);
       if (daysParam) setInputDays(daysParam);
@@ -89,8 +109,11 @@ export function ItineraryPage() {
         state: stateParam || undefined,
         daysCount: daysParam || 3,
         pace: paceParam || 'balanced',
-        travelers: tripDetails?.travelers || 2,
-        budgetLimit: tripDetails?.totalBudgetLimit || 25000,
+        travelers: displayTravelers,
+        budgetLimit: displayTotalBudget,
+        interests: groupInterestsParam && groupInterestsParam.length > 0 ? groupInterestsParam : getSavedInterests(),
+        weatherPreference: getSavedWeatherPreference(),
+        accessibility: getSavedAccessibility(),
       });
     }
   }, [searchParams]);
@@ -106,6 +129,32 @@ export function ItineraryPage() {
       ? activeDay.activities[addAfterIndex]
       : activeDay?.activities[activeDay.activities.length - 1] || null;
 
+  const getSavedDiscoveryAnswers = () => {
+    try {
+      const raw = localStorage.getItem('lokiva_discovery_answers');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  };
+
+  const getSavedInterests = (): string[] => {
+    const answers = getSavedDiscoveryAnswers();
+    if (answers && Array.isArray(answers.interests) && answers.interests.length > 0) {
+      return answers.interests;
+    }
+    return ['heritage', 'crafts', 'food'];
+  };
+
+  const getSavedWeatherPreference = (): 'winter' | 'monsoon' | 'summer_hills' | 'temperate' => {
+    const answers = getSavedDiscoveryAnswers();
+    return answers?.weather_preference || 'winter';
+  };
+
+  const getSavedAccessibility = () => {
+    const answers = getSavedDiscoveryAnswers();
+    return answers?.accessibility || undefined;
+  };
+
   const handleGenerateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     generateTrip({
@@ -115,6 +164,9 @@ export function ItineraryPage() {
       pace: inputPace,
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
+      interests: getSavedInterests(),
+      weatherPreference: getSavedWeatherPreference(),
+      accessibility: getSavedAccessibility(),
     });
     setSearchParams({ city: inputCity, days: String(inputDays), pace: inputPace });
   };
@@ -132,6 +184,9 @@ export function ItineraryPage() {
       pace: inputPace,
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
+      interests: getSavedInterests(),
+      weatherPreference: getSavedWeatherPreference(),
+      accessibility: getSavedAccessibility(),
     });
     setSearchParams({ city: cityName, days: String(inputDays), pace: inputPace });
   };
@@ -146,25 +201,106 @@ export function ItineraryPage() {
     setIsAddActivityModalOpen(true);
   };
 
-  // Compute Grand Total for Header
-  const allActivities = days.flatMap((d) => d.activities);
-  const totalExperiencesCost = allActivities.reduce(
-    (sum, act) => sum + (act.costPerPerson || 0) * (tripDetails.travelers || 2),
-    0
+  // Compute Grand Total and Category Breakdown for Header directly from day metrics or calibrated components
+  const categoryBreakdown = days.reduce(
+    (acc, d) => {
+      if (d.metrics?.costBreakdown) {
+        acc.tickets += d.metrics.costBreakdown.ticketCost || 0;
+        acc.transit += d.metrics.costBreakdown.transitCost || 0;
+        acc.food += d.metrics.costBreakdown.foodCost || 0;
+      } else {
+        const dayActs = d.activities || [];
+        const tCost = dayActs.reduce((s, a) => s + (a.costPerPerson || 0) * (tripDetails.travelers || 2), 0);
+        const trCost = dayActs.reduce((s, a) => s + (a.transitCost || 0), 0);
+        const mCost = (d.mealBudgetPerPerson || 350) * (tripDetails.travelers || 2);
+        acc.tickets += tCost;
+        acc.transit += trCost;
+        acc.food += mCost;
+      }
+      return acc;
+    },
+    { tickets: 0, transit: 0, food: 0 }
   );
-  const totalTransitCost = allActivities.reduce((sum, act) => sum + (act.transitCost || 0), 0);
-  const totalMealsCost = days.length * 800 * (tripDetails.travelers || 2);
-  const grandTotal = totalExperiencesCost + totalTransitCost + totalMealsCost;
+
+  const grandTotal = categoryBreakdown.tickets + categoryBreakdown.transit + categoryBreakdown.food;
 
   return (
     <div className="min-h-screen bg-paper text-ink pb-20 pt-4 sm:pt-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+        {/* Group Trip Mode: Cost Split Per Person Banner */}
+        {isGroupMode && (
+          <div className="p-5 rounded-3xl bg-white border-2 border-[#E8DEC8] shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#FAF4ED] border border-[#E8DEC8] flex items-center justify-center text-[#C85A32] shrink-0">
+                  <Users className="w-5 h-5 text-[#C85A32]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF4ED] border border-[#E8DEC8] text-[#C85A32] text-[10px] font-heading font-extrabold uppercase tracking-wide">
+                      Group Trip Mode · Squad #{groupId || 'Hub'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-heading font-bold border border-emerald-200">
+                      Collective Consensus Plan
+                    </span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-heading font-black text-ink">
+                    {groupSession?.groupName || 'Squad Cultural Circuit'} · {displayTravelers} Travelers
+                  </h2>
+                </div>
+              </div>
+
+              {groupId && (
+                <Link
+                  to={`/group/${groupId}`}
+                  className="px-3.5 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF4ED] border border-[#DDD7CC] hover:border-[#C85A32] text-xs font-heading font-bold text-[#C85A32] transition flex items-center gap-1.5 shadow-2xs self-start sm:self-auto cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Group Hub</span>
+                </Link>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#FAF4ED]">
+              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] space-y-1">
+                <span className="text-[10px] font-mono text-dusk-400 font-bold uppercase block">
+                  Total Group Spend
+                </span>
+                <span className="text-xl font-mono font-bold text-ink">
+                  ₹{displayTotalBudget.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+                <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase block">
+                  Per-Person Split
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-mono font-black text-emerald-900">
+                    ₹{displayPerPersonBudget.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-xs font-sans text-emerald-700">/ traveler</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] flex flex-col justify-center space-y-1">
+                <span className="text-[10px] font-mono text-dusk-400 font-bold uppercase block">
+                  Fair Sweet-Spot
+                </span>
+                <span className="text-xs font-sans text-dusk-600 leading-snug">
+                  Calibrated to protect lowest member ceiling without financial stretch
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 1. Dynamic Trip Generator Bar */}
         <section className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-4 sm:p-5 shadow-xs space-y-3">
           <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             {/* Destination City */}
             <div className="sm:col-span-4 space-y-1">
-              <label className="text-[11px] font-mono uppercase font-bold text-dusk block">
+              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
                 Destination City
               </label>
               <div className="relative">
@@ -181,7 +317,7 @@ export function ItineraryPage() {
 
             {/* Days Count (1 to 7 Days) */}
             <div className="sm:col-span-3 space-y-1">
-              <label className="text-[11px] font-mono uppercase font-bold text-dusk block">
+              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
                 Duration: {inputDays} {inputDays === 1 ? 'Day' : 'Days'}
               </label>
               <div className="flex items-center gap-1.5">
@@ -190,7 +326,7 @@ export function ItineraryPage() {
                     key={num}
                     type="button"
                     onClick={() => setInputDays(num)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
+                    className={`flex-1 py-2 rounded-xl text-xs font-meta font-bold transition cursor-pointer ${
                       inputDays === num
                         ? 'bg-ink text-white shadow-2xs'
                         : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
@@ -283,6 +419,7 @@ export function ItineraryPage() {
         <TripHeaderOverview
           tripDetails={tripDetails}
           totalCost={grandTotal}
+          categoryBreakdown={categoryBreakdown}
           onEditTrip={() => setIsEditTripModalOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
           onPrint={handlePrint}
@@ -302,7 +439,7 @@ export function ItineraryPage() {
                   key={day.dayNumber}
                   type="button"
                   onClick={() => setSelectedDay(day.dayNumber)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  className={`px-4 py-2.5 rounded-xl text-xs font-meta font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                     isSelected
                       ? 'bg-ink text-white shadow-sm'
                       : 'bg-[#FAF7F2] text-ink hover:bg-white border border-[#E5DFD5]'
@@ -394,29 +531,17 @@ export function ItineraryPage() {
             </div>
 
             {/* Right Column (4 cols): Sticky Map & Cost/Impact Sidebar */}
-            <div className="lg:col-span-4 space-y-6 sticky top-20">
-              {/* Embedded Live Route Map */}
-              <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                    Day {selectedDay} Route Map
-                  </span>
-                  <button
-                    onClick={() => setViewMode('map')}
-                    className="text-[11px] font-mono text-[#C1443B] hover:underline cursor-pointer"
-                  >
-                    Full Screen Map &rarr;
-                  </button>
-                </div>
-
-                <ItineraryMapView
-                  days={days}
-                  selectedDayNumber={selectedDay}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Spatiotemporal Route Dispatch Sidebar */}
+              {activeDay && (
+                <RouteDispatchSidebar
+                  day={activeDay}
                   activeStopId={activeStopId}
                   hoveredStopId={hoveredStopId}
                   onSelectStop={(id) => setActiveStopId(id)}
+                  onExpandFullScreenMap={() => setViewMode('map')}
                 />
-              </div>
+              )}
 
               {/* Trip Financial & Local Impact Sidebar */}
               <TripSummarySidebar

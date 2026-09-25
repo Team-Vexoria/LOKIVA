@@ -59,7 +59,7 @@ export interface ItineraryActivity {
   durationMins: number;
   visitDurationMinutes: number;
   transitToNextMinutes: number;
-  transitMode: 'walking' | 'auto_rickshaw' | 'taxi';
+  transitMode: 'walking' | 'auto_rickshaw' | 'taxi' | 'heritage_cab' | 'private_cab';
   transitDistanceKm: number;
   indoorOutdoor: 'indoor' | 'outdoor' | 'semi-covered';
   is_indoor: boolean;
@@ -91,6 +91,8 @@ export interface ItineraryDay {
   dayStartTime?: string;
   activeFilter?: ReplanCondition;
   originalActivities?: ItineraryActivity[];
+  mealBudgetPerPerson?: number;
+  metrics?: DayFeasibilityMetrics;
 }
 
 export interface ItineraryTripDetails {
@@ -105,6 +107,12 @@ export interface ItineraryTripDetails {
   pace?: 'relaxed' | 'balanced' | 'packed';
 }
 
+export interface FoodRecommendation {
+  locale: string;
+  dishes: string[];
+  notes?: string;
+}
+
 export interface ItineraryPracticalInfo {
   weatherSummary: string;
   temperature: string;
@@ -112,4 +120,16 @@ export interface ItineraryPracticalInfo {
   accessibilityNotes: string;
   transitNotes: string;
   languages: string[];
+  foodRecommendations: FoodRecommendation[];
+  travelTips: string[];
+  bestTimeToVisit: {
+    idealMonths: string;
+    crowdPacing: string;
+    advisory: string;
+  };
+  nearbyPlaces: Array<{
+    name: string;
+    area: string;
+    tag: string;
+  }>;
 }

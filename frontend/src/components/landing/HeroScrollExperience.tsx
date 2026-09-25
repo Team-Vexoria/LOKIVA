@@ -5,7 +5,6 @@ import { ArrowRight, Compass, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   SquiggleUnderline,
-  HandDrawnArrow,
   StampBadge,
 } from '../ui/HandDrawnAnnotations';
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
@@ -28,8 +27,8 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   } | null>(null);
   const handlePlanGenerated = (answers: TripContextAnswers, plan: DayPlanResponse) => {
     setSolvedPlan({ answers, plan });
-    // Navigate to discovery map carrying the solved plan so user sees their curated results
-    navigate('/discovery-map', { state: { solvedPlan: plan, solvedAnswers: answers } });
+    // Navigate directly to /itinerary so user sees and edits their curated plan
+    navigate('/itinerary');
   };
 
   // ─── GSAP refs ─────────────────────────────────────────────────────────────
@@ -39,12 +38,13 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayTextRef = useRef<HTMLDivElement>(null);
 
-  // ─── Native Scroll Tracking for Bulletproof Video Playback ────────────────
+  // ─── Native Scroll Tracking for Scroll-Triggered Video Playback ───────────
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
       video.muted = true;
       video.defaultMuted = true;
+      video.pause();
     }
 
     const checkPlayback = () => {
@@ -53,9 +53,9 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       const vh = window.innerHeight;
 
-      // Start playing as soon as user scrolls a little past hero top (scrollY > 15px)
-      // Keep playing through fullscreen and until half of next section (scrollY < vh * 2.2)
-      if (scrollY > 15 && scrollY < vh * 2.2) {
+      // Only play once the user has begun scrolling down (scrollY >= 50px) to reveal the video
+      // and pause when at the top hero section or past the pinned showcase section (vh * 2.2)
+      if (scrollY >= 50 && scrollY < vh * 2.2) {
         if (vid.paused) {
           vid.muted = true;
           const playPromise = vid.play();
@@ -72,6 +72,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
 
     window.addEventListener('scroll', checkPlayback, { passive: true });
     window.addEventListener('resize', checkPlayback, { passive: true });
+    // Check initial position (will pause if at top)
     checkPlayback();
 
     return () => {
@@ -151,14 +152,15 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           {/* ── HERO CONTENT (fades out / floats up during scrub) ─────────────── */}
           <div
             ref={heroContentRef}
-            className="absolute inset-x-0 top-0 z-10 flex flex-col items-center text-center pt-8 sm:pt-10 px-4 pointer-events-auto"
+            className="absolute inset-x-0 z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-auto"
+            style={{ top: '52px', bottom: '7%' }}
           >
           {/* Decorative monument cutouts - background layer */}
           <div
             className="pointer-events-none select-none absolute inset-0 overflow-hidden hidden lg:block"
             aria-hidden="true"
           >
-            <div className="absolute left-0 xl:left-4 top-4 w-36 lg:w-44 xl:w-52 -rotate-3">
+            <div className="absolute left-0 xl:left-4 top-16 lg:top-20 xl:top-24 w-44 lg:w-56 xl:w-64 -rotate-3">
               <img
                 src="/assets/monuments/hawa-mahal-cutout.png"
                 alt=""
@@ -166,7 +168,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
                 className="w-full h-auto object-contain opacity-60 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
               />
             </div>
-            <div className="absolute right-0 xl:right-4 top-2 w-36 lg:w-40 xl:w-48 -rotate-2">
+            <div className="absolute right-0 xl:right-4 top-16 lg:top-20 xl:top-24 w-44 lg:w-52 xl:w-60 -rotate-2">
               <img
                 src="/assets/monuments/taj-mahal-cutout.png"
                 alt=""
@@ -177,7 +179,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* Stamp badge */}
-          <div className="flex items-center justify-center gap-2 mb-3 relative z-10">
+          <div className="flex items-center justify-center gap-2 mb-4 relative z-10">
             <StampBadge text="PAN-INDIA CULTURAL DISCOVERY ENGINE" />
           </div>
 
@@ -195,12 +197,12 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </h1>
 
           {/* Supporting line */}
-          <p className="relative z-10 pt-3 text-sm sm:text-base text-[#5B6B8C] font-sans max-w-xl mx-auto leading-relaxed px-2">
-            India's living artisan guilds, sacred stepwells, and vernacular heritage are scattered across oral lore. LOKIVA evaluates real street transit buffers, opening schedules, and budget limits to build cultural micro-circuits that actually work.
+          <p className="relative z-10 mt-4 sm:mt-5 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
+            Discover authentic artisan guilds and living heritage, packed into feasible cultural circuits built around your time and budget.
           </p>
 
           {/* Verification line */}
-          <div className="relative z-10 flex items-center justify-center gap-2 pt-2 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
+          <div className="relative z-10 flex items-center justify-center gap-2 mt-3 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
             <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
             <span>Curated Across</span>
             <span className="font-mono text-[#12213B] font-extrabold text-sm">36</span>
@@ -208,13 +210,23 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* CTAs */}
-          <div className="relative z-10 pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
+          <div className="relative z-10 mt-5 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
             <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
-              <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
-                <span className="font-display italic text-xs font-bold text-[#C1443B] transform -rotate-6 whitespace-nowrap">
-                  Takes 60s
-                </span>
-                <HandDrawnArrow className="w-11 h-6 -mr-1 text-[#C1443B]" />
+              {/* Character pointing finger directly at the Plan Instant Micro-Itinerary button */}
+              <div
+                className="hidden md:block absolute pointer-events-none select-none z-20 w-[130px] h-[130px] md:w-[150px] md:h-[150px] lg:w-[170px] lg:h-[170px]"
+                style={{
+                  right: 'calc(100% - 6px)',
+                  top: '50%',
+                  transform: 'translateY(-29%) rotate(2.5deg)',
+                }}
+                aria-hidden="true"
+              >
+                <img
+                  src="/assets/character-pointing.png"
+                  alt="Character pointing to plan instant micro-itinerary"
+                  className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(18,33,59,0.15)]"
+                />
               </div>
               <button
                 type="button"
@@ -245,7 +257,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           ref={mediaCardRef}
           className="absolute overflow-hidden will-change-transform z-20"
           style={{
-            top: '85%',
+            top: '93%',
             left: '8%',
             right: '8%',
             bottom: '0%',
@@ -253,35 +265,41 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             boxShadow: '0 -8px 30px rgba(18, 33, 59, 0.12)',
           }}
         >
-          {/* Autoplay Landing Video */}
+          {/* Scroll-Triggered Landing Video */}
           <video
             ref={videoRef}
             src="/landing_video.mp4"
+            autoPlay={false}
             playsInline
             muted
             loop
-            preload="auto"
+            preload="metadata"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
 
-          {/* Dark gradient scrim for crisp text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20 pointer-events-none" />
+          {/* Minimal scrim so the video remains completely visible in full screen */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
-          {/* Overlay text - bottom-left, fades in during scrub */}
+          {/* Overlay text: almost transparent LOKIVA watermark + crisp non-transparent text below */}
           <div
             ref={overlayTextRef}
-            className="absolute bottom-10 left-6 right-6 sm:bottom-14 sm:left-14 sm:right-14 z-10 text-white"
+            className="absolute bottom-8 sm:bottom-14 inset-x-0 z-10 text-center px-4 pointer-events-none flex flex-col items-center justify-center"
             style={{ opacity: 0 }}
           >
-            <span className="inline-block text-xs font-heading font-extrabold uppercase tracking-widest text-[#FFC067] mb-2 drop-shadow-sm">
-              Living Heritage &amp; Generational Flavors
-            </span>
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-lg max-w-3xl">
-              Where Living Traditions Meet Timeless Flavors.
+            {/* Almost transparent LOKIVA text as requested */}
+            <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-black tracking-[0.25em] uppercase text-white/20 select-none drop-shadow-sm">
+              LOKIVA
             </h2>
-            <p className="text-sm sm:text-base text-white/90 font-sans font-medium leading-relaxed max-w-2xl mt-3 drop-shadow-md">
-              From generational tea masters and aromatic spice trails to sacred brass ateliers, LOKIVA curates authentic cultural immersions around your real transit hours.
-            </p>
+
+            {/* Non-transparent crisp concise texts below */}
+            <div className="mt-1.5 sm:mt-2 space-y-1">
+              <p className="text-xs sm:text-sm font-heading font-extrabold uppercase tracking-widest text-[#FFC067] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                Living Heritage &bull; Real Transit Hours
+              </p>
+              <p className="text-xs sm:text-sm md:text-base font-sans font-semibold text-white tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] max-w-lg mx-auto">
+                Where living traditions meet curated cultural micro-circuits.
+              </p>
+            </div>
           </div>
         </div>
     </section>

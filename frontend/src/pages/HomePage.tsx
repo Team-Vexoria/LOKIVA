@@ -266,18 +266,18 @@ export function HomePage() {
         <LokivaMomentsSection experiences={experiences} selectedCity={selectedCity} />
       </section>
 
-      {/* 6. TAG US ON YOUR NEXT TRIP */}
+      {/* 6. TRAVEL BLOGS / STORIES FROM THE JOURNEY */}
       <section className="relative z-30 bg-[#FAF7F2] py-16 sm:py-24">
-        <TagUsSection />
-      </section>
-
-      {/* 7. TRAVEL BLOGS / STORIES FROM THE JOURNEY */}
-      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24">
         <TravelBlogsSection />
       </section>
 
+      {/* 7. TAG US ON YOUR NEXT TRIP */}
+      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24">
+        <TagUsSection />
+      </section>
+
       {/* 8. FREQUENTLY ASKED QUESTIONS */}
-      <section className="relative z-30 bg-[#FAF8F5] py-16 sm:py-24 pb-24">
+      <section className="relative z-30 bg-[#FAF7F2] py-16 sm:py-24 pb-24">
         <FaqSection />
       </section>
     </main>

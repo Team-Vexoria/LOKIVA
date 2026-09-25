@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShieldCheck, MapPin } from 'lucide-react';
+import { ShieldCheck, MapPin, Sparkles, ArrowUpRight } from 'lucide-react';
 
 export function Footer() {
   const location = useLocation();
@@ -11,81 +11,137 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-[#E2D5C3] text-[#1C1814] border-t border-[#CCBCAB] pt-10 sm:pt-14 pb-8 sm:pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
-          {/* Brand & Manifesto */}
-          <div className="md:col-span-2 space-y-4">
-            <Link to="/" className="inline-flex items-center gap-2.5">
-              <img
-                src="/logo.png"
-                alt="LOKIVA Platform Logo"
-                className="h-8 w-auto object-contain"
-              />
-              <span className="text-2xl font-bold font-display text-[#1C1814] tracking-tight">
+    <footer className="relative bg-[#FAF8F5] text-[#12213B] border-t border-[#E5DFD5] pt-14 sm:pt-16 pb-10">
+      {/* Decorative top ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-px bg-gradient-to-r from-transparent via-[#FFC067]/40 to-transparent pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12">
+          {/* Brand and Mission */}
+          <div className="md:col-span-5 space-y-5">
+            <Link to="/" className="inline-flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-2xl bg-white border border-[#E5DFD5] flex items-center justify-center shadow-xs p-1.5 group-hover:border-[#FFC067] transition-colors">
+                <img
+                  src="/logo.png"
+                  alt="LOKIVA Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="text-2xl font-display font-extrabold text-[#12213B] tracking-tight">
                 LOKIVA
               </span>
             </Link>
-            <p className="text-xs text-[#4D443B] leading-relaxed max-w-md">
-              The first live constraint solver and feasibility engine for authentic Indian cultural discovery. We don't just rank options, we guarantee they fit your exact time, travel buffer, and budget, and adapt the moment life changes.
+
+            <p className="text-sm font-sans font-normal text-[#5B6B8C] leading-relaxed max-w-md">
+              The cultural discovery engine and live feasibility solver for authentic India. We curate master artisans, generational kitchens, and living heritage around your real transit hours.
             </p>
-            <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] font-mono">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EFE8DC] border border-[#C5B4A0] text-[#135E52] shadow-xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#135E52]" /> 100% Verified Local Artisans
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EFE8DC] border border-[#C5B4A0] text-[#9E3E26] shadow-xs">
-                <MapPin className="w-3.5 h-3.5 text-[#9E3E26]" /> 36 States & UTs (Pan-India)
-              </span>
+
+            {/* Clean Professional Micro-Labels */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs font-heading font-bold">
+              <div className="inline-flex items-center gap-1.5 text-[#0F766E]">
+                <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
+                <span>Verified Master Artisans</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-[#C1443B]">
+                <MapPin className="w-4 h-4 text-[#C1443B]" />
+                <span>Pan-India Micro-Circuits</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-[#B45309]">
+                <Sparkles className="w-4 h-4 text-[#B45309]" />
+                <span>Live Constraint Solver</span>
+              </div>
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-[#9E3E26] font-bold">
-              Traveller Flow
-            </h4>
-            <ul className="space-y-2.5 text-xs text-[#3E362E] font-medium">
+          {/* Quick Links Column */}
+          <div className="md:col-span-2 space-y-4">
+            <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
+              Discover
+            </p>
+            <ul className="space-y-3 text-sm font-sans font-medium text-[#5B6B8C]">
               <li>
-                <Link to="/explore" className="hover:text-[#9E3E26] transition-colors">
-                  Browse Pan-India Experiences
+                <Link to="/explore" className="hover:text-[#12213B] transition-colors">
+                  Explore Experiences
                 </Link>
               </li>
               <li>
-                <Link to="/destinations" className="hover:text-[#9E3E26] transition-colors">
-                  State Heritage Collections
+                <Link to="/destinations" className="hover:text-[#12213B] transition-colors">
+                  36 States &amp; UTs
                 </Link>
               </li>
               <li>
-                <Link to="/ai-guide" className="hover:text-[#9E3E26] transition-colors">
-                  AI Cultural Concierge
+                <Link to="/discovery-map" className="hover:text-[#12213B] transition-colors">
+                  Discovery Map
                 </Link>
               </li>
               <li>
-                <Link to="/itinerary" className="hover:text-[#9E3E26] transition-colors">
-                  Dynamic Itinerary Planner
+                <Link to="/itinerary" className="hover:text-[#12213B] transition-colors">
+                  Itinerary Planner
+                </Link>
+              </li>
+              <li>
+                <Link to="/saved" className="hover:text-[#12213B] transition-colors">
+                  Saved Places
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Provider & Trust */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-[#135E52] font-bold">
-              Artisans & Hosts
-            </h4>
-            <ul className="space-y-2.5 text-xs text-[#3E362E] font-medium">
+          {/* Intelligence Column */}
+          <div className="md:col-span-2 space-y-4">
+            <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#B45309]">
+              Intelligence
+            </p>
+            <ul className="space-y-3 text-sm font-sans font-medium text-[#5B6B8C]">
               <li>
-                <Link to="/provider" className="hover:text-[#135E52] transition-colors">
-                  Host Console & Analytics
+                <Link to="/ai-guide" className="hover:text-[#12213B] transition-colors inline-flex items-center gap-1.5">
+                  <span>AI Concierge</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                 </Link>
               </li>
               <li>
-                <Link to="/register/provider" className="hover:text-[#135E52] transition-colors">
-                  List Your Cultural Workshop
+                <Link to="/ai-guide" className="hover:text-[#12213B] transition-colors">
+                  Voice Guide
                 </Link>
               </li>
               <li>
-                <Link to="/admin" className="hover:text-[#135E52] transition-colors">
+                <Link to="/discovery-map" className="hover:text-[#12213B] transition-colors">
+                  Circuit Solver
+                </Link>
+              </li>
+              <li>
+                <Link to="/profile" className="hover:text-[#12213B] transition-colors">
+                  Traveler Profile
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Artisans and Hosts Column */}
+          <div className="md:col-span-3 space-y-4">
+            <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#0F766E]">
+              Artisans &amp; Hosts
+            </p>
+            <ul className="space-y-3 text-sm font-sans font-medium text-[#5B6B8C]">
+              <li>
+                <Link to="/provider" className="hover:text-[#12213B] transition-colors">
+                  Host Console &amp; Analytics
+                </Link>
+              </li>
+              <li>
+                <Link to="/register/provider" className="hover:text-[#12213B] transition-colors inline-flex items-center gap-1">
+                  <span>List Your Workshop</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/login/provider" className="hover:text-[#12213B] transition-colors">
+                  Provider Sign In
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin" className="hover:text-[#12213B] transition-colors">
                   Platform Moderation
                 </Link>
               </li>
@@ -93,16 +149,27 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom copyright line */}
-        <div className="pt-8 border-t border-[#CCBCAB] flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-[#61564B] gap-4">
-          <div>
-            © {new Date().getFullYear()} LOKIVA. Handcrafted for authentic regional discovery across India.
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Josefin Sans, Raleway & Nunito typography</span>
+        {/* Bottom Legal and Copyright Bar */}
+        <div className="pt-8 border-t border-[#E5DFD5] flex flex-col sm:flex-row items-center justify-between text-xs font-sans text-[#718096] gap-4">
+          <p className="text-center sm:text-left">
+            © {new Date().getFullYear()} LOKIVA Technologies. Handcrafted with reverence for India's living cultural traditions.
+          </p>
+
+          <div className="flex items-center gap-6 font-medium text-[#5B6B8C]">
+            <Link to="/explore" className="hover:text-[#12213B] transition-colors">
+              Privacy
+            </Link>
+            <Link to="/explore" className="hover:text-[#12213B] transition-colors">
+              Terms
+            </Link>
+            <Link to="/explore" className="hover:text-[#12213B] transition-colors">
+              Trust &amp; Safety
+            </Link>
           </div>
         </div>
       </div>
     </footer>
   );
 }
+
+export default Footer;

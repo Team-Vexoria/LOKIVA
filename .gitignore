@@ -59,6 +59,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python venv
+.venv/
+venv/
+backend/.venv/
+
 # media
 *.mp4
 *.mov
+!frontend/public/*.mp4
+!frontend/public/*.mov

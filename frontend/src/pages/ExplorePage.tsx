@@ -32,6 +32,8 @@ const THEMATIC_PERSPECTIVES = [
   { id: 'Heritage & History', label: 'Living Heritage & Culture' },
 ];
 
+const MAX_BUDGET_CEILING = 25000;
+
 export function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialState = searchParams.get('state') || '';
@@ -39,7 +41,7 @@ export function ExplorePage() {
   const initialLocation = searchParams.get('location') || initialCity || initialState || '';
   const initialSearch = searchParams.get('search') || searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || '';
-  const initialBudget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
+  const initialBudget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : MAX_BUDGET_CEILING;
   const initialWheelchair = searchParams.get('wheelchair') === 'true';
   const initialWalking = searchParams.get('walking') === 'true';
 
@@ -64,7 +66,7 @@ export function ExplorePage() {
     (wheelchairOnly ? 1 : 0) +
     (lowWalkingOnly ? 1 : 0) +
     (rainSafeOnly ? 1 : 0) +
-    (maxPrice < 5000 ? 1 : 0);
+    (maxPrice < MAX_BUDGET_CEILING ? 1 : 0);
 
   // Fast, instant experience filter strictly displaying verified curated places
   const fetchExperiences = useCallback(
@@ -132,7 +134,7 @@ export function ExplorePage() {
           );
         }
 
-        if (maxPrice < 5000) {
+        if (maxPrice < MAX_BUDGET_CEILING) {
           results = results.filter((p) => p.price <= maxPrice);
         }
 
@@ -218,7 +220,7 @@ export function ExplorePage() {
     const loc = searchParams.get('location') || cityParam || stateParam || '';
     const q = searchParams.get('search') || searchParams.get('q') || '';
     const cat = searchParams.get('category') || '';
-    const budget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : 5000;
+    const budget = searchParams.get('budget') ? parseInt(searchParams.get('budget')!, 10) : MAX_BUDGET_CEILING;
     const wheelchair = searchParams.get('wheelchair') === 'true';
     const walking = searchParams.get('walking') === 'true';
 
@@ -277,7 +279,7 @@ export function ExplorePage() {
     setWheelchairOnly(false);
     setLowWalkingOnly(false);
     setRainSafeOnly(false);
-    setMaxPrice(5000);
+    setMaxPrice(MAX_BUDGET_CEILING);
     setSelectedCategory('');
     setSearchQuery('');
     setLocationInput('');
@@ -504,16 +506,18 @@ export function ExplorePage() {
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-dusk">Max Contribution:</span>
-              <span className="font-bold text-ink font-mono">₹{maxPrice}</span>
+              <span className="text-dusk text-xs font-sans">Max Budget / Day:</span>
+              <span className="font-bold text-ink font-mono text-xs sm:text-sm min-w-[76px] text-right">
+                {maxPrice >= MAX_BUDGET_CEILING ? '₹25,000+' : `₹${maxPrice.toLocaleString('en-IN')}`}
+              </span>
               <input
                 type="range"
-                min="300"
-                max="5000"
-                step="100"
+                min="500"
+                max={MAX_BUDGET_CEILING}
+                step="500"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
-                className="w-24 accent-ink cursor-pointer"
+                className="w-28 sm:w-36 accent-[#C1443B] cursor-pointer"
               />
             </div>
           </div>
@@ -666,9 +670,9 @@ export function ExplorePage() {
                     Rain Safe
                   </span>
                 )}
-                {maxPrice < 5000 && (
-                  <span className="px-2 py-0.5 bg-paper-100 border border-paper-300 rounded text-ink">
-                    ≤ ₹{maxPrice}
+                {maxPrice < MAX_BUDGET_CEILING && (
+                  <span className="px-2 py-0.5 bg-paper-100 border border-paper-300 rounded text-ink font-mono text-[11px]">
+                    ≤ ₹{maxPrice.toLocaleString('en-IN')}
                   </span>
                 )}
                 <button

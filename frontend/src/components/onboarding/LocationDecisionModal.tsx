@@ -1,9 +1,28 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Map, Search, Sparkles, Compass, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useItineraryStore } from '../../store/useItineraryStore';
 
 import { DiscoveryOnboardingFlow, DiscoveryAnswers } from './DiscoveryOnboardingFlow';
+import { getStateForCity } from '../../data/places';
+
+export const ONBOARDING_COMPLETED_KEY = 'has_onboarded_lokiva';
+export const ONBOARDING_LAST_SHOWN_KEY = 'lokiva_onboarding_last_shown';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+export function wasOnboardingShownToday(lastShownStr: string | null): boolean {
+  if (!lastShownStr) return false;
+  const lastShownTime = parseInt(lastShownStr, 10);
+  if (isNaN(lastShownTime)) return false;
+
+  const now = Date.now();
+  const isSameCalendarDay = new Date(lastShownTime).toDateString() === new Date(now).toDateString();
+  const isWithin24Hours = (now - lastShownTime) < ONE_DAY_MS;
+
+  return isSameCalendarDay || isWithin24Hours;
+}
 
 interface LocationDecisionModalProps {
   isOpen: boolean;
@@ -15,18 +34,18 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   const [hasMadeChoice, setHasMadeChoice] = useState(false);
   const [showDiscoveryFlow, setShowDiscoveryFlow] = useState(false);
 
-  // Check localStorage on mount
+  // Sync state when modal is opened manually
   useEffect(() => {
-    const hasOnboarded = localStorage.getItem('has_onboarded_lokiva');
-    if (hasOnboarded) {
-      // User has already onboarded, but modal might be shown manually
-      setHasMadeChoice(true);
+    if (isOpen) {
+      setHasMadeChoice(false);
     }
-  }, []);
+  }, [isOpen]);
 
   const handleOptionA = () => {
-    // User knows where they want to go
-    localStorage.setItem('has_onboarded_lokiva', 'true');
+    try {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     onClose();
     navigate('/explore');
@@ -38,15 +57,38 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
   };
 
   const handleDiscoveryComplete = (answers: DiscoveryAnswers) => {
-    localStorage.setItem('has_onboarded_lokiva', 'true');
+    try {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     setShowDiscoveryFlow(false);
     onClose();
-    navigate('/discovery-map');
+
+    const city = answers.destination || 'Jaipur';
+    const stateName = getStateForCity(city);
+
+    useItineraryStore.getState().generateTrip({
+      city,
+      state: stateName,
+      daysCount: answers.days,
+      pace: answers.pace,
+      budgetLimit: answers.budget_max_inr,
+      travelers: answers.group_size,
+      focusCategory: answers.interests[0] || 'heritage',
+      interests: answers.interests,
+      weatherPreference: answers.weather_preference,
+      accessibility: answers.accessibility,
+    });
+
+    navigate('/itinerary');
   };
 
   const handleSkip = () => {
-    // Skip onboarding but don't mark as completed (user can reopen)
+    // Record that the modal was dismissed today so it will not show on reloads
+    try {
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setHasMadeChoice(true);
     onClose();
   };
@@ -89,12 +131,11 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
 
   if (!isOpen || hasMadeChoice) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-ink/80 backdrop-blur-md overflow-y-auto"
-          style={{ padding: '3rem 1rem' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#12213B]/60 backdrop-blur-md overflow-y-auto p-4 sm:p-6"
           variants={overlayVariants}
           initial="hidden"
           animate="visible"
@@ -102,7 +143,7 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
         >
           <motion.div
             className="relative w-full max-w-md mx-auto my-auto flex flex-col"
-            style={{ maxHeight: 'min(580px, calc(100vh - 6rem))' }}
+            style={{ maxHeight: 'min(580px, calc(100vh - 3rem))' }}
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -245,6 +286,8 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 // Hook to check if user has onboarded and control modal
@@ -252,17 +295,36 @@ export function useOnboardingGate() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // Check if user has already onboarded
-    const hasOnboarded = localStorage.getItem('has_onboarded_lokiva');
-
-    // Small delay to ensure page is loaded
-    const timer = setTimeout(() => {
-      if (!hasOnboarded) {
-        setShowModal(true);
+    try {
+      // Check if user has already permanently onboarded
+      const hasOnboarded = localStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      if (hasOnboarded === 'true') {
+        return;
       }
-    }, 1000);
 
-    return () => clearTimeout(timer);
+      // Check if modal was already shown today (only once a day)
+      const lastShown = localStorage.getItem(ONBOARDING_LAST_SHOWN_KEY);
+      if (wasOnboardingShownToday(lastShown)) {
+        return;
+      }
+
+      // Small delay to ensure page is loaded before presenting modal
+      const timer = setTimeout(() => {
+        try {
+          const currentOnboarded = localStorage.getItem(ONBOARDING_COMPLETED_KEY);
+          const currentLastShown = localStorage.getItem(ONBOARDING_LAST_SHOWN_KEY);
+          if (currentOnboarded === 'true' || wasOnboardingShownToday(currentLastShown)) {
+            return;
+          }
+          localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+        } catch {}
+        setShowModal(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } catch {
+      // Fallback in case localStorage is unavailable
+    }
   }, []);
 
   const openModal = () => {
@@ -270,6 +332,9 @@ export function useOnboardingGate() {
   };
 
   const closeModal = () => {
+    try {
+      localStorage.setItem(ONBOARDING_LAST_SHOWN_KEY, Date.now().toString());
+    } catch {}
     setShowModal(false);
   };
 

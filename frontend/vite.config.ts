@@ -13,6 +13,9 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    watch: {
+      ignored: ['**/*.mp4', '**/*.webm', '**/*.mov'],
+    },
     proxy: {
       '/api/v1/ai': {
         target: 'http://localhost:4000',
@@ -21,6 +24,11 @@ export default defineConfig({
       '/api/ai': {
         target: 'http://localhost:4000',
         changeOrigin: true,
+      },
+      '/api/v1/voice': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/v1\/voice/, '/voice'),
       },
       '/api/voice': {
         target: 'http://localhost:4000',
@@ -31,8 +39,13 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
-      '/api': {
+      '/stt': {
         target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+
+      '/api': {
+        target: 'http://localhost:4000',
         changeOrigin: true,
       },
     },

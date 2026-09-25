@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useItineraryStore } from '../../store/useItineraryStore';
 import { api } from '../../lib/api';
 import { DayPlanResponse, DayPlanStop } from '../../types';
 import {
   DiscoveryOnboardingFlow,
   DiscoveryAnswers,
 } from './DiscoveryOnboardingFlow';
+import { getStateForCity } from '../../data/places';
 
 export interface TripContextAnswers {
   city: string;
@@ -364,15 +366,68 @@ const CITY_EXPERIENCES: Record<string, ExperienceSeed[]> = {
       description: 'Synchronised high-kick military parade at India-Pakistan border with patriotic crowd energy at sunset.',
     },
   ],
+  ladakh: [
+    {
+      name: 'Thiksey Monastery Sunrise Chanting & Morning Puja',
+      category: 'rituals',
+      time: '06:00 AM',
+      duration_mins: 90,
+      costLabelBudget: 'Free monastery prayer hall',
+      costLabelComfort: '₹150 monk community offering pass',
+      costLabelLuxury: '₹1,500 private Rinpoche blessing audience',
+      description: 'Twelve-story tiered gompa resembling the Potala Palace with resonant morning copper conch horns.',
+    },
+    {
+      name: 'Leh Old Town Bakery & Ladakhi Khambir Butter Tea',
+      category: 'food',
+      time: '08:30 AM',
+      duration_mins: 45,
+      costLabelBudget: '₹80 traditional wood-fired bread & tea',
+      costLabelComfort: '₹250 organic Ladakhi breakfast feast',
+      costLabelLuxury: '₹1,200 heritage Nimmu House garden breakfast',
+      description: 'Crusty whole-wheat fermented flatbread served with savory salted yak butter tea in mud-brick lanes.',
+    },
+    {
+      name: 'Hemis Museum & Living Buddhist Thangka Guild',
+      category: 'crafts',
+      time: '10:30 AM',
+      duration_mins: 90,
+      costLabelBudget: '₹100 museum admission',
+      costLabelComfort: '₹350 preservation guild pass',
+      costLabelLuxury: '₹2,500 master mineral-pigment thangka workshop',
+      description: 'Hidden valley monastery holding ancient gold statues and sacred silk applique ceremonial banners.',
+    },
+    {
+      name: 'Shey Palace Ancient Copper Buddha & Royal Gompa',
+      category: 'heritage',
+      time: '01:30 PM',
+      duration_mins: 75,
+      costLabelBudget: '₹50 entry ticket',
+      costLabelComfort: '₹200 heritage audio trail',
+      costLabelLuxury: '₹1,200 royal family restoration walk',
+      description: 'Historic summer capital of the Kings of Ladakh housing a three-story gilded copper Shakyamuni statue.',
+    },
+    {
+      name: 'Shanti Stupa Panoramic Sunset & Indus Valley View',
+      category: 'nature',
+      time: '05:00 PM',
+      duration_mins: 75,
+      costLabelBudget: 'Free hilltop platform',
+      costLabelComfort: '₹200 twilight shuttle pass',
+      costLabelLuxury: '₹1,000 private twilight mountain guide',
+      description: 'White-domed Buddhist stupa offering 360-degree views of snow-capped Zanskar peaks turning amber.',
+    },
+  ],
 };
 
 function generateDynamicLogicalPlan(answers: DiscoveryAnswers): DayPlanResponse {
   const normCity = (answers.destination || 'Jaipur').toLowerCase();
   const matchedCityKey =
-    Object.keys(CITY_EXPERIENCES).find((k) => normCity.includes(k)) || 'jaipur';
-  const cityStopsCatalog = CITY_EXPERIENCES[matchedCityKey];
+    Object.keys(CITY_EXPERIENCES).find((k) => normCity.includes(k) || k.includes(normCity)) ||
+    (normCity.includes('leh') || normCity.includes('ladakh') ? 'ladakh' : 'jaipur');
+  const cityStopsCatalog = CITY_EXPERIENCES[matchedCityKey] || CITY_EXPERIENCES.jaipur;
 
-  const budget = answers.budget_daily_inr || 4500;
+  const budget = answers.budget_daily_inr || 5000;
   const budgetTier: 'budget' | 'comfort' | 'luxury' =
     budget <= 2500 ? 'budget' : budget <= 9000 ? 'comfort' : 'luxury';
 
@@ -451,6 +506,22 @@ export function TripOnboardingTakeover({
 
   const handleComplete = async (answers: DiscoveryAnswers) => {
     const city = answers.destination || 'Jaipur';
+    const stateName = getStateForCity(city);
+
+    // 1. Immediately synchronize with the central Zustand itinerary store
+    useItineraryStore.getState().generateTrip({
+      city,
+      state: stateName,
+      daysCount: answers.days,
+      pace: answers.pace,
+      budgetLimit: answers.budget_max_inr,
+      travelers: answers.group_size,
+      focusCategory: answers.interests[0] || 'heritage',
+      interests: answers.interests,
+      weatherPreference: answers.weather_preference,
+      accessibility: answers.accessibility,
+    });
+
     const mappedAnswers: TripContextAnswers = {
       city,
       timeWindow: `${answers.days} Days`,
@@ -471,19 +542,14 @@ export function TripOnboardingTakeover({
     };
 
     if (onPlanGenerated) {
-      // Always use the deterministic client-side generator to guarantee
-      // the correct city, interests, and budget tier are applied.
-      // The backend may return stale or city-agnostic data.
       const dynamicPlan = generateDynamicLogicalPlan(answers);
       onPlanGenerated(mappedAnswers, dynamicPlan);
-
-      // Close modal and navigate to discovery map with the plan
       onClose();
       return;
     }
 
     onClose();
-    navigate('/discovery-map');
+    navigate('/itinerary');
   };
 
   return (

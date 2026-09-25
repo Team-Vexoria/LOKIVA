@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { ItineraryDay, ItineraryTripDetails, ItineraryPracticalInfo } from '../../types/itinerary';
+import { PracticalBriefingCard } from './PracticalBriefingCard';
 
 interface TripSummarySidebarProps {
   tripDetails: ItineraryTripDetails;
@@ -60,20 +61,20 @@ export function TripSummarySidebar({
             Trip Financial Overview
           </span>
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-display font-bold text-ink">
+            <span className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 tracking-tight">
               ₹{grandTotal.toLocaleString('en-IN')}
             </span>
-            <span className="text-xs font-mono text-[#C1443B] font-bold">
+            <span className="text-xs font-meta text-[#C1443B] font-bold">
               {days.length} Days · {Math.max(1, days.length - 1)} Nights
             </span>
           </div>
-          <span className="text-xs font-mono text-dusk block">
+          <span className="text-xs font-meta text-dusk block">
             ₹{perPersonTotal.toLocaleString('en-IN')} per person for {travelers} {travelers === 1 ? 'traveler' : 'travelers'}
           </span>
         </div>
 
         {/* Stacked Cost Visualizer */}
-        <div className="space-y-3 font-mono text-xs">
+        <div className="space-y-3 font-meta text-xs">
           <div className="flex items-center justify-between">
             <span className="font-bold text-ink uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <PieChart className="w-3.5 h-3.5 text-[#FFC067]" />
@@ -100,29 +101,29 @@ export function TripSummarySidebar({
             />
           </div>
 
-          <div className="space-y-2 pt-1 text-xs">
+          <div className="space-y-2 pt-1 font-meta text-xs font-semibold tracking-wide text-neutral-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#C1443B]" />
-                <span className="text-dusk">Entry & Masterclasses</span>
+                <span className="text-neutral-600 font-normal">Entry & Masterclasses</span>
               </div>
-              <span className="font-bold text-ink">₹{totalTicketsCost.toLocaleString('en-IN')}</span>
+              <span className="font-bold text-neutral-900">₹{totalTicketsCost.toLocaleString('en-IN')}</span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FFC067]" />
-                <span className="text-dusk">Regional Culinary Food</span>
+                <span className="text-neutral-600 font-normal">Regional Culinary Food</span>
               </div>
-              <span className="font-bold text-ink">₹{totalMealsCost.toLocaleString('en-IN')}</span>
+              <span className="font-bold text-neutral-900">₹{totalMealsCost.toLocaleString('en-IN')}</span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#12213B]" />
-                <span className="text-dusk">Auto & Cab Transit</span>
+                <span className="text-neutral-600 font-normal">Auto & Cab Transit</span>
               </div>
-              <span className="font-bold text-ink">₹{totalTransitCost.toLocaleString('en-IN')}</span>
+              <span className="font-bold text-neutral-900">₹{totalTransitCost.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
@@ -130,11 +131,11 @@ export function TripSummarySidebar({
         {/* 2. Direct Artisan & Local Impact Score Widget */}
         <div className="bg-white p-4 rounded-xl border border-[#E5DFD5] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-emerald-700 flex items-center gap-1.5">
+            <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
               <span>Local Community Impact</span>
             </span>
-            <span className="text-xs font-mono font-bold text-emerald-800">
+            <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-emerald-800">
               {localImpactPercent}% Direct
             </span>
           </div>
@@ -173,42 +174,11 @@ export function TripSummarySidebar({
         </div>
       </div>
 
-      {/* 3. Practical Field Notes Card */}
-      <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-5 space-y-4 shadow-sm text-xs font-sans text-ink">
-        <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B] block">
-          Practical Field Briefing
-        </span>
-
-        <div className="space-y-3">
-          <div className="flex items-start gap-2.5">
-            <CloudSun className="w-4 h-4 text-[#FFC067] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Climate & Weather</strong>
-              <span className="text-dusk">{practicalInfo.weatherSummary} ({practicalInfo.temperature})</span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Luggage className="w-4 h-4 text-[#C1443B] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Packing Essentials</strong>
-              <ul className="text-dusk list-disc list-inside space-y-0.5 mt-0.5">
-                {practicalInfo.packingList.slice(0, 3).map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Languages className="w-4 h-4 text-[#12213B] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Spoken Dialects</strong>
-              <span className="text-dusk">{practicalInfo.languages.join(', ')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 3. Practical Field Intelligence Dossier Bento */}
+      <PracticalBriefingCard
+        practicalInfo={practicalInfo}
+        cityName={tripDetails.destination}
+      />
     </aside>
   );
 }

@@ -34,7 +34,9 @@ import {
   Bot,
   User,
   Ticket,
+  Users,
 } from 'lucide-react';
+import { useAuth } from '../../lib/auth-context';
 
 export type FeatureTab = 'itinerary' | 'vernacular' | 'checkout';
 
@@ -48,7 +50,16 @@ interface ChatMessage {
 
 export function DeviceMockupSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<FeatureTab>('itinerary');
+
+  const handlePlanGroupTrip = () => {
+    if (isAuthenticated) {
+      navigate('/group/new');
+    } else {
+      navigate('/login?redirect=/group/new');
+    }
+  };
 
   // Desktop Window State: boolean toggling between full Safari Window and centered mobile view
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
@@ -67,8 +78,8 @@ export function DeviceMockupSection() {
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: "Namaste! Welcome to LOKIVA, your AI Cultural Concierge.\n\nI'm here to help you experience authentic Indian heritage, generational culinary traditions, and master artisan workshops.\n\nBefore I recommend any places, where are you heading? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nTell me your destination and available time, and I'll curate the top 2 signature spots for you!",
-      badge: 'Gemini 1.5 Pro',
+      text: "Namaste! Welcome to LOKIVA, your AI Cultural Concierge 🙏\n\nI curate authentic heritage routes, artisan masterclasses, and generational culinary trails across 36 Indian states.\n\nTell me your destination, budget, or available days, and I will tailor your signature experience!",
+      badge: 'LOKIVA Concierge',
     },
   ]);
   const chatScrollContainerRef = useRef<HTMLDivElement>(null);
@@ -133,19 +144,24 @@ export function DeviceMockupSection() {
           id: `ai-${Date.now()}`,
           sender: 'ai',
           text: chatRes.reply,
-          badge: chatRes.context_destination ? `${chatRes.context_destination} Verified` : 'AI Concierge',
+          badge: chatRes.context_destination ? `${chatRes.context_destination} Verified` : 'LOKIVA Concierge',
           action,
         },
       ]);
     } catch (err: any) {
       console.warn('Mobile Concierge API error, using intelligent fallback:', err);
+      const isBudgetQuery = /(budget|20k|15k|50k|days?|where\s*to\s*go|where\s*should\s*i\s*go)/i.test(trimmed);
+      const fallbackText = isBudgetQuery
+        ? "Namaste! With a budget of ₹20,000 for 5 days (approx. ₹4,000/day), you have excellent choices in India:\n\n1. **Rajasthan Heritage Circuit (Jaipur & Pushkar):** Sunrise over Nahargarh Fort, authentic blue pottery masterclasses in Kot Jewar, and heritage haveli stays (~₹1,600/night).\n2. **Himachal Monastic Trail (Dharamshala & Bir):** Dalai Lama Temple, Norbulingka Institute arts, and mountain tea garden walks.\n3. **Kerala Tropical Spice Coast (Fort Kochi & Munnar):** Kathakali traditions, colonial spice warehouses, and tea hills.\n\nWhich vibe calls to you most: royal heritage forts, mountain monasteries, or tropical spice trails?"
+        : "Namaste! Welcome to LOKIVA 🙏 I curate authentic heritage routes, artisan workshops, and generational food traditions. Tell me where you are heading or what you enjoy, and I will tailor your signature experience!";
+
       setChatMessages((prev) => [
         ...prev,
         {
           id: `ai-fallback-${Date.now()}`,
           sender: 'ai',
-          text: "Hello! Namaste 🙏 Welcome to LOKIVA, your personal AI Cultural Concierge.\n\nWhich Indian city or destination are you exploring or planning to visit? (e.g., Jaipur, Varanasi, Udaipur, Delhi, Mumbai, Kochi, Goa)\n\nShare where you're heading and what you enjoy, and I'll curate the top 2 signature spots perfectly suited for you!",
-          badge: 'AI Concierge',
+          text: fallbackText,
+          badge: 'LOKIVA Concierge',
           action: { label: 'Explore 36 States', url: '/explore' },
         },
       ]);
@@ -210,17 +226,38 @@ export function DeviceMockupSection() {
   return (
     <div className="w-full pt-6 sm:pt-8 pb-8 px-4 sm:px-6 lg:px-8 bg-[#FAF7F2] border-t border-b border-[#E5DFD5]">
       {/* Section Header */}
-      <div className="max-w-4xl mx-auto text-center space-y-2 mb-4">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-ink tracking-tight">
-          Live Cultural Intelligence &amp; On-Ground Sync
-        </h2>
+      <div className="max-w-6xl mx-auto mb-6">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-2">
+          {/* Main Title and Narrative */}
+          <div className="text-center lg:text-left space-y-2 max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-ink tracking-tight">
+              Live Cultural Intelligence &amp; On-Ground Sync
+            </h2>
 
-        <p className="text-xs sm:text-sm text-dusk-700 max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-          Synthesize hyper-local micro-itineraries on your desktop while synchronizing real-time vernacular audio, verified artisan passes, and live AI guidance directly to your mobile device.
-        </p>
+            <p className="text-xs sm:text-sm text-dusk-700 font-sans leading-relaxed font-medium">
+              Synthesize hyper-local micro-itineraries on your desktop while synchronizing real-time vernacular audio, verified artisan passes, and live AI guidance directly to your mobile device.
+            </p>
+          </div>
+
+          {/* Group Plan Itinerary CTA Card on the Right Side */}
+          <div className="flex flex-col items-center lg:items-end shrink-0">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[10px] font-meta font-extrabold uppercase tracking-widest text-[#C85A32] mb-2 shadow-2xs">
+              <Sparkles className="w-3 h-3 text-[#D99B43]" />
+              <span>NEW · SOLVE WHATSAPP TRIP CHAOS</span>
+            </div>
+            <button
+              onClick={handlePlanGroupTrip}
+              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C85A32] to-[#D99B43] hover:from-[#B84E28] hover:to-[#C88A33] text-white font-heading font-bold text-xs sm:text-sm shadow-lg shadow-[#C85A32]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group"
+            >
+              <Users className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+              <span>Plan Group Itinerary</span>
+              <ArrowRight className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
 
         {/* Feature Tab Switcher */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-4">
           <button
             onClick={() => setActiveTab('itinerary')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
@@ -835,8 +872,8 @@ export function DeviceMockupSection() {
                     onClick={() => setMobileActiveView('concierge')}
                     className={`flex-1 py-1 px-2 rounded-md text-[10px] font-heading font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1 ${
                       mobileActiveView === 'concierge'
-                        ? 'bg-[#12213B] text-white shadow-xs'
-                        : 'text-ink-700 hover:text-ink hover:bg-white'
+                        ? 'bg-[#FAF4ED] text-[#C1443B] border border-[#C1443B]/30 shadow-xs'
+                        : 'text-ink-700 hover:text-ink hover:bg-white border border-transparent'
                     }`}
                   >
                     <Bot className="w-3 h-3 text-[#C1443B]" />
@@ -847,8 +884,8 @@ export function DeviceMockupSection() {
                     onClick={() => setMobileActiveView('destinations')}
                     className={`flex-1 py-1 px-2 rounded-md text-[10px] font-heading font-extrabold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1 ${
                       mobileActiveView === 'destinations'
-                        ? 'bg-[#12213B] text-white shadow-xs'
-                        : 'text-ink-700 hover:text-ink hover:bg-white'
+                        ? 'bg-[#FAF4ED] text-[#C1443B] border border-[#C1443B]/30 shadow-xs'
+                        : 'text-ink-700 hover:text-ink hover:bg-white border border-transparent'
                     }`}
                   >
                     <Compass className="w-3 h-3 text-[#C1443B]" />
@@ -857,14 +894,14 @@ export function DeviceMockupSection() {
                 </div>
 
                 {/* Mobile Screen Body Content */}
-                <div className="flex-1 overflow-y-auto bg-[#FAF8F5] relative">
+                <div className="flex-1 overflow-y-auto bg-[#FAF8F5] relative [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {mobileActiveView === 'concierge' ? (
                     /* VIEW A: INTERACTIVE AI CONCIERGE CHAT */
                     <div className="flex flex-col h-full justify-between p-2.5">
-                      {/* Chat Messages List */}
+                      {/* Chat Messages List (Native iOS hidden scrollbar) */}
                       <div
                         ref={chatScrollContainerRef}
-                        className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[275px] sm:max-h-[290px] scrollbar-thin scrollbar-thumb-[#DDD7CC]"
+                        className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[275px] sm:max-h-[290px] scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                       >
                         {chatMessages.map((msg) => (
                           <div
@@ -880,11 +917,17 @@ export function DeviceMockupSection() {
                               </div>
                             )}
 
+                            {msg.sender === 'user' && (
+                              <div className="text-[8px] font-mono font-bold text-[#C1443B] mb-0.5 mr-1 uppercase tracking-wider">
+                                <span>YOU</span>
+                              </div>
+                            )}
+
                             <div
                               className={`max-w-[92%] p-2 rounded-xl text-[11px] font-sans leading-relaxed shadow-xs ${
                                 msg.sender === 'user'
-                                  ? 'bg-[#12213B] text-white rounded-tr-xs'
-                                  : 'bg-white border border-[#E5DFD5] text-ink rounded-tl-xs whitespace-pre-line'
+                                  ? 'bg-[#FAF4ED] border border-[#E8DCCB] text-[#12213B] rounded-tr-xs font-medium'
+                                  : 'bg-white border border-[#E5DFD5] text-[#12213B] rounded-tl-xs whitespace-pre-line'
                               }`}
                             >
                               {msg.text}
@@ -915,39 +958,45 @@ export function DeviceMockupSection() {
                         )}
                       </div>
 
-                      {/* Prompt Helper Chips */}
+                      {/* Prompt Helper Chips (Clean horizontal swipe, zero ugly scrollbars) */}
                       <div className="pt-1.5 pb-1 border-t border-[#E8E1D5] space-y-0.5">
                         <div className="text-[8px] font-heading font-bold uppercase tracking-wider text-dusk-500 text-left">
                           SELECT DESTINATION / PROMPT:
                         </div>
-                        <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+                        <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                          <button
+                            onClick={() => handleSendChat('hey lokiva hi have a budget of 20k for 5 days where should i go')}
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#C1443B]/40 text-[9px] font-heading font-extrabold text-[#C1443B] transition cursor-pointer shrink-0"
+                          >
+                            💰 20k / 5 Days
+                          </button>
                           <button
                             onClick={() => handleSendChat('Jaipur')}
-                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer"
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer shrink-0"
                           >
                             🏰 Jaipur
                           </button>
                           <button
                             onClick={() => handleSendChat('Varanasi')}
-                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer"
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer shrink-0"
                           >
                             🕉️ Varanasi
                           </button>
                           <button
                             onClick={() => handleSendChat('Goa')}
-                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer"
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer shrink-0"
                           >
                             🌴 Goa
                           </button>
                           <button
                             onClick={() => handleSendChat('Udaipur')}
-                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer"
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer shrink-0"
                           >
                             ⛵ Udaipur
                           </button>
                           <button
                             onClick={() => handleSendChat('Street Food & Aarti')}
-                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer"
+                            className="whitespace-nowrap px-1.5 py-0.5 rounded bg-white hover:bg-[#FAF4ED] border border-[#DDD7CC] text-[9px] font-heading font-bold text-ink transition cursor-pointer shrink-0"
                           >
                             ☕ Food &amp; Aarti
                           </button>

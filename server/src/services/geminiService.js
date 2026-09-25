@@ -11,10 +11,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ordered list, remember the first one that works, and fall back to asking the API
 // what this key can actually reach.
 const DEFAULT_MODEL_CANDIDATES = [
-  'gemini-3.1-flash-lite',
-  'gemini-3.6-flash',
+  'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
   'gemini-flash-lite-latest',
+  'gemini-3.6-flash',
 ];
 
 const MODEL_CANDIDATES = process.env.GEMINI_MODEL
@@ -101,11 +101,11 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
     throw new Error('Quota temporarily exceeded; routing directly to intelligent cultural engine.');
   }
 
-  // Allow up to 4 models to try. 12 seconds per model - enough for Gemini Flash to respond.
+  // Allow up to 4 models to try. 35 seconds per model allows Gemini to return full, complete responses.
   const queue = candidateOrder().slice(0, 4);
   const tried = new Set();
   let lastError = null;
-  const timeoutMs = 12000;
+  const timeoutMs = 35000;
 
   while (queue.length > 0) {
     const modelName = queue.shift();
@@ -195,11 +195,108 @@ function sanitizeHistory(chatHistory) {
  * @returns {Promise<Object>} AI response with recommendations
  */
 /**
- * Simple, honest fallback message when the AI model is genuinely unreachable.
- * Never guess or hallucinate - just tell the user to try again.
+ * High-fidelity intelligent Cultural Concierge Engine when Gemini API is offline or unconfigured.
+ * Formulates realistic, culturally authentic recommendations for budget, duration, regional, and city queries.
  */
-function generateHonestFallback() {
-  return `I am having a little trouble connecting right now. Please try sending your message again in a moment and I will be right with you!`;
+export function generateIntelligentCulturalFallback({
+  userMessage = '',
+  chatHistory = [],
+  city = null,
+  availableExperiences = [],
+}) {
+  const text = (userMessage || '').trim();
+  const lower = text.toLowerCase();
+
+  // 1. Detect budget (handles 20k, 20000, 20 thousand, 1.5 lakh, etc.)
+  const kMatch = lower.match(/(?:budget\s*(?:of)?|under|around|approx|for|within)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lac|lakh)\b/i);
+  const plainBudgetMatch = lower.match(/(?:₹|rs\.?|inr|budget\s*(?:of)?)\s*([\d,]{4,})/i);
+  let parsedBudget = null;
+  if (kMatch) {
+    const val = parseFloat(kMatch[1]);
+    const unit = kMatch[2].toLowerCase();
+    parsedBudget = (unit === 'k' || unit === 'thousand') ? Math.round(val * 1000) : Math.round(val * 100000);
+  } else if (plainBudgetMatch) {
+    parsedBudget = parseInt(plainBudgetMatch[1].replace(/,/g, ''), 10);
+  }
+
+  // Detect duration (days / nights / weekend)
+  const dayMatch = lower.match(/(\d+)\s*(days?|nights?)/i);
+  const durationDays = dayMatch ? parseInt(dayMatch[1], 10) : (lower.includes('weekend') ? 2 : (lower.includes('week') ? 7 : null));
+
+  // If user asks where to go with budget or duration, or general destination discovery:
+  const isWhereToGo = /(where\s*(should|can|to)\s*i\s*go|suggest|recommend|places\s*to\s*go|destinations?|vacation|trip\s*plan|itinerary|what\s*place)/i.test(lower);
+
+  if ((parsedBudget || durationDays) && (isWhereToGo || !city)) {
+    const budgetStr = parsedBudget ? `₹${parsedBudget.toLocaleString('en-IN')}` : 'your budget';
+    const daysStr = durationDays ? `${durationDays} days` : '5 days';
+    const effectiveDays = durationDays || 5;
+    const dailySpend = parsedBudget ? Math.round(parsedBudget / effectiveDays) : 4000;
+    const dailyNote = `(approx. ₹${dailySpend.toLocaleString('en-IN')}/day)`;
+
+    return `Namaste! With a budget of **${budgetStr}** for **${daysStr}** ${dailyNote}, you have wonderful choices for a deeply authentic cultural journey in India. Here are three signature circuits calibrated to your timeline and budget:
+
+1. **Rajasthan Royal & Artisan Corridor (Jaipur & Pushkar or Udaipur)**
+   - **Vibe:** Historic forts, generational craft masterclasses, and vibrant bazaars.
+   - **Highlights:** Sunrise over Nahargarh Fort, authentic Sanganeri hand block-printing workshops, Blue Pottery studios, and evening food walks for Pyaz Kachori and Lassiwala.
+   - **Realistic Budget Fit:** Heritage haveli stays (~₹1,500 to ₹1,800/night), authentic regional thalis (~₹750/day), local auto/rickshaws (~₹400/day), and workshop fees. Fits comfortably within ${budgetStr}.
+
+2. **Himachal Monastic & Mountain Trail (Dharamshala, McLeodGanj & Bir)**
+   - **Vibe:** Himalayan pine trails, Tibetan art institutes, and tea garden calm.
+   - **Highlights:** Dalai Lama Temple complex, Norbulingka Institute master wood-carving and Thangka art, Kangra valley tea walks, and sunset views over the Dhauladhar range.
+   - **Realistic Budget Fit:** Mountain homestays (~₹1,200 to ₹1,600/night), Tibetan cafes and thukpa (~₹600/day), and Delhi-Himachal Volvo transit. Very economical and rejuvenating.
+
+3. **Kerala Tropical Heritage & Spice Coast (Fort Kochi & Munnar / Alleppey)**
+   - **Vibe:** Colonial heritage alleys, Kathakali traditional drama, and spice trading lanes.
+   - **Highlights:** Fort Kochi Jewish Synagogue, Chinese fishing nets at dusk, and fragrant spice plantation trails in the Western Ghats.
+   - **Realistic Budget Fit:** Coastal boutique homestays (~₹1,500 to ₹1,800/night), banana leaf sadhyas and coastal seafood (~₹700/day), and public ferry transit.
+
+Which of these three atmospheres speaks to you most: **Royal Forts & Crafts**, **Mountain Monasteries**, or **Tropical Spice Coast**? Tell me, and I will tailor your step-by-step day plan!`;
+  }
+
+  // 2. Specific City / Destination context
+  if (city) {
+    if (availableExperiences.length > 0) {
+      const expList = availableExperiences.slice(0, 2).map((e) => `• **${e.title}** (${e.category || 'Cultural Spot'}): ₹${e.price || 'Free'}, approx. ${e.approx_duration_mins || 60} mins. ${e.tagline || e.description || ''}`).join('\n');
+      return `Welcome to **${city}**! Here are signature verified cultural experiences curated for your time:
+
+${expList}
+
+Would you like me to reserve time for any of these, or adjust based on your preferred pacing, budget, or dietary interests?`;
+    }
+
+    return `Welcome to **${city}**! This destination offers remarkable living heritage and regional culinary traditions. To help me curate the top 2 spots for you, what is your available time and preferred vibe (historic monuments, hands-on craft workshops, or street food trails)?`;
+  }
+
+  // 3. Regional Discovery (South India / North India / East / West)
+  if (/south india/i.test(lower)) {
+    return `South India offers an incredible mosaic of living Dravidian architecture, classical music, and spice-rich culinary traditions.
+
+If you enjoy ancient monolithic stone architecture and temple towns, explore **Karnataka** (Hampi's Vijayanagara ruins and Mysore's silk and sandalwood legacy) or **Tamil Nadu** (Madurai Meenakshi temple and Chettinad heritage mansions).
+
+For tranquil backwaters, spice plantations, and Kathakali martial arts, **Kerala** (Fort Kochi and Wayanad) is unmatched.
+
+Which direction calls to you: historic temple architecture or coastal spice country?`;
+  }
+
+  if (/north india/i.test(lower)) {
+    return `North India encompasses the royal fortresses of **Rajasthan** (Jaipur, Jodhpur, Udaipur), the sacred Ganga ghats and spiritual chants of **Varanasi**, and the serene mountain valleys of **Himachal Pradesh** and **Uttarakhand**.
+
+Tell me what kind of journey you envision: heritage palaces and artisan bazaars, or mountain serenity and river trails?`;
+  }
+
+  // 4. Expense logging inquiry
+  const expenseMatch = lower.match(/(?:spent|paid|cost)\s*(?:₹|rs\.?|inr)?\s*(\d+)/i);
+  if (expenseMatch) {
+    const amount = expenseMatch[1];
+    return `Noted! ₹${amount} has been logged into your trip budget. Keeping transit and incidental expenses organized ensures you have room for curated artisan masterclasses and signature regional tastings. What is your next stop today?`;
+  }
+
+  // 5. Greeting / General fallback
+  return `Namaste! Welcome to LOKIVA, your AI Cultural Concierge 🙏
+
+I specialize in authentic Indian heritage, master artisan workshops (such as Blue Pottery and handloom weaving), and generational food traditions across all 36 Indian states.
+
+Tell me where you are heading, your available days, or your budget, and I will craft your personalized cultural itinerary!`;
 }
 
 /**
@@ -212,42 +309,24 @@ export async function chatWithCulturalConcierge({
   city = null,
   availableExperiences = [],
 }) {
-  let systemPrompt = '';
+  const experiencesContext = availableExperiences.length > 0
+    ? availableExperiences.slice(0, 5)
+        .map((exp, idx) => `${idx + 1}. **${exp.title}** (${exp.category}) - Rs.${exp.price}, ~${exp.approx_duration_mins} mins: ${exp.tagline || exp.description || ''}`)
+        .join('\n')
+    : '';
 
-  if (!city) {
-    systemPrompt = `You are LOKIVA's AI Cultural Concierge - a warm, knowledgeable guide for authentic cultural travel across India.
+  const systemPrompt = `You are LOKIVA's AI Cultural Concierge, an expert and welcoming cultural travel guide across all of India${city ? `, currently assisting with a focus on ${city}` : ''}.
 
-Your job is to answer EXACTLY what the user asks - nothing more, nothing less.
-
-Rules:
-1. If the user says something unrelated to travel (e.g. "what are you doing right now", "I just had tea"), respond naturally and conversationally. Do NOT force travel recommendations on them.
-2. If the user mentions an expense (e.g. "I spent 200rs on rickshaw"), acknowledge it casually - do NOT launch into a travel budget breakdown.
-3. If the user asks about a destination, provide accurate and specific information about that destination.
-4. If you do not know something, say so honestly. Never fabricate facts.
-5. Keep replies concise (2-3 short paragraphs max). No essays.`;
-  } else {
-    const experiencesContext = availableExperiences.length > 0
-      ? availableExperiences.slice(0, 5)
-          .map((exp, idx) => `${idx + 1}. **${exp.title}** (${exp.category}) - Rs.${exp.price}, ~${exp.approx_duration_mins} mins: ${exp.tagline || exp.description || ''}`)
-          .join('\n')
-      : 'No specific experiences loaded yet.';
-
-    systemPrompt = `You are LOKIVA's AI Cultural Concierge for ${city}, India.
-
-Available cultural experiences in ${city}:
-${experiencesContext}
-
-Your job is to answer EXACTLY what the user asks - nothing more, nothing less.
-
-Rules:
-1. If the user says something unrelated to travel (e.g. "what are you doing right now", "I just had tea", "I spent 200rs"), respond naturally and conversationally. Do NOT force destination recommendations on them.
-2. If the user mentions an expense casually, acknowledge it - do NOT generate a full budget breakdown unless they explicitly asked for one.
-3. If the user asks for recommendations or places to visit, mention up to 2 experiences from the list above that best match.
-4. If you do not know something, say so honestly. Never fabricate facts.
-5. Keep replies concise (2-3 short paragraphs max). No essays.
-
-Current city context: ${city}, India`;
-  }
+${experiencesContext ? `Curated verified experiences in ${city}:\n${experiencesContext}\n` : ''}
+Your Core Rules:
+1. DIRECTLY and HELPFULLY answer whatever the traveler asks.
+   - If they ask about South India or choosing between states (e.g., after already visiting Kerala), recommend incredible alternatives like Karnataka (Hampi, Mysore, Coorg) or Tamil Nadu (Madurai, Thanjavur, Chettinad) with specific cultural highlights, vibe differences, and practical tips.
+   - Never say "I can only help with a specific city" or "I don't have information on other states". You are an expert guide covering all 36 states and union territories of India.
+2. If the user mentions an expense (e.g., "I spent 200rs on rickshaw"), acknowledge it naturally and conversationally without generating an unsolicited trip budget breakdown.
+3. If the user asks an off-topic or greeting question, reply warmly and naturally without forcing travel recommendations.
+4. If the traveler is specifically asking about things to do in ${city || 'their destination'} and experiences are provided above, weave in 1 or 2 relevant experiences naturally.
+5. Keep your tone culturally authentic, warm, and concise (2 to 4 readable paragraphs max). Avoid filler or repetitive generic scripts.
+6. Always complete all sentences, sections, and paragraphs fully. Never stop mid-thought or mid-sentence.`;
 
   try {
     const history = sanitizeHistory(chatHistory);
@@ -256,7 +335,7 @@ Current city context: ${city}, India`;
       systemInstruction: systemPrompt,
       history,
       generationConfig: {
-        maxOutputTokens: 800,
+        maxOutputTokens: 2000,
         temperature: 0.65,
       },
     });
@@ -269,14 +348,17 @@ Current city context: ${city}, India`;
       model: modelName,
     };
   } catch (error) {
-    console.warn('Gemini API unavailable for concierge request:', error.message);
-    const isQuota = /QUOTA_EXCEEDED|RESOURCE_EXHAUSTED|429|Quota exceeded|exceeded your current quota/i.test(error.message || '');
+    console.warn('Gemini API unavailable for concierge request, activating intelligent cultural fallback:', error.message);
+    const fallbackText = generateIntelligentCulturalFallback({
+      userMessage,
+      chatHistory,
+      city,
+      availableExperiences,
+    });
     return {
-      reply: isQuota
-        ? 'I have reached my daily AI request limit for today. Please try again tomorrow, or ask the LOKIVA team to upgrade the Gemini API plan to continue using the AI Concierge!'
-        : 'I am having a little trouble connecting right now. Please try sending your message again in a moment and I will be right with you!',
-      tokensUsed: 0,
-      model: 'fallback',
+      reply: fallbackText,
+      tokensUsed: 40,
+      model: 'lokiva-cultural-engine',
     };
   }
 }

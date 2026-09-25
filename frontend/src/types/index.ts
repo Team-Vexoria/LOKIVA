@@ -5,6 +5,8 @@ export interface User {
   role: 'traveler' | 'provider' | 'admin';
   is_active: boolean;
   created_at: string;
+  avatar?: string;
+  avatar_url?: string;
   profile?: TravelerProfile;
 }
 
@@ -25,6 +27,10 @@ export interface TravelerProfile {
   location_name: string;
   hotel_lat: number;
   hotel_lng: number;
+  avatar?: string;
+  craft_name?: string;
+  workshop_city?: string;
+  craft_specialty?: string;
 }
 
 export interface State {
@@ -411,4 +417,6 @@ export interface DayPlanResponse {
   feasibility_summary: string;
   stops: DayPlanStop[];
 }
+
+export * from './groupTrip';
 
