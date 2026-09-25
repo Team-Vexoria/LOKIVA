@@ -197,8 +197,8 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </h1>
 
           {/* Supporting line */}
-          <p className="relative z-10 pt-3 text-sm sm:text-base text-[#5B6B8C] font-sans max-w-xl mx-auto leading-relaxed px-2">
-            India's living artisan guilds, sacred stepwells, and vernacular heritage are scattered across oral lore. LOKIVA evaluates real street transit buffers, opening schedules, and budget limits to build cultural micro-circuits that actually work.
+          <p className="relative z-10 pt-3 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
+            Discover authentic artisan guilds and living heritage, packed into feasible cultural circuits built around your time and budget.
           </p>
 
           {/* Verification line */}

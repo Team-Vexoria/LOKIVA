@@ -183,7 +183,7 @@ aiRouter.post('/concierge', async (req, res) => {
     const intent = parseIntentFromPrompt(message);
 
     // 2. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
-    if (!activeCity) {
+    if (!activeCity || isGreeting) {
       const aiResponse = await chatWithCulturalConcierge({
         userMessage: message,
         chatHistory: chat_history,
@@ -191,10 +191,11 @@ aiRouter.post('/concierge', async (req, res) => {
         availableExperiences: [],
       });
 
+      // Strict Rule: Never attach recommended experience cards when destination has not been decided or on greetings
       return res.json({
         reply: sanitizeAiText(aiResponse.reply),
         tokens_used: aiResponse.tokensUsed || 0,
-        model: aiResponse.model || 'gemini-1.5-flash',
+        model: aiResponse.model || 'lokiva-cultural-engine',
         extracted_intent: intent,
         suggested_experiences: [],
         context_destination: null,

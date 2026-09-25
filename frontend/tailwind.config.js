@@ -87,10 +87,18 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Josefin Sans"', 'sans-serif'],
-        heading: ['"Raleway"', 'sans-serif'],
-        sans: ['"Nunito"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        // 1. Primary Display & Big Titles (Object Sans)
+        display: ['"Object Sans"', '"Plus Jakarta Sans"', 'sans-serif'],
+        heading: ['"Object Sans"', '"Plus Jakarta Sans"', 'sans-serif'],
+
+        // 2. Platform Telemetry, Badges, Metrics & Micro-text (Josefin Sans)
+        meta: ['"Josefin Sans"', 'sans-serif'],
+        mono: ['"Josefin Sans"', 'monospace'],
+        sans: ['"Josefin Sans"', 'sans-serif'],
+      },
+      letterSpacing: {
+        widest: '0.12em',
+        tightest: '-0.03em',
       },
     },
   },

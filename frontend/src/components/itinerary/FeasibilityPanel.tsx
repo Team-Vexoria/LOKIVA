@@ -61,7 +61,7 @@ export function FeasibilityPanel({
               AI Feasibility Solver · Day {dayNumber}
             </span>
             {activeFilter !== 'none' && (
-              <span className="px-2 py-0.5 rounded-full bg-[#12213B] text-white text-[10px] font-mono font-bold uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-full bg-[#12213B] text-white text-[10px] font-meta font-bold uppercase tracking-wider">
                 Filter: {activeFilter}
               </span>
             )}
@@ -71,7 +71,7 @@ export function FeasibilityPanel({
             {activeFilter !== 'none' && (
               <button
                 onClick={() => onReplan('none')}
-                className="text-[11px] font-mono text-[#C1443B] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-meta text-[#C1443B] hover:underline flex items-center gap-1 cursor-pointer"
                 title="Reset to original balanced schedule"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -80,7 +80,7 @@ export function FeasibilityPanel({
             )}
 
             <span
-              className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold border ${
+              className={`px-3 py-1 rounded-full text-[11px] font-meta font-bold border ${
                 paceScore >= 80
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                   : paceScore >= 60
@@ -97,30 +97,30 @@ export function FeasibilityPanel({
         {/* 4 Key Feasibility Real-Time Gauges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
           <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5 shadow-2xs">
-            <span className="text-[10px] font-mono uppercase text-dusk block">Sightseeing</span>
-            <span className="text-sm font-bold font-mono text-ink">
+            <span className="text-[10px] font-meta uppercase text-dusk block">Sightseeing</span>
+            <span className="text-sm font-bold font-meta text-ink">
               {Math.floor(totalSightseeingMinutes / 60)}h {totalSightseeingMinutes % 60}m
             </span>
           </div>
 
           <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5 shadow-2xs">
-            <span className="text-[10px] font-mono uppercase text-dusk block">Transit Time</span>
-            <span className="text-sm font-bold font-mono text-ink">
+            <span className="text-[10px] font-meta uppercase text-dusk block">Transit Time</span>
+            <span className="text-sm font-bold font-meta text-ink">
               {totalTransitMinutes} mins ({totalTransitDistanceKm} km)
             </span>
           </div>
 
           <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5 shadow-2xs">
-            <span className="text-[10px] font-mono uppercase text-dusk block">Step Count</span>
-            <span className="text-sm font-bold font-mono text-ink flex items-center gap-1">
+            <span className="text-[10px] font-meta uppercase text-dusk block">Step Count</span>
+            <span className="text-sm font-bold font-meta text-ink flex items-center gap-1">
               <Footprints className="w-3.5 h-3.5 text-[#C1443B]" />
               <span>{estimatedWalkingSteps.toLocaleString()}</span>
             </span>
           </div>
 
           <div className="bg-white p-3 rounded-xl border border-[#E5DFD5] space-y-0.5 shadow-2xs">
-            <span className="text-[10px] font-mono uppercase text-dusk block">Local Impact</span>
-            <span className="text-sm font-bold font-mono text-emerald-700">
+            <span className="text-[10px] font-meta uppercase text-dusk block">Local Impact</span>
+            <span className="text-sm font-bold font-meta text-emerald-700">
               {localImpactScore}% Direct
             </span>
           </div>
@@ -174,10 +174,10 @@ export function FeasibilityPanel({
       {/* 1-Click Adaptive Re-Planner Pill Buttons (Fully Functional State) */}
       <div className="space-y-2.5 pt-2 border-t border-[#E5DFD5]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono uppercase font-bold text-dusk">
+          <span className="font-meta text-xs font-semibold tracking-wider uppercase text-dusk">
             1-Click Adaptive Re-Planner:
           </span>
-          <span className="text-[10px] font-mono text-[#C1443B]">
+          <span className="font-meta text-[11px] text-[#C1443B]">
             {activeFilter !== 'none' ? `Active: ${activeFilter} (Click to toggle)` : 'Click to adapt schedule'}
           </span>
         </div>
@@ -187,7 +187,7 @@ export function FeasibilityPanel({
           <button
             onClick={() => onReplan('rain')}
             disabled={isReplanning}
-            className={`p-2.5 rounded-xl text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
+            className={`p-2.5 rounded-xl font-meta text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
               activeFilter === 'rain'
                 ? 'bg-sky-100 border-2 border-sky-600 text-sky-950 ring-2 ring-sky-300'
                 : 'bg-white hover:bg-sky-50 border border-[#E5DFD5] hover:border-sky-300 text-ink'
@@ -201,7 +201,7 @@ export function FeasibilityPanel({
           <button
             onClick={() => onReplan('heat')}
             disabled={isReplanning}
-            className={`p-2.5 rounded-xl text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
+            className={`p-2.5 rounded-xl font-meta text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
               activeFilter === 'heat'
                 ? 'bg-amber-100 border-2 border-amber-600 text-amber-950 ring-2 ring-amber-300'
                 : 'bg-white hover:bg-amber-50 border border-[#E5DFD5] hover:border-amber-300 text-ink'
@@ -215,7 +215,7 @@ export function FeasibilityPanel({
           <button
             onClick={() => onReplan('fatigue')}
             disabled={isReplanning}
-            className={`p-2.5 rounded-xl text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
+            className={`p-2.5 rounded-xl font-meta text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
               activeFilter === 'fatigue'
                 ? 'bg-emerald-100 border-2 border-emerald-600 text-emerald-950 ring-2 ring-emerald-300'
                 : 'bg-white hover:bg-emerald-50 border border-[#E5DFD5] hover:border-emerald-300 text-ink'
@@ -229,7 +229,7 @@ export function FeasibilityPanel({
           <button
             onClick={() => onReplan('crowded')}
             disabled={isReplanning}
-            className={`p-2.5 rounded-xl text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
+            className={`p-2.5 rounded-xl font-meta text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 ${
               activeFilter === 'crowded'
                 ? 'bg-purple-100 border-2 border-purple-600 text-purple-950 ring-2 ring-purple-300'
                 : 'bg-white hover:bg-purple-50 border border-[#E5DFD5] hover:border-purple-300 text-ink'

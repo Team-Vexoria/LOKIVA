@@ -2,32 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Object Sans @font-face declarations */
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/ObjectSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/ObjectSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/ObjectSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Object Sans';
+  src: url('/fonts/ObjectSans-Heavy.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   body {
-    font-family: 'Nunito', sans-serif !important;
+    font-family: 'Josefin Sans', sans-serif !important;
   }
-  h1, h2 {
-    font-family: 'Josefin Sans', sans-serif;
-  }
-  h3, h4, h5, h6 {
-    font-family: 'Raleway', sans-serif;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Object Sans', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
 .font-display {
-  font-family: 'Josefin Sans', sans-serif !important;
+  font-family: 'Object Sans', 'Plus Jakarta Sans', sans-serif !important;
+  letter-spacing: -0.02em;
 }
 
 .font-heading {
-  font-family: 'Raleway', sans-serif !important;
+  font-family: 'Object Sans', 'Plus Jakarta Sans', sans-serif !important;
+  letter-spacing: -0.02em;
 }
 
 .font-sans {
-  font-family: 'Nunito', sans-serif !important;
+  font-family: 'Josefin Sans', sans-serif !important;
+}
+
+.font-meta {
+  font-family: 'Josefin Sans', sans-serif !important;
+  font-feature-settings: 'tnum' on, 'lnum' on;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: 'Josefin Sans', monospace !important;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+}
+
+/* Display Titles */
+h1, h2, h3, h4, .font-heading, .font-display {
+  font-family: 'Object Sans', 'Plus Jakarta Sans', sans-serif !important;
+  letter-spacing: -0.02em;
+}
+
+/* Micro-copy, Badges, Metrics, Timestamps, and Navigation Pills */
+p, span, button, input, select, label, .font-mono, .font-meta {
+  font-family: 'Josefin Sans', sans-serif !important;
+}
+
+/* Ensure Josefin Sans numbers and tabular figures render with clean geometry */
+.font-meta, .font-mono {
+  font-feature-settings: 'tnum' on, 'lnum' on;
 }
 
 /* Moving Photo Stream Marquee Animations */
@@ -105,8 +160,84 @@
   }
 }
 
-.custom-marker-icon {
-  animation: marker-pulse 2s infinite;
+/* Editorial Continuous Transit Glow & Luminous Flight Pulse */
+.editorial-transit-glow {
+  stroke: #C85A32 !important;
+  stroke-width: 3.5px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  filter: drop-shadow(0 0 6px rgba(200, 90, 50, 0.45));
+}
+
+/* Traveling luminous pulse wave */
+@keyframes transitPulseGlow {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animated-corridor-flow {
+  stroke: #C85A32 !important;
+  stroke-width: 4px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  /* Long sweeping wave: solid line with traveling luminous gap */
+  stroke-dasharray: 180 300 !important;
+  animation: transitPulseGlow 3.5s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 8px rgba(217, 107, 67, 0.65));
+}
+
+/* Solid Champagne/Sandstone Base Corridor Track */
+.corridor-base-track {
+  stroke: #E8DEC8 !important;
+  stroke-width: 4px !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  opacity: 0.75 !important;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* Departure beacon ambient ripple for Stop 1 */
+@keyframes startBeaconRipple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.start-beacon-ripple {
+  animation: startBeaconRipple 2.6s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+/* Custom glowing amber compass beacon ring */
+@keyframes beaconHaloPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+.beacon-pulse-ring {
+  animation: beaconHaloPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Ensure map container respects z-index */
@@ -154,6 +285,20 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Hide scrollbar cleanly for device mockups and horizontal chip rows */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Responsive adjustments */

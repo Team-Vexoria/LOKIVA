@@ -63,7 +63,7 @@ export function TripHeaderOverview({
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-ink tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-ink tracking-tight">
               {tripDetails.title}
             </h1>
             <p className="text-xs sm:text-sm text-dusk font-sans">
@@ -72,7 +72,7 @@ export function TripHeaderOverview({
           </div>
 
           {/* Quick Details Badges */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs font-mono text-ink">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs font-meta text-ink">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-xl border border-[#E5DFD5]">
               <Calendar className="w-3.5 h-3.5 text-[#FFC067]" />
               <span>{tripDetails.startDate} to {tripDetails.endDate}</span>
@@ -103,7 +103,7 @@ export function TripHeaderOverview({
             <div className="text-xs font-mono uppercase tracking-wider text-dusk font-semibold">
               Total Estimated Spend
             </div>
-            <div className="text-2xl sm:text-3xl font-display font-black text-ink">
+            <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-ink tracking-tight">
               ₹{totalCost.toLocaleString('en-IN')}
             </div>
             <div className="text-xs font-mono text-emerald-800 font-semibold">

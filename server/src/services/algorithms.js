@@ -172,17 +172,41 @@ export function parseIntentFromPrompt(prompt) {
 
   // 2. Budget
   let budget = 2500;
-  const budgetMatch = text.match(/(₹|rs\.?|inr|budget\s*of)\s*(\d+)/i);
-  if (budgetMatch) budget = parseInt(budgetMatch[2], 10);
-  else if (text.includes('budget') || text.includes('cheap')) budget = 1000;
-  else if (text.includes('luxury') || text.includes('premium')) budget = 6000;
+  const kMatch = text.match(/(?:budget\s*(?:of)?|under|around|approx|for|within)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lac|lakh)\b/i);
+  const plainBudgetMatch = text.match(/(?:₹|rs\.?|inr|budget\s*(?:of)?)\s*([\d,]+)/i);
+  if (kMatch) {
+    const val = parseFloat(kMatch[1]);
+    const unit = kMatch[2].toLowerCase();
+    if (unit === 'k' || unit === 'thousand') {
+      budget = Math.round(val * 1000);
+    } else if (unit === 'lac' || unit === 'lakh') {
+      budget = Math.round(val * 100000);
+    }
+  } else if (plainBudgetMatch) {
+    budget = parseInt(plainBudgetMatch[1].replace(/,/g, ''), 10);
+  } else if (text.includes('budget') || text.includes('cheap')) {
+    budget = 1000;
+  } else if (text.includes('luxury') || text.includes('premium')) {
+    budget = 6000;
+  }
 
-  // 3. Duration Hours
+  // 3. Duration (Hours / Days)
   let availableHours = 6;
-  const hourMatch = text.match(/(\d+)\s*(hours?|hrs?)/);
-  if (hourMatch) availableHours = parseInt(hourMatch[1], 10);
-  else if (text.includes('half day')) availableHours = 4;
-  else if (text.includes('full day')) availableHours = 8;
+  let durationDays = 1;
+  const dayMatch = text.match(/(\d+)\s*(days?|nights?)/i);
+  if (dayMatch) {
+    durationDays = parseInt(dayMatch[1], 10);
+    availableHours = durationDays * 8;
+  } else {
+    const hourMatch = text.match(/(\d+)\s*(hours?|hrs?)/i);
+    if (hourMatch) availableHours = parseInt(hourMatch[1], 10);
+    else if (text.includes('half day')) availableHours = 4;
+    else if (text.includes('full day')) availableHours = 8;
+    else if (text.includes('weekend')) {
+      durationDays = 2;
+      availableHours = 16;
+    }
+  }
 
   // 4. Interests
   const interests = [];
@@ -201,6 +225,7 @@ export function parseIntentFromPrompt(prompt) {
     traveler_type: groupSize === 1 ? 'Solo Explorer' : text.includes('family') ? 'Family with Kids' : 'Couples / Friends',
     group_size: groupSize,
     budget,
+    duration_days: durationDays,
     available_hours: availableHours,
     interests,
     accessibility_prefs: { low_walking: lowWalking },

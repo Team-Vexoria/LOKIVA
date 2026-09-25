@@ -6,6 +6,7 @@ import { ItineraryViewTabs } from '../components/itinerary/ItineraryViewTabs';
 import { DayCardTimeline } from '../components/itinerary/DayCardTimeline';
 import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
 import { TripSummarySidebar } from '../components/itinerary/TripSummarySidebar';
+import { RouteDispatchSidebar } from '../components/itinerary/RouteDispatchSidebar';
 import { ItineraryMapView } from '../components/itinerary/ItineraryMapView';
 import { ItineraryListView } from '../components/itinerary/ItineraryListView';
 import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView';
@@ -212,7 +213,7 @@ export function ItineraryPage() {
           <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             {/* Destination City */}
             <div className="sm:col-span-4 space-y-1">
-              <label className="text-[11px] font-mono uppercase font-bold text-dusk block">
+              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
                 Destination City
               </label>
               <div className="relative">
@@ -229,7 +230,7 @@ export function ItineraryPage() {
 
             {/* Days Count (1 to 7 Days) */}
             <div className="sm:col-span-3 space-y-1">
-              <label className="text-[11px] font-mono uppercase font-bold text-dusk block">
+              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
                 Duration: {inputDays} {inputDays === 1 ? 'Day' : 'Days'}
               </label>
               <div className="flex items-center gap-1.5">
@@ -238,7 +239,7 @@ export function ItineraryPage() {
                     key={num}
                     type="button"
                     onClick={() => setInputDays(num)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
+                    className={`flex-1 py-2 rounded-xl text-xs font-meta font-bold transition cursor-pointer ${
                       inputDays === num
                         ? 'bg-ink text-white shadow-2xs'
                         : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
@@ -351,7 +352,7 @@ export function ItineraryPage() {
                   key={day.dayNumber}
                   type="button"
                   onClick={() => setSelectedDay(day.dayNumber)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                  className={`px-4 py-2.5 rounded-xl text-xs font-meta font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                     isSelected
                       ? 'bg-ink text-white shadow-sm'
                       : 'bg-[#FAF7F2] text-ink hover:bg-white border border-[#E5DFD5]'
@@ -443,29 +444,17 @@ export function ItineraryPage() {
             </div>
 
             {/* Right Column (4 cols): Sticky Map & Cost/Impact Sidebar */}
-            <div className="lg:col-span-4 space-y-6 sticky top-20">
-              {/* Embedded Live Route Map */}
-              <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
-                    Day {selectedDay} Route Map
-                  </span>
-                  <button
-                    onClick={() => setViewMode('map')}
-                    className="text-[11px] font-mono text-[#C1443B] hover:underline cursor-pointer"
-                  >
-                    Full Screen Map &rarr;
-                  </button>
-                </div>
-
-                <ItineraryMapView
-                  days={days}
-                  selectedDayNumber={selectedDay}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Spatiotemporal Route Dispatch Sidebar */}
+              {activeDay && (
+                <RouteDispatchSidebar
+                  day={activeDay}
                   activeStopId={activeStopId}
                   hoveredStopId={hoveredStopId}
                   onSelectStop={(id) => setActiveStopId(id)}
+                  onExpandFullScreenMap={() => setViewMode('map')}
                 />
-              </div>
+              )}
 
               {/* Trip Financial & Local Impact Sidebar */}
               <TripSummarySidebar

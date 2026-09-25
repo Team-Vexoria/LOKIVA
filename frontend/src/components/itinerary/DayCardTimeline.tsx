@@ -69,28 +69,28 @@ export function DayCardTimeline({
       {/* Day Top Bar */}
       <div className="p-5 sm:p-6 bg-white border-b border-[#E5DFD5] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-dusk font-bold">
-            <span className="px-2.5 py-0.5 bg-[#12213B] text-white rounded-md">
+          <div className="flex flex-wrap items-center gap-2 font-meta text-xs font-medium tracking-wide text-neutral-600">
+            <span className="px-2.5 py-0.5 bg-[#FAF7F2] text-[#C1443B] font-extrabold border border-[#E5DFD5] rounded-md tracking-wider">
               DAY {day.dayNumber}
             </span>
             <span>·</span>
-            <span className="text-ink">{day.date}</span>
+            <span className="text-neutral-800 font-semibold">{day.date}</span>
             <span>|</span>
-            <span className="text-ink">{day.dayOfWeek}</span>
+            <span className="text-neutral-800 font-semibold">{day.dayOfWeek}</span>
 
             {/* Start Time Config */}
-            <span className="text-dusk font-normal">· Starts at:</span>
+            <span className="text-neutral-500 font-normal">· Starts at:</span>
             {isEditingStart ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="time"
                   value={startTimeInput}
                   onChange={(e) => setStartTimeInput(e.target.value)}
-                  className="px-1.5 py-0.5 border border-ink rounded text-xs font-mono"
+                  className="px-1.5 py-0.5 border border-ink rounded text-xs font-meta"
                 />
                 <button
                   onClick={handleSaveStartTime}
-                  className="px-2 py-0.5 bg-ink text-white rounded text-[10px] font-bold cursor-pointer"
+                  className="px-2 py-0.5 bg-[#C85A32] text-white rounded text-[10px] font-bold cursor-pointer"
                 >
                   Save
                 </button>
@@ -107,7 +107,7 @@ export function DayCardTimeline({
             )}
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-display font-bold text-ink">
+          <h2 className="text-xl sm:text-2xl font-display font-extrabold text-ink tracking-tight">
             {day.title}
           </h2>
         </div>
