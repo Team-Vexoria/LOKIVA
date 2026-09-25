@@ -107,29 +107,48 @@ export interface ItineraryTripDetails {
   pace?: 'relaxed' | 'balanced' | 'packed';
 }
 
-export interface FoodRecommendation {
-  locale: string;
-  dishes: string[];
-  notes?: string;
+export interface RegionalFoodGuide {
+  locale: string; // e.g., "Malshej Ghat Base", "Old City Bazaars", "Fort Precinct"
+  dishes: string[]; // e.g., ["Pithla-bhakri", "Kanda bhaji", "Hot chai"]
+  contextNote?: string;
+  notes?: string; // backwards compatibility alias
 }
 
-export interface ItineraryPracticalInfo {
+export type FoodRecommendation = RegionalFoodGuide;
+
+export interface RegionalBestTimeWindow {
+  idealMonths: string;
+  seasonContext: string;
+  crowdPacing: string;
+  advisoryNote?: string;
+  advisory?: string; // backwards compatibility alias
+  budgetEstimates?: {
+    tierLabel: string;
+    rangeInr: string;
+  }[];
+}
+
+export interface NearbyDetourPlace {
+  name: string;
+  districtOrArea: string;
+  area?: string; // backwards compatibility alias
+  tag: string; // e.g., "Waterfall", "Ancient Fort", "Backwater"
+  distanceKm?: number;
+}
+
+export interface DynamicRegionalIntelligence {
+  foodRecommendations: RegionalFoodGuide[];
+  travelTips: string[];
+  bestTimeToVisit: RegionalBestTimeWindow;
+  nearbyPlaces: NearbyDetourPlace[];
+}
+
+// Links directly inside ItineraryPracticalInfo
+export interface ItineraryPracticalInfo extends DynamicRegionalIntelligence {
   weatherSummary: string;
   temperature: string;
   packingList: string[];
   accessibilityNotes: string;
   transitNotes: string;
   languages: string[];
-  foodRecommendations: FoodRecommendation[];
-  travelTips: string[];
-  bestTimeToVisit: {
-    idealMonths: string;
-    crowdPacing: string;
-    advisory: string;
-  };
-  nearbyPlaces: Array<{
-    name: string;
-    area: string;
-    tag: string;
-  }>;
 }
