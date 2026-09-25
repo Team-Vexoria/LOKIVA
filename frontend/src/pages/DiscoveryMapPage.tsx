@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Sparkles,
@@ -14,7 +14,8 @@ import {
   RegionType,
   STATE_REGION_MAP,
 } from '../components/discovery/IndiaVectorMap';
-import { StateEditorialDossier } from '../components/discovery/StateEditorialDossier';
+import { HeritageFlankClusters } from '../components/discovery/HeritageFlankClusters';
+import { EditorialStateDossier } from '../components/discovery/EditorialStateDossier';
 import {
   DiscoveryOnboardingFlow,
   DiscoveryAnswers,
@@ -67,11 +68,13 @@ const FEATURED_STATES = [
 ];
 
 export function DiscoveryMapPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const routerState = (location.state as { solvedAnswers?: { city?: string } } | null) ?? {};
 
   const dossierSectionRef = useRef<HTMLDivElement>(null);
+  const heroContainerRef = useRef<HTMLDivElement>(null);
 
   // Active regional filter
   const [activeRegion, setActiveRegion] = useState<RegionType>('All India');
@@ -211,6 +214,7 @@ export function DiscoveryMapPage() {
 
       {/* SECTION 1: FULL-VIEWPORT HERO MAP CANVAS (Unobstructed by navigation bars) */}
       <section
+        ref={heroContainerRef}
         className="w-full h-[78vh] sm:h-[82vh] relative overflow-hidden bg-[#FAF7F2] border-b border-[#E5DFD5]"
         aria-label="Interactive Pan-India Discovery Map"
       >
@@ -221,6 +225,9 @@ export function DiscoveryMapPage() {
           activeRegion={activeRegion}
           className="w-full h-full"
         />
+
+        {/* Diagonal Heritage Flank Clusters with Corner-Reveal Entrances & Scroll Retraction */}
+        <HeritageFlankClusters heroRef={heroContainerRef} />
 
         {/* Bottom Teaser Cue */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
@@ -250,27 +257,36 @@ export function DiscoveryMapPage() {
       <main
         ref={dossierSectionRef}
         id="state-cultural-dossier"
-        className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+        className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
       >
         {currentDossier ? (
-          <StateEditorialDossier dossier={currentDossier} />
+          <EditorialStateDossier
+            dossier={currentDossier}
+            onLaunchCircuit={(title) => {
+              const match = title.match(/\d+/);
+              const days = match ? match[0] : '4';
+              navigate(
+                `/itinerary?city=${encodeURIComponent(currentDossier.name)}&days=${days}&pace=balanced`
+              );
+            }}
+          />
         ) : (
-          <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-8">
+          <div className="p-8 sm:p-12 rounded-3xl bg-white/80 backdrop-blur-md border border-[#E8DEC8] shadow-sm space-y-8">
             <div className="max-w-2xl space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF7F2] border border-[#E5DFD5] text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF7F2] border border-[#E8DEC8] text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
                 <Compass className="w-3.5 h-3.5" />
                 <span>Living Heritage Dossier</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-display font-extrabold text-[#12213B]">
+              <h2 className="text-2xl sm:text-4xl font-display font-extrabold text-[#1E2022]">
                 Select Any State to Unveil Its Cultural Heritage
               </h2>
-              <p className="text-sm sm:text-base font-sans text-dusk-600 leading-relaxed">
+              <p className="text-sm sm:text-base font-sans text-[#1E2022]/75 leading-relaxed">
                 Filter by geographic region above or tap any state boundary directly on the interactive vector canvas to unveil verified living traditions, seasonal calendars, signature gastronomic flavors, and curated routes.
               </p>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-[#E5DFD5]">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-dusk-600 block">
+            <div className="space-y-4 pt-4 border-t border-[#E8DEC8]">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1E2022]/60 block">
                 Featured Regional Dossiers
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -279,7 +295,7 @@ export function DiscoveryMapPage() {
                     key={state.name}
                     type="button"
                     onClick={() => handleStateSelect(state.name)}
-                    className="p-4 rounded-2xl bg-[#FAF7F2] hover:bg-white border border-[#E5DFD5] hover:border-[#C85A32] text-left transition-all duration-200 cursor-pointer group space-y-1 shadow-2xs"
+                    className="p-4 rounded-2xl bg-[#FAF7F2] hover:bg-white border border-[#E8DEC8] hover:border-[#C85A32] text-left transition-all duration-200 cursor-pointer group space-y-1 shadow-2xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
@@ -287,10 +303,10 @@ export function DiscoveryMapPage() {
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-[#C85A32] group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#12213B] group-hover:text-[#C85A32] transition-colors">
+                    <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#1E2022] group-hover:text-[#C85A32] transition-colors">
                       {state.name}
                     </h3>
-                    <p className="text-xs font-sans text-dusk-600">
+                    <p className="text-xs font-sans text-[#1E2022]/70">
                       {state.tag}
                     </p>
                   </button>

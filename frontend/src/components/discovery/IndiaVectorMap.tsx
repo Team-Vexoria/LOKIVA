@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -142,7 +142,11 @@ export function IndiaVectorMap({
   const [zoom, setZoom] = useState<number>(
     REGION_BOUNDS[activeRegion]?.zoom || 1
   );
-  const [isPanning, setIsPanning] = useState<boolean>(false);
+
+  // Memoize coordinates to prevent scroll-triggered recalibration
+  const memoizedCenter = useMemo<[number, number]>(() => {
+    return [center[0], center[1]];
+  }, [center[0], center[1]]);
 
   // Sync camera position when activeRegion prop changes
   useEffect(() => {
@@ -165,11 +169,11 @@ export function IndiaVectorMap({
   };
 
   const handleZoomIn = () => {
-    setZoom((prev) => Math.min(prev * 1.35, 6));
+    setZoom((prev) => Math.min(prev * 1.35, 4));
   };
 
   const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev / 1.35, 0.8));
+    setZoom((prev) => Math.max(prev / 1.35, 1));
   };
 
   const handleResetZoom = () => {
@@ -231,7 +235,7 @@ export function IndiaVectorMap({
       </AnimatePresence>
 
       {/* Floating Zoom Controls (Top Right) */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
         <button
           type="button"
           onClick={handleZoomIn}
@@ -293,24 +297,14 @@ export function IndiaVectorMap({
           scale: 1050,
           center: [82.9, 22.5],
         }}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
+        className="w-full h-full select-none"
       >
         <ZoomableGroup
-          center={center}
+          center={memoizedCenter}
           zoom={zoom}
-          minZoom={0.8}
-          maxZoom={6}
-          className={isPanning ? 'is-panning' : ''}
-          onMoveStart={() => setIsPanning(true)}
-          onMoveEnd={(props) => {
-            setIsPanning(false);
-            if (props.coordinates) {
-              setCenter(props.coordinates);
-            }
-            if (props.zoom) {
-              setZoom(props.zoom);
-            }
-          }}
+          minZoom={1}
+          maxZoom={4}
+          filterZoomEvent={() => false}
         >
           <Geographies geography={INDIA_TOPO_JSON}>
             {({ geographies }) =>
