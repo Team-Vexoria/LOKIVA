@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { HeroScrollExperience } from '../components/landing/HeroScrollExperience';
+import { LandingHero } from '../components/home/LandingHero';
 import { DeviceMockupSection } from '../components/landing/DeviceMockupSection';
 import { PhotosMapsReviewsSection } from '../components/landing/PhotosMapsReviewsSection';
 import { TagUsSection } from '../components/landing/TagUsSection';
@@ -184,8 +184,8 @@ export function HomePage() {
 
   return (
     <main ref={containerRef} className="relative w-full min-h-screen bg-[#FAF7F2] text-[#12213B] overflow-x-clip">
-      {/* 1. PINNED HERO + SHOWREEL (PANEL 0 - Spain Collection scroll architecture, GSAP pin) */}
-      <HeroScrollExperience />
+      {/* 1. DYNAMICALLY BUDGETED VIEWPORT CANVAS HERO */}
+      <LandingHero />
 
       {/* 2. CARD-STACKED TRANSITION GROUP (Between Showcase and Everything you need) */}
       <div className="card-stack-wrapper relative w-full">
