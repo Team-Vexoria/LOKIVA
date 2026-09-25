@@ -518,6 +518,8 @@ export function TripOnboardingTakeover({
       travelers: answers.group_size,
       focusCategory: answers.interests[0] || 'heritage',
       interests: answers.interests,
+      weatherPreference: answers.weather_preference,
+      accessibility: answers.accessibility,
     });
 
     const mappedAnswers: TripContextAnswers = {

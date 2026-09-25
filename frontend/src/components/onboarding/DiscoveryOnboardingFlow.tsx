@@ -38,6 +38,7 @@ export interface DiscoveryAnswers {
   group_type: 'solo' | 'couple' | 'family' | 'friends';
   group_size: number;
   pace: 'relaxed' | 'balanced' | 'packed';
+  weather_preference: 'winter' | 'monsoon' | 'summer_hills' | 'temperate';
   accessibility: {
     low_walking: boolean;
     wheelchair: boolean;
@@ -72,6 +73,41 @@ export const BUDGET_MARKS = [
   { value: 25000, label: '₹25k+' },
 ];
 
+export const WEATHER_OPTIONS = [
+  {
+    id: 'winter' as const,
+    label: 'Winter Heritage & Desert Sun',
+    season: 'Oct to Mar',
+    icon: Sparkles,
+    tagline: 'Crisp Days & Desert Nights',
+    desc: 'Golden havelis, stepwells, royal citadels and cool desert breezes in Rajasthan and North India.',
+  },
+  {
+    id: 'monsoon' as const,
+    label: 'Lush Monsoon & Backwaters',
+    season: 'Jun to Sep',
+    icon: Mountain,
+    tagline: 'Verdant Green & Rains',
+    desc: 'Rain-washed palm canals, spice plantations, mist-covered valleys and soothing Ayurvedic retreats.',
+  },
+  {
+    id: 'summer_hills' as const,
+    label: 'Cool Mountain Frontiers',
+    season: 'Apr to Jun',
+    icon: Mountain,
+    tagline: 'High-Altitude Serenity',
+    desc: 'Pine forests, ancient Buddhist gompas, panoramic Himalayan ridges and alpine fresh air.',
+  },
+  {
+    id: 'temperate' as const,
+    label: 'Temperate Coastal / Plateau Breeze',
+    season: 'Year-Round',
+    icon: Compass,
+    tagline: 'Pleasant Cultural Strolls',
+    desc: 'Colonial stone enclaves, maritime promenades, temple towns and vibrant plateau craft studios.',
+  },
+];
+
 export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
   destination: 'Smart Match',
   interests: ['heritage', 'crafts', 'food'],
@@ -82,6 +118,7 @@ export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
   group_type: 'couple',
   group_size: 2,
   pace: 'balanced',
+  weather_preference: 'winter',
   accessibility: {
     low_walking: false,
     wheelchair: false,
@@ -236,6 +273,9 @@ export function DiscoveryOnboardingFlow({
     initialAnswers?.group_type || DEFAULT_DISCOVERY_ANSWERS.group_type
   );
   const [paceVal, setPaceVal] = useState<number>(50); // 0 (relaxed) to 100 (packed)
+  const [weatherPreference, setWeatherPreference] = useState<'winter' | 'monsoon' | 'summer_hills' | 'temperate'>(
+    initialAnswers?.weather_preference || DEFAULT_DISCOVERY_ANSWERS.weather_preference
+  );
   const [accessibility, setAccessibility] = useState<{
     low_walking: boolean;
     wheelchair: boolean;
@@ -266,9 +306,9 @@ export function DiscoveryOnboardingFlow({
           onClose();
         }
       } else if (e.key === 'Enter') {
-        if (currentStep < 7) {
+        if (currentStep < 8) {
           handleNext();
-        } else if (currentStep === 7) {
+        } else if (currentStep === 8) {
           handleStartSynthesis();
         }
       }
@@ -276,10 +316,10 @@ export function DiscoveryOnboardingFlow({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentStep, isSynthesizing, destination, interests, days, budgetDaily, groupType, paceVal, accessibility]);
+  }, [isOpen, currentStep, isSynthesizing, destination, interests, days, budgetDaily, groupType, paceVal, weatherPreference, accessibility]);
 
   const handleNext = () => {
-    if (currentStep < 7) {
+    if (currentStep < 8) {
       setDirection(1);
       setCurrentStep((s) => s + 1);
     } else {
@@ -306,12 +346,36 @@ export function DiscoveryOnboardingFlow({
     return 'balanced';
   };
 
+  const HUB_WEATHER_AFFINITY: Record<string, Record<'winter' | 'monsoon' | 'summer_hills' | 'temperate', number>> = {
+    Varanasi: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -4 },
+    Rishikesh: { winter: 7, summer_hills: 7, temperate: 6, monsoon: 2 },
+    Jaipur: { winter: 9, temperate: 5, monsoon: 2, summer_hills: -5 },
+    Udaipur: { winter: 8, monsoon: 7, temperate: 6, summer_hills: -3 },
+    Jaisalmer: { winter: 10, temperate: 4, monsoon: 0, summer_hills: -8 },
+    Leh: { summer_hills: 10, temperate: 4, monsoon: 2, winter: -8 },
+    Kochi: { monsoon: 8, winter: 8, temperate: 7, summer_hills: 2 },
+    Amritsar: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -2 },
+    Delhi: { winter: 8, temperate: 6, monsoon: 2, summer_hills: -4 },
+    Mumbai: { temperate: 8, winter: 8, monsoon: 6, summer_hills: 3 },
+    Kolkata: { winter: 8, temperate: 7, monsoon: 4, summer_hills: -2 },
+    Shillong: { monsoon: 9, summer_hills: 8, temperate: 7, winter: 4 },
+    Bhubaneswar: { winter: 8, temperate: 7, monsoon: 3, summer_hills: -2 },
+    Ahmedabad: { winter: 8, temperate: 5, monsoon: 3, summer_hills: -4 },
+    Goa: { winter: 8, monsoon: 8, temperate: 7, summer_hills: 2 },
+    Hyderabad: { winter: 8, temperate: 8, monsoon: 4, summer_hills: -1 },
+    Chennai: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -3 },
+    Srinagar: { summer_hills: 10, winter: 7, temperate: 6, monsoon: 3 },
+    Bhopal: { winter: 8, temperate: 6, monsoon: 5, summer_hills: -2 },
+    Shimla: { summer_hills: 10, winter: 8, temperate: 6, monsoon: 2 },
+  };
+
   const resolveSmartCity = (
     dest: string,
     userInterests: string[],
     dailyBudget: number,
     chosenGroup: 'solo' | 'couple' | 'family' | 'friends',
-    chosenPace: 'relaxed' | 'balanced' | 'packed'
+    chosenPace: 'relaxed' | 'balanced' | 'packed',
+    chosenWeather: 'winter' | 'monsoon' | 'summer_hills' | 'temperate'
   ): string => {
     if (dest && dest !== 'Smart Match') {
       if (dest === 'Ladakh') return 'Leh';
@@ -471,7 +535,11 @@ export function DiscoveryOnboardingFlow({
         score += (hub.scores as Record<string, number>)[interest] || 0;
       }
 
-      // 2. Budget affinity calibration
+      // 2. Weather affinity calibration
+      const weatherAffinity = HUB_WEATHER_AFFINITY[hub.city]?.[chosenWeather] || 0;
+      score += weatherAffinity;
+
+      // 3. Budget affinity calibration
       if (dailyBudget <= 3000 && (hub.budgetTier === 'budget' || hub.budgetTier === 'all')) {
         score += 3;
       } else if (dailyBudget >= 8000 && (hub.budgetTier === 'luxury' || hub.budgetTier === 'all')) {
@@ -480,12 +548,12 @@ export function DiscoveryOnboardingFlow({
         score += 2;
       }
 
-      // 3. Group type affinity
+      // 4. Group type affinity
       if (hub.groupTypes.includes(chosenGroup)) {
         score += 3;
       }
 
-      // 4. Pace category affinity
+      // 5. Pace category affinity
       if (hub.paces.includes(chosenPace)) {
         score += 2;
       }
@@ -500,7 +568,7 @@ export function DiscoveryOnboardingFlow({
     const candidates = scoredHubs.filter((h) => h.score >= topScore - 1);
     if (candidates.length === 1) return candidates[0].city;
 
-    const seedString = `${validInterests.join('-')}_${dailyBudget}_${chosenGroup}_${chosenPace}`;
+    const seedString = `${validInterests.join('-')}_${dailyBudget}_${chosenGroup}_${chosenPace}_${chosenWeather}`;
     let hash = 0;
     for (let i = 0; i < seedString.length; i++) {
       hash = (hash << 5) - hash + seedString.charCodeAt(i);
@@ -516,7 +584,7 @@ export function DiscoveryOnboardingFlow({
 
     const pace = getPaceCategory(paceVal);
     const groupMeta = GROUP_OPTIONS.find((g) => g.id === groupType);
-    const finalCity = resolveSmartCity(destination, interests, budgetDaily, groupType, pace);
+    const finalCity = resolveSmartCity(destination, interests, budgetDaily, groupType, pace, weatherPreference);
     setComputedCity(finalCity);
 
     const answers: DiscoveryAnswers = {
@@ -529,6 +597,7 @@ export function DiscoveryOnboardingFlow({
       group_type: groupType,
       group_size: groupMeta ? groupMeta.size : 2,
       pace,
+      weather_preference: weatherPreference,
       accessibility,
     };
 
@@ -657,12 +726,12 @@ export function DiscoveryOnboardingFlow({
                   <motion.div
                     className="h-full bg-gradient-to-r from-[#FFC067] to-[#C85A32] rounded-full"
                     initial={{ width: 0 }}
-                    animate={{ width: `${(currentStep / 7) * 100}%` }}
+                    animate={{ width: `${(currentStep / 8) * 100}%` }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   />
                 </div>
                 <span className="text-[11px] font-mono text-dusk-600 font-semibold tracking-wider">
-                  {currentStep} of 7
+                  {currentStep} of 8
                 </span>
               </div>
             )}
@@ -1333,11 +1402,103 @@ export function DiscoveryOnboardingFlow({
                   <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={handleStartSynthesis}
+                      onClick={handleNext}
                       className="text-xs font-mono text-dusk-600 hover:text-[#12213B] transition-colors cursor-pointer"
                     >
                       Skip mobility preferences
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ======================================================= */}
+              {/* STEP 8: SEASON / WEATHER CALIBRATION                     */}
+              {/* ======================================================= */}
+              {currentStep === 8 && !isSynthesizing && (
+                <motion.div
+                  key="step-8"
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="space-y-6 flex-1 flex flex-col justify-between"
+                >
+                  <div className="space-y-2 text-center sm:text-left">
+                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+                      Question 8: Climate & Season Calibration
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
+                      What season or weather do you prefer?
+                    </h2>
+                    <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
+                      Matches destinations and times your activities to ideal thermal and rainfall conditions.
+                    </p>
+                  </div>
+
+                  {/* 4 Tactile Season Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 py-2">
+                    {WEATHER_OPTIONS.map((card) => {
+                      const isSelected = weatherPreference === card.id;
+                      const Icon = card.icon;
+
+                      return (
+                        <motion.button
+                          key={card.id}
+                          type="button"
+                          onClick={() => setWeatherPreference(card.id)}
+                          whileHover={{ y: -3, scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                          className={`p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
+                            isSelected
+                              ? 'bg-[#FFFDF9] border-[#FFC067] ring-2 ring-[#FFC067] shadow-[0_8px_24px_rgba(255,192,103,0.32)]'
+                              : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5] shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div
+                              className={`p-2.5 rounded-xl ${
+                                isSelected
+                                  ? 'bg-[#FFC067]/20 text-[#C85A32]'
+                                  : 'bg-[#FAF7F2] text-[#12213B]'
+                              }`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </div>
+
+                            <span className="text-[10px] font-mono font-bold text-dusk-600 bg-[#FAF7F2] px-2 py-0.5 rounded-full border border-[#E5DFD5]">
+                              {card.season}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <h3 className="font-heading font-bold text-base text-[#12213B]">
+                              {card.label}
+                            </h3>
+                            <p className="text-xs text-dusk-600 font-sans leading-relaxed">
+                              {card.desc}
+                            </p>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Action */}
+                  <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
+                    <span className="text-xs font-mono text-[#C85A32] font-semibold">
+                      Selected: {WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.label}
+                    </span>
 
                     <button
                       type="button"
@@ -1416,6 +1577,15 @@ export function DiscoveryOnboardingFlow({
                       className="px-3 py-1 rounded-full bg-white border border-[#E5DFD5] text-xs font-mono font-bold text-[#D99B43] shadow-xs"
                     >
                       {getPaceCategory(paceVal)} Pace
+                    </motion.span>
+
+                    <motion.span
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.45 }}
+                      className="px-3 py-1 rounded-full bg-white border border-[#E5DFD5] text-xs font-mono font-bold text-[#2D8978] shadow-xs"
+                    >
+                      {WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.label}
                     </motion.span>
                   </div>
 

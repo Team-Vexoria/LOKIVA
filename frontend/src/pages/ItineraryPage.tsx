@@ -92,6 +92,8 @@ export function ItineraryPage() {
         travelers: tripDetails?.travelers || 2,
         budgetLimit: tripDetails?.totalBudgetLimit || 25000,
         interests: getSavedInterests(),
+        weatherPreference: getSavedWeatherPreference(),
+        accessibility: getSavedAccessibility(),
       });
     }
   }, [searchParams]);
@@ -107,17 +109,30 @@ export function ItineraryPage() {
       ? activeDay.activities[addAfterIndex]
       : activeDay?.activities[activeDay.activities.length - 1] || null;
 
-  const getSavedInterests = (): string[] => {
+  const getSavedDiscoveryAnswers = () => {
     try {
       const raw = localStorage.getItem('lokiva_discovery_answers');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.interests) && parsed.interests.length > 0) {
-          return parsed.interests;
-        }
-      }
+      if (raw) return JSON.parse(raw);
     } catch {}
+    return null;
+  };
+
+  const getSavedInterests = (): string[] => {
+    const answers = getSavedDiscoveryAnswers();
+    if (answers && Array.isArray(answers.interests) && answers.interests.length > 0) {
+      return answers.interests;
+    }
     return ['heritage', 'crafts', 'food'];
+  };
+
+  const getSavedWeatherPreference = (): 'winter' | 'monsoon' | 'summer_hills' | 'temperate' => {
+    const answers = getSavedDiscoveryAnswers();
+    return answers?.weather_preference || 'winter';
+  };
+
+  const getSavedAccessibility = () => {
+    const answers = getSavedDiscoveryAnswers();
+    return answers?.accessibility || undefined;
   };
 
   const handleGenerateSubmit = (e: React.FormEvent) => {
@@ -130,6 +145,8 @@ export function ItineraryPage() {
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
       interests: getSavedInterests(),
+      weatherPreference: getSavedWeatherPreference(),
+      accessibility: getSavedAccessibility(),
     });
     setSearchParams({ city: inputCity, days: String(inputDays), pace: inputPace });
   };
@@ -148,6 +165,8 @@ export function ItineraryPage() {
       travelers: tripDetails.travelers || 2,
       budgetLimit: tripDetails.totalBudgetLimit || 25000,
       interests: getSavedInterests(),
+      weatherPreference: getSavedWeatherPreference(),
+      accessibility: getSavedAccessibility(),
     });
     setSearchParams({ city: cityName, days: String(inputDays), pace: inputPace });
   };

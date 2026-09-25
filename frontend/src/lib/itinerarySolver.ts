@@ -9,7 +9,7 @@ import {
   TimeOfDaySlot,
   ReplanCondition,
 } from '../types/itinerary';
-import { getPlacesByCity, ALL_LOKIVA_PLACES } from '../data/places';
+import { getPlacesByCity, ALL_LOKIVA_PLACES, getStateForCity } from '../data/places';
 import { USER_CURATED_PLACES } from '../data/userVerifiedPlacesData';
 import { resolveImageUrl } from './api';
 
@@ -23,6 +23,12 @@ export interface GenerateTripOptions {
   budgetLimit?: number;
   travelers?: number;
   startDate?: string;
+  weatherPreference?: 'winter' | 'monsoon' | 'summer_hills' | 'temperate';
+  accessibility?: {
+    low_walking?: boolean;
+    wheelchair?: boolean;
+    step_free?: boolean;
+  };
 }
 
 // Haversine distance in kilometers between two geographic coordinates
@@ -353,48 +359,96 @@ export function recalculateDaySchedule(
   };
 }
 
-function scorePlaceForInterests(
+export function scorePlaceForInterests(
   exp: Experience,
   chosenInterests: string[],
-  targetPerActivityTicket: number
+  targetPerActivityTicket: number,
+  weatherPreference?: string,
+  accessibility?: { low_walking?: boolean; wheelchair?: boolean; step_free?: boolean }
 ): number {
   let score = 0;
-  const text = `${exp.title || ''} ${exp.category || ''} ${exp.description || ''} ${(exp.tags || []).join(' ')}`.toLowerCase();
+  const text = `${exp.title || ''} ${exp.category || ''} ${exp.description || ''} ${exp.tagline || ''} ${(exp.tags || []).join(' ')}`.toLowerCase();
+  const cat = (exp.category || '').toLowerCase();
 
+  // 1. Direct interest matches (+20 per matched interest)
   for (const interest of chosenInterests) {
     const k = interest.toLowerCase().trim();
-    if (k === 'heritage' && (text.includes('heritage') || text.includes('palace') || text.includes('fort') || text.includes('haveli') || text.includes('citadel') || text.includes('dynasty') || text.includes('royal'))) {
-      score += 15;
-    } else if (k === 'crafts' && (text.includes('craft') || text.includes('artisan') || text.includes('weav') || text.includes('potter') || text.includes('textile') || text.includes('block') || text.includes('guild') || text.includes('sculpt'))) {
-      score += 15;
-    } else if (k === 'food' && (text.includes('food') || text.includes('culinary') || text.includes('bazaar') || text.includes('sweet') || text.includes('thali') || text.includes('chai') || text.includes('tasting') || text.includes('snack') || text.includes('spice') || text.includes('chaat'))) {
-      score += 15;
+    if (k === 'heritage' && (text.includes('heritage') || text.includes('palace') || text.includes('fort') || text.includes('haveli') || text.includes('citadel') || text.includes('dynasty') || text.includes('royal') || text.includes('monument'))) {
+      score += 20;
+    } else if (k === 'crafts' && (text.includes('craft') || text.includes('artisan') || text.includes('weav') || text.includes('potter') || text.includes('textile') || text.includes('block') || text.includes('guild') || text.includes('sculpt') || text.includes('handicraft'))) {
+      score += 20;
+    } else if (k === 'food' && (text.includes('food') || text.includes('culinary') || text.includes('bazaar') || text.includes('sweet') || text.includes('thali') || text.includes('chai') || text.includes('tasting') || text.includes('snack') || text.includes('spice') || text.includes('chaat') || text.includes('dining'))) {
+      score += 20;
     } else if (k === 'rituals' && (text.includes('temple') || text.includes('ghat') || text.includes('aarti') || text.includes('mandir') || text.includes('puja') || text.includes('monastery') || text.includes('spiritual') || text.includes('sanctum') || text.includes('darshan') || text.includes('shrine'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'monuments' && (text.includes('monument') || text.includes('stepwell') || text.includes('ruin') || text.includes('archaeolog') || text.includes('pillar') || text.includes('tomb') || text.includes('stupa') || text.includes('minar'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'nature' && (text.includes('lake') || text.includes('nature') || text.includes('valley') || text.includes('river') || text.includes('wildlife') || text.includes('garden') || text.includes('forest') || text.includes('mountain') || text.includes('canal') || text.includes('backwater') || text.includes('waterfall') || text.includes('view') || text.includes('hill'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'markets' && (text.includes('market') || text.includes('bazaar') || text.includes('shopping') || text.includes('souk') || text.includes('perfum') || text.includes('ittar') || text.includes('lane') || text.includes('silk') || text.includes('spices'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'arts' && (text.includes('art') || text.includes('music') || text.includes('dance') || text.includes('folk') || text.includes('museum') || text.includes('gallery') || text.includes('theatre') || text.includes('kathakali') || text.includes('painting'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'offbeat' && (text.includes('hidden') || text.includes('secret') || text.includes('courtyard') || text.includes('alley') || text.includes('walk') || text.includes('unexplored') || text.includes('quarter') || text.includes('stepwell') || text.includes('nook'))) {
-      score += 15;
+      score += 20;
     } else if (k === 'wellness' && (text.includes('wellness') || text.includes('ayurved') || text.includes('yoga') || text.includes('ashram') || text.includes('mindful') || text.includes('sanctuary') || text.includes('herbal') || text.includes('meditation') || text.includes('serene'))) {
-      score += 15;
+      score += 20;
     } else if (text.includes(k)) {
-      score += 10;
+      score += 15;
     }
   }
 
-  // Budget fit adjustment
+  // 2. Weather calibration (+10)
+  const isIndoor = cat.includes('craft') || cat.includes('art') || cat.includes('food') || cat.includes('culinary') || cat.includes('museum') || cat.includes('haveli');
+  if (weatherPreference === 'monsoon') {
+    if (isIndoor || text.includes('canal') || text.includes('backwater') || text.includes('greenery') || text.includes('plantation')) {
+      score += 10;
+    }
+  } else if (weatherPreference === 'summer_hills') {
+    if (text.includes('mountain') || text.includes('valley') || text.includes('pass') || text.includes('pine') || text.includes('hill') || text.includes('monastery') || text.includes('view')) {
+      score += 10;
+    }
+  } else if (weatherPreference === 'winter') {
+    if (!isIndoor || text.includes('fort') || text.includes('palace') || text.includes('stepwell') || text.includes('ghat')) {
+      score += 10;
+    }
+  } else if (weatherPreference === 'temperate') {
+    score += 8;
+  }
+
+  // 3. Budget alignment (+15 fit, -25 overbudget penalty)
   const rawPrice = exp.price || 0;
   if (targetPerActivityTicket > 0) {
-    if (rawPrice <= targetPerActivityTicket * 1.3) {
-      score += 6;
-    } else if (rawPrice > targetPerActivityTicket * 2.5) {
-      score -= 10;
+    if (rawPrice <= targetPerActivityTicket * 1.2) {
+      score += 15;
+    } else if (rawPrice > targetPerActivityTicket * 2.0) {
+      score -= 25;
+    }
+  } else if (rawPrice === 0) {
+    score += 15;
+  }
+
+  // 4. Rating & Quality bonus
+  if (exp.rating && exp.rating >= 4.7) {
+    score += 5;
+  }
+  if (exp.review_count && exp.review_count >= 100) {
+    score += 5;
+  }
+
+  // 5. Accessibility adjustments
+  if (accessibility?.wheelchair) {
+    if (exp.wheelchair_accessible) {
+      score += 15;
+    } else if (text.includes('stepwell') || text.includes('steep') || text.includes('stairs') || text.includes('climb')) {
+      score -= 30;
+    }
+  }
+  if (accessibility?.low_walking) {
+    if (isIndoor || text.includes('courtyard') || text.includes('compact') || text.includes('boat')) {
+      score += 10;
+    } else if (text.includes('trek') || text.includes('hike') || text.includes('expansive')) {
+      score -= 20;
     }
   }
 
@@ -419,6 +473,8 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     budgetLimit = 25000,
     travelers = 2,
     startDate,
+    weatherPreference = 'winter',
+    accessibility,
   } = options;
 
   const safeDays = Math.max(1, daysCount);
@@ -426,20 +482,20 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
   const targetDailyTotal = Math.max(800, Math.round(budgetLimit / safeDays));
   const targetDailyPerPerson = Math.max(400, Math.round(targetDailyTotal / safeTravelers));
 
-  // Partition the daily budget responsibly
+  // Realistic meal allocation per person per day based on tier
   let dailyMealPerPerson = 350;
   if (targetDailyPerPerson <= 1500) {
-    dailyMealPerPerson = Math.max(180, Math.round(targetDailyPerPerson * 0.28));
-  } else if (targetDailyPerPerson <= 4500) {
-    dailyMealPerPerson = Math.round(targetDailyPerPerson * 0.30);
-  } else if (targetDailyPerPerson <= 10000) {
-    dailyMealPerPerson = Math.round(targetDailyPerPerson * 0.28);
+    dailyMealPerPerson = 280;
+  } else if (targetDailyPerPerson <= 4000) {
+    dailyMealPerPerson = 450;
+  } else if (targetDailyPerPerson <= 9000) {
+    dailyMealPerPerson = 850;
   } else {
-    dailyMealPerPerson = Math.min(3000, Math.round(targetDailyPerPerson * 0.25));
+    dailyMealPerPerson = 1500;
   }
 
-  const estDailyTransitGroup = Math.min(1200, Math.max(90, Math.round(targetDailyTotal * 0.12)));
   const activitiesPerDay = pace === 'relaxed' ? 3 : pace === 'packed' ? 5 : 4;
+  const estDailyTransitGroup = Math.min(1000, Math.max(80, activitiesPerDay * 45));
   const targetDailyActivitiesGroup = Math.max(0, targetDailyTotal - (dailyMealPerPerson * safeTravelers) - estDailyTransitGroup);
   const targetPerActivityTicket = Math.max(0, Math.round((targetDailyActivitiesGroup / activitiesPerDay) / safeTravelers));
 
@@ -447,19 +503,43 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     ? interests
     : (focusCategory ? [focusCategory] : ['heritage', 'crafts', 'food']);
 
-  let candidates = getPlacesByCity(city);
-  if (candidates.length < safeDays * activitiesPerDay) {
-    const pool = USER_CURATED_PLACES.length > 0 ? USER_CURATED_PLACES : ALL_LOKIVA_PLACES;
-    const backupPlaces = pool.filter(
-      (p) =>
-        (p.city && p.city.toLowerCase().includes(city.toLowerCase())) ||
-        (state && p.state && p.state.toLowerCase() === state.toLowerCase())
-    );
-    candidates = [...candidates, ...backupPlaces];
+  const pool = USER_CURATED_PLACES.length > 0 ? USER_CURATED_PLACES : ALL_LOKIVA_PLACES;
+
+  // Strict Catalog Extraction:
+  // Step 1: Query exact city
+  let candidates = pool.filter(
+    (p) => p.city && p.city.toLowerCase().trim() === city.toLowerCase().trim()
+  );
+
+  // Step 2: If candidate pool is too small for all days, extract verified places from the same state
+  const totalNeeded = safeDays * activitiesPerDay;
+  if (candidates.length < totalNeeded) {
+    const effectiveState = state || getStateForCity(city) || candidates[0]?.state || '';
+    if (effectiveState) {
+      const statePlaces = pool.filter(
+        (p) =>
+          p.state &&
+          p.state.toLowerCase().trim() === effectiveState.toLowerCase().trim() &&
+          !candidates.some((c) => c.id === p.id)
+      );
+      candidates = [...candidates, ...statePlaces];
+    }
   }
 
+  // Step 3: If still insufficient, look up substring matches in city or state
+  if (candidates.length < totalNeeded) {
+    const nearby = pool.filter(
+      (p) =>
+        !candidates.some((c) => c.id === p.id) &&
+        ((p.city && p.city.toLowerCase().includes(city.toLowerCase())) ||
+         (p.state && state && p.state.toLowerCase().includes(state.toLowerCase())))
+    );
+    candidates = [...candidates, ...nearby];
+  }
+
+  // Step 4: Emergency fallback to highest-rated places
   if (candidates.length === 0) {
-    candidates = ALL_LOKIVA_PLACES.slice(0, 40);
+    candidates = pool.filter((p) => (p.rating || 0) >= 4.5);
   }
 
   // Deduplicate candidates by unique ID
@@ -472,15 +552,39 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     }
   }
 
-  // Score candidates against ALL user interests and budget alignment
+  // Score all candidates with multi-factor weighting
   uniqueCandidates.sort((a, b) => {
-    const scoreA = scorePlaceForInterests(a, userInterests, targetPerActivityTicket);
-    const scoreB = scorePlaceForInterests(b, userInterests, targetPerActivityTicket);
+    const scoreA = scorePlaceForInterests(a, userInterests, targetPerActivityTicket, weatherPreference, accessibility);
+    const scoreB = scorePlaceForInterests(b, userInterests, targetPerActivityTicket, weatherPreference, accessibility);
     return scoreB - scoreA;
+  });
+
+  // Free high-quality candidates for budget substitutions
+  const freeCandidatePool = uniqueCandidates.filter((p) => !p.price || p.price === 0);
+
+  // Take top K candidate pool for multi-day clustering
+  const candidatePoolSize = Math.max(totalNeeded, Math.min(uniqueCandidates.length, safeDays * activitiesPerDay * 2));
+  const topCandidatePool = uniqueCandidates.slice(0, candidatePoolSize);
+
+  // Group candidate pool into spatial clusters (sorted by longitude / polar angle)
+  topCandidatePool.sort((a, b) => {
+    const latA = a.latitude || 26.9;
+    const lngA = a.longitude || 75.8;
+    const latB = b.latitude || 26.9;
+    const lngB = b.longitude || 75.8;
+    return (lngA + latA) - (lngB + latB);
+  });
+
+  // Partition pool into N day buckets
+  const dayBuckets: Experience[][] = Array.from({ length: safeDays }, () => []);
+  topCandidatePool.forEach((exp, idx) => {
+    const targetBucket = idx % safeDays;
+    dayBuckets[targetBucket].push(exp);
   });
 
   const days: ItineraryDay[] = [];
   const baseDate = startDate ? new Date(startDate) : new Date();
+  const usedExperienceIds = new Set<number>();
 
   for (let d = 0; d < safeDays; d++) {
     const curDate = new Date(baseDate);
@@ -489,18 +593,66 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     const dateStr = curDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const dayOfWeekStr = curDate.toLocaleDateString('en-US', { weekday: 'long' });
 
-    const startIndex = d * activitiesPerDay;
-    const dayCandidates = uniqueCandidates.slice(startIndex, startIndex + activitiesPerDay);
+    // Available bucket places for this day
+    const availablePool = dayBuckets[d].filter((p) => !usedExperienceIds.has(p.id));
+    if (availablePool.length < activitiesPerDay) {
+      // Pull unused candidates from other buckets or full scored list
+      const extras = uniqueCandidates.filter((p) => !usedExperienceIds.has(p.id) && !availablePool.some((a) => a.id === p.id));
+      availablePool.push(...extras.slice(0, activitiesPerDay - availablePool.length));
+    }
 
-    if (dayCandidates.length < activitiesPerDay) {
-      const needed = activitiesPerDay - dayCandidates.length;
-      for (let k = 0; k < needed; k++) {
-        const fallbackPlace = uniqueCandidates[(startIndex + k) % uniqueCandidates.length];
-        if (fallbackPlace) dayCandidates.push(fallbackPlace);
+    // Sequence stops using Nearest-Neighbor TSP starting from the highest-scoring anchor
+    const sequencedPlaces: Experience[] = [];
+    if (availablePool.length > 0) {
+      // Pick best anchor site
+      availablePool.sort((a, b) => {
+        const scoreA = scorePlaceForInterests(a, userInterests, targetPerActivityTicket, weatherPreference, accessibility);
+        const scoreB = scorePlaceForInterests(b, userInterests, targetPerActivityTicket, weatherPreference, accessibility);
+        return scoreB - scoreA;
+      });
+
+      const firstStop = availablePool[0];
+      sequencedPlaces.push(firstStop);
+      usedExperienceIds.add(firstStop.id);
+
+      const remainingPool = availablePool.filter((p) => p.id !== firstStop.id);
+
+      while (sequencedPlaces.length < activitiesPerDay && remainingPool.length > 0) {
+        const lastStop = sequencedPlaces[sequencedPlaces.length - 1];
+        const lastLat = lastStop.latitude || 26.9124;
+        const lastLng = lastStop.longitude || 75.7873;
+
+        // Find candidate with minimum distance from last stop and score weighting
+        let bestCandidateIdx = 0;
+        let bestDistance = 9999;
+
+        for (let i = 0; i < remainingPool.length; i++) {
+          const cand = remainingPool[i];
+          const dist = getHaversineDistanceKm(lastLat, lastLng, cand.latitude || lastLat, cand.longitude || lastLng);
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestCandidateIdx = i;
+          }
+        }
+
+        const chosen = remainingPool.splice(bestCandidateIdx, 1)[0];
+        sequencedPlaces.push(chosen);
+        usedExperienceIds.add(chosen.id);
       }
     }
 
-    const initialActivities: ItineraryActivity[] = dayCandidates.map((exp, actIdx) => {
+    // If still short, backfill from remaining catalog
+    if (sequencedPlaces.length < activitiesPerDay) {
+      const remainingUnused = uniqueCandidates.filter((p) => !usedExperienceIds.has(p.id));
+      const fill = remainingUnused.slice(0, activitiesPerDay - sequencedPlaces.length);
+      fill.forEach((p) => {
+        sequencedPlaces.push(p);
+        usedExperienceIds.add(p.id);
+      });
+    }
+
+    // Map into ItineraryActivity items using actual catalog pricing and realistic transit hops
+    const initialActivities: ItineraryActivity[] = sequencedPlaces.map((exp, actIdx) => {
       const durationMins = exp.duration_mins || exp.approx_duration_mins || 75;
       const cat = (exp.category || '').toLowerCase();
       const isIndoor =
@@ -528,19 +680,17 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       const lat = exp.latitude || 26.9124 + d * 0.01;
       const lng = exp.longitude || 75.7873 + actIdx * 0.01;
 
-      // Realistic ticket cost calibration aligned with budget ceiling
-      let calibratedCost = exp.price || 0;
-      if (calibratedCost > targetPerActivityTicket * 1.4) {
-        if (targetDailyPerPerson <= 1500) {
-          calibratedCost = isIndoor ? Math.min(100, calibratedCost) : Math.min(50, calibratedCost);
-        } else {
-          calibratedCost = Math.round(targetPerActivityTicket * (0.8 + (actIdx % 3) * 0.15));
-        }
-      } else if (calibratedCost === 0 && targetDailyPerPerson >= 5000) {
-        calibratedCost = Math.round(targetPerActivityTicket * 0.65);
-      } else if (calibratedCost === 0 && targetDailyPerPerson > 2000 && isIndoor) {
-        calibratedCost = Math.min(250, Math.max(80, Math.round(targetPerActivityTicket * 0.5)));
+      // Real Catalog Admission Cost
+      const actualTicketCost = exp.price !== undefined ? exp.price : 0;
+
+      // Calculate realistic transit to next stop
+      let transitDistKm = 2.0;
+      if (actIdx < sequencedPlaces.length - 1) {
+        const nextExp = sequencedPlaces[actIdx + 1];
+        transitDistKm = getHaversineDistanceKm(lat, lng, nextExp.latitude || lat, nextExp.longitude || lng);
       }
+      const transitMins = Math.max(8, Math.min(45, Math.round(transitDistKm * 4 + 5)));
+      const transitCost = transitDistKm < 0.8 ? 0 : Math.round(30 + transitDistKm * 15);
 
       return {
         id: exp.id * 100 + d * 10 + actIdx,
@@ -558,19 +708,19 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
         duration: `${durationMins} mins`,
         durationMins,
         visitDurationMinutes: durationMins,
-        transitToNextMinutes: 15,
-        transitMode: 'auto_rickshaw',
-        transitDistanceKm: 2.5,
+        transitToNextMinutes: transitMins,
+        transitMode: transitDistKm < 1.2 ? 'walking' : 'auto_rickshaw',
+        transitDistanceKm: Math.round(transitDistKm * 10) / 10,
         indoorOutdoor,
         is_indoor: isIndoor,
         walkingDistanceMeters,
         crowdLevel,
         coordinates: [lat, lng],
-        includes: exp.tags || ['Verified host guide', 'Cultural field notes'],
-        costPerPerson: calibratedCost,
+        includes: exp.tags && exp.tags.length > 0 ? exp.tags : ['Verified local guide', 'Field notes'],
+        costPerPerson: actualTicketCost,
         bookingStatus: 'available',
-        gettingThere: 'Local auto or walking navigation',
-        transitCost: 45,
+        gettingThere: transitDistKm < 1.2 ? 'Short paved walking hop' : 'Local auto-rickshaw or e-rickshaw',
+        transitCost,
         whatToBring: ['Comfortable footwear', 'Camera', 'Refillable water'],
         photos: exp.image_urls && exp.image_urls.length > 0 ? exp.image_urls : [resolveImageUrl(exp.image_url)],
         wheelchair_accessible: exp.wheelchair_accessible,
@@ -579,9 +729,45 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       };
     });
 
+    // Budget Substitution: If day activities exceed daily budget allowance, substitute high-cost stops with free cultural stops
+    let dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
+    const maxAllowedActivitiesSpend = targetDailyActivitiesGroup * 1.25;
+
+    if (dayActivitiesCost > maxAllowedActivitiesSpend && freeCandidatePool.length > 0) {
+      for (let actIdx = initialActivities.length - 1; actIdx >= 1; actIdx--) {
+        if (dayActivitiesCost <= maxAllowedActivitiesSpend) break;
+        const currentAct = initialActivities[actIdx];
+        if (currentAct.costPerPerson > 0) {
+          const freeReplacement = freeCandidatePool.find(
+            (fp) => !usedExperienceIds.has(fp.id) && fp.id !== currentAct.experienceId
+          );
+          if (freeReplacement) {
+            usedExperienceIds.add(freeReplacement.id);
+            const durationMins = freeReplacement.duration_mins || 60;
+            initialActivities[actIdx] = {
+              ...currentAct,
+              experienceId: freeReplacement.id,
+              title: freeReplacement.title,
+              category: freeReplacement.category || 'Living Heritage',
+              description: freeReplacement.description || freeReplacement.tagline || 'Verified cultural landmark.',
+              location: freeReplacement.area_name || `${freeReplacement.city}, ${freeReplacement.state || ''}`,
+              costPerPerson: 0,
+              photos: freeReplacement.image_urls && freeReplacement.image_urls.length > 0 ? freeReplacement.image_urls : [resolveImageUrl(freeReplacement.image_url)],
+              duration: `${durationMins} mins`,
+              durationMins,
+              visitDurationMinutes: durationMins,
+              lat: freeReplacement.latitude || currentAct.lat,
+              lng: freeReplacement.longitude || currentAct.lng,
+            };
+            dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
+          }
+        }
+      }
+    }
+
     const heroImg =
-      dayCandidates.length > 0
-        ? resolveImageUrl(dayCandidates[0].image_url)
+      sequencedPlaces.length > 0
+        ? resolveImageUrl(sequencedPlaces[0].image_url)
         : 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80';
 
     const rawDay: ItineraryDay = {
@@ -603,26 +789,6 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     days.push(calculatedDay);
   }
 
-  // Enforce overall budget ceiling so total plan spend stays safely within user budget
-  const initialTotalSpend = days.reduce(
-    (sum, d) => sum + (d.metrics?.costBreakdown?.totalCost || 0),
-    0
-  );
-
-  if (initialTotalSpend > budgetLimit && budgetLimit > 0) {
-    const scaleFactor = Math.max(0.5, (budgetLimit * 0.92) / initialTotalSpend);
-    days.forEach((d) => {
-      d.activities.forEach((act) => {
-        act.costPerPerson = Math.round((act.costPerPerson || 0) * scaleFactor);
-      });
-      if (d.mealBudgetPerPerson) {
-        d.mealBudgetPerPerson = Math.round(d.mealBudgetPerPerson * scaleFactor);
-      }
-      const recalculated = recalculateDaySchedule(d, safeTravelers);
-      d.metrics = recalculated.metrics;
-    });
-  }
-
   const tripDetails: ItineraryTripDetails = {
     title: `Your ${daysCount}-Day ${city} Cultural Heritage Journey`,
     destination: city,
@@ -636,16 +802,28 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
   };
 
   const practicalInfo: ItineraryPracticalInfo = {
-    weatherSummary: 'Sunny with pleasant morning breeze',
-    temperature: '24°C - 32°C',
+    weatherSummary: weatherPreference === 'monsoon'
+      ? 'Monsoon mist and lush greenery with occasional rain showers'
+      : weatherPreference === 'summer_hills'
+      ? 'Cool mountain breezes with clear mountain sun'
+      : weatherPreference === 'temperate'
+      ? 'Pleasant coastal breeze with mild sunny skies'
+      : 'Sunny with crisp morning air and golden desert evenings',
+    temperature: weatherPreference === 'summer_hills'
+      ? '14°C to 22°C'
+      : weatherPreference === 'monsoon'
+      ? '22°C to 28°C'
+      : '20°C to 29°C',
     packingList: [
       'Breathable cotton attire',
       'Comfortable slip-on footwear for temples',
       'Modesty scarf for heritage shrines',
-      'Sunscreen, sunglasses & hydration',
+      weatherPreference === 'monsoon' ? 'Compact umbrella and waterproof pouch' : 'Sunscreen, sunglasses and hydration flask',
     ],
     accessibilityNotes:
-      'Major promenades feature ramp access; older bazaar alleys and rock-cut shrines have stone steps.',
+      accessibility?.wheelchair
+        ? 'Route optimized for ramp access and step-free entries wherever available.'
+        : 'Major promenades feature ramp access; older bazaar alleys and stone temples have steps.',
     transitNotes:
       'Auto-rickshaws and app cabs are widely available. Negotiate or insist on meter when boarding street autos.',
     languages: ['Hindi', 'English', 'Regional State Language'],
