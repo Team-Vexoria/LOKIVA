@@ -39,7 +39,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayTextRef = useRef<HTMLDivElement>(null);
 
-  // ─── Native Scroll Tracking for Bulletproof Video Playback ────────────────
+  // ─── Native Scroll Tracking for Scroll-Triggered Video Playback ───────────
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
@@ -54,8 +54,9 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       const vh = window.innerHeight;
 
-      // Keep playing from initial hero preview through fullscreen and until past section (scrollY < vh * 2.2)
-      if (scrollY < vh * 2.2) {
+      // Only play once the user has begun scrolling down (scrollY >= 50px) to reveal the video
+      // and pause when at the top hero section or past the pinned showcase section (vh * 2.2)
+      if (scrollY >= 50 && scrollY < vh * 2.2) {
         if (vid.paused) {
           vid.muted = true;
           const playPromise = vid.play();
@@ -72,6 +73,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
 
     window.addEventListener('scroll', checkPlayback, { passive: true });
     window.addEventListener('resize', checkPlayback, { passive: true });
+    // Check initial position (will pause if at top)
     checkPlayback();
 
     return () => {
@@ -253,15 +255,15 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             boxShadow: '0 -8px 30px rgba(18, 33, 59, 0.12)',
           }}
         >
-          {/* Autoplay Landing Video */}
+          {/* Scroll-Triggered Landing Video */}
           <video
             ref={videoRef}
             src="/landing_video.mp4"
-            autoPlay
+            autoPlay={false}
             playsInline
             muted
             loop
-            preload="auto"
+            preload="metadata"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
 

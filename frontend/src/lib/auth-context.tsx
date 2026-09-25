@@ -23,7 +23,7 @@ interface AuthContextType {
   demoLogin: (role: Role, customName?: string, customEmail?: string) => Promise<void>;
   loginWithGoogle: (role?: Role, customName?: string, customEmail?: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<TravelerProfile>, newFullName?: string, newEmail?: string) => Promise<void>;
+  updateProfile: (data: Partial<TravelerProfile>, newFullName?: string, newEmail?: string, newAvatar?: string, newRole?: Role) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -363,12 +363,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateProfile = async (data: Partial<TravelerProfile>, newFullName?: string, newEmail?: string) => {
+  const updateProfile = async (
+    data: Partial<TravelerProfile>,
+    newFullName?: string,
+    newEmail?: string,
+    newAvatar?: string,
+    newRole?: Role
+  ) => {
     if (!user) return;
+    const effectiveAvatar = newAvatar !== undefined ? newAvatar : user.avatar;
+    const effectiveRole = newRole || user.role;
     const updatedUser: User = {
       ...user,
       full_name: newFullName || user.full_name,
       email: newEmail || user.email,
+      role: effectiveRole,
+      avatar: effectiveAvatar,
+      avatar_url: effectiveAvatar,
       profile: {
         ...(user.profile || {
           traveler_type: 'Family with Kids',
@@ -382,6 +393,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           hotel_lng: 75.7873,
         }),
         ...data,
+        avatar: effectiveAvatar,
       },
     };
     setUser(updatedUser);
@@ -399,13 +411,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({
             full_name: newFullName || user.full_name,
             email: newEmail || user.email,
+            role: effectiveRole,
+            avatar: effectiveAvatar,
             profile: data,
           }),
         });
         if (res.ok) {
           const backendUser = await res.json();
-          setUser(backendUser);
-          localStorage.setItem('lokiva_user', JSON.stringify(backendUser));
+          const mergedUser = { ...updatedUser, ...backendUser, avatar: effectiveAvatar || backendUser.avatar };
+          setUser(mergedUser);
+          localStorage.setItem('lokiva_user', JSON.stringify(mergedUser));
         }
       } catch (err) {
         console.error('Failed to sync profile update to backend:', err);
