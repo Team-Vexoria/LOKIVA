@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useItineraryStore } from '../../store/useItineraryStore';
 
 import { DiscoveryOnboardingFlow, DiscoveryAnswers } from './DiscoveryOnboardingFlow';
+import { getStateForCity } from '../../data/places';
 
 interface LocationDecisionModalProps {
   isOpen: boolean;
@@ -46,14 +47,7 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
     onClose();
 
     const city = answers.destination || 'Jaipur';
-    const stateName =
-      city.toLowerCase().includes('kochi') ? 'Kerala' :
-      city.toLowerCase().includes('mumbai') ? 'Maharashtra' :
-      city.toLowerCase().includes('leh') || city.toLowerCase().includes('ladakh') ? 'Ladakh' :
-      city.toLowerCase().includes('varanasi') ? 'Uttar Pradesh' :
-      city.toLowerCase().includes('delhi') ? 'Delhi' :
-      city.toLowerCase().includes('amritsar') ? 'Punjab' :
-      city.toLowerCase().includes('udaipur') || city.toLowerCase().includes('jaipur') ? 'Rajasthan' : 'Rajasthan';
+    const stateName = getStateForCity(city);
 
     useItineraryStore.getState().generateTrip({
       city,
@@ -63,6 +57,7 @@ export function LocationDecisionModal({ isOpen, onClose }: LocationDecisionModal
       budgetLimit: answers.budget_max_inr,
       travelers: answers.group_size,
       focusCategory: answers.interests[0] || 'heritage',
+      interests: answers.interests,
     });
 
     navigate('/itinerary');

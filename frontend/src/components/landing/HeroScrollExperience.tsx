@@ -265,24 +265,29 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
 
-          {/* Dark gradient scrim for crisp text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20 pointer-events-none" />
+          {/* Minimal scrim so the video remains completely visible in full screen */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
-          {/* Overlay text - bottom-left, fades in during scrub */}
+          {/* Overlay text: almost transparent LOKIVA watermark + crisp non-transparent text below */}
           <div
             ref={overlayTextRef}
-            className="absolute bottom-10 left-6 right-6 sm:bottom-14 sm:left-14 sm:right-14 z-10 text-white"
+            className="absolute bottom-8 sm:bottom-14 inset-x-0 z-10 text-center px-4 pointer-events-none flex flex-col items-center justify-center"
             style={{ opacity: 0 }}
           >
-            <span className="inline-block text-xs font-heading font-extrabold uppercase tracking-widest text-[#FFC067] mb-2 drop-shadow-sm">
-              Living Heritage &amp; Generational Flavors
-            </span>
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight leading-[1.08] drop-shadow-lg max-w-3xl">
-              Where Living Traditions Meet Timeless Flavors.
+            {/* Almost transparent LOKIVA text as requested */}
+            <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-display font-black tracking-[0.25em] uppercase text-white/20 select-none drop-shadow-sm">
+              LOKIVA
             </h2>
-            <p className="text-sm sm:text-base text-white/90 font-sans font-medium leading-relaxed max-w-2xl mt-3 drop-shadow-md">
-              From generational tea masters and aromatic spice trails to sacred brass ateliers, LOKIVA curates authentic cultural immersions around your real transit hours.
-            </p>
+
+            {/* Non-transparent crisp concise texts below */}
+            <div className="mt-1.5 sm:mt-2 space-y-1">
+              <p className="text-xs sm:text-sm font-heading font-extrabold uppercase tracking-widest text-[#FFC067] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                Living Heritage &bull; Real Transit Hours
+              </p>
+              <p className="text-xs sm:text-sm md:text-base font-sans font-semibold text-white tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] max-w-lg mx-auto">
+                Where living traditions meet curated cultural micro-circuits.
+              </p>
+            </div>
           </div>
         </div>
     </section>

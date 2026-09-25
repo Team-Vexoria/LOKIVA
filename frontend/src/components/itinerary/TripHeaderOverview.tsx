@@ -92,6 +92,16 @@ export function TripHeaderOverview({
             <div className="text-xs font-mono text-emerald-800 font-medium">
               ₹{perPersonCost.toLocaleString('en-IN')} per person
             </div>
+            {tripDetails.totalBudgetLimit ? (
+              <div className="flex items-center sm:justify-end gap-1.5 pt-1 text-[11px] font-mono text-emerald-800 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                <span>
+                  {totalCost <= tripDetails.totalBudgetLimit
+                    ? `Within your ₹${tripDetails.totalBudgetLimit.toLocaleString('en-IN')} budget`
+                    : `Budget ceiling: ₹${tripDetails.totalBudgetLimit.toLocaleString('en-IN')}`}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* Action Button Row */}

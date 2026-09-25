@@ -23,6 +23,7 @@ import {
   DiscoveryOnboardingFlow,
   DiscoveryAnswers,
 } from '../components/onboarding/DiscoveryOnboardingFlow';
+import { getStateForCity } from '../data/places';
 import {
   DEFAULT_JOURNEY_PREFERENCES,
   UserJourneyPreferences,
@@ -117,7 +118,13 @@ export function DiscoveryMapPage() {
         bestState = st;
       }
     });
-    setSelectedState(bestState);
+
+    const mappedDestinationState = answers.destination ? getStateForCity(answers.destination) : '';
+    if (mappedDestinationState && mappedDestinationState !== 'India' && INDIA_STATES_METADATA[mappedDestinationState]) {
+      setSelectedState(mappedDestinationState);
+    } else {
+      setSelectedState(bestState);
+    }
     setIsGuidedFlowOpen(false);
 
     // Smooth scroll down to map section

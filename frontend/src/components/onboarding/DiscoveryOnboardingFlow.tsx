@@ -281,7 +281,13 @@ export function DiscoveryOnboardingFlow({
     return 'balanced';
   };
 
-  const resolveSmartCity = (dest: string, userInterests: string[]): string => {
+  const resolveSmartCity = (
+    dest: string,
+    userInterests: string[],
+    dailyBudget: number,
+    chosenGroup: 'solo' | 'couple' | 'family' | 'friends',
+    chosenPace: 'relaxed' | 'balanced' | 'packed'
+  ): string => {
     if (dest && dest !== 'Smart Match') {
       if (dest === 'Ladakh') return 'Leh';
       return dest;
@@ -291,53 +297,192 @@ export function DiscoveryOnboardingFlow({
 
     const hubs = [
       {
-        city: 'Kochi',
-        scores: { wellness: 6, nature: 5, arts: 4, food: 3, offbeat: 3, heritage: 2, crafts: 2 },
-      },
-      {
-        city: 'Leh',
-        scores: { nature: 6, offbeat: 5, monuments: 4, rituals: 3, heritage: 3, crafts: 2 },
-      },
-      {
-        city: 'Mumbai',
-        scores: { arts: 6, markets: 5, food: 5, heritage: 3, offbeat: 4, crafts: 2 },
-      },
-      {
         city: 'Varanasi',
-        scores: { rituals: 6, crafts: 4, food: 3, heritage: 3, offbeat: 4 },
+        scores: { rituals: 10, offbeat: 8, crafts: 6, food: 7, heritage: 7, monuments: 4, wellness: 6, nature: 3, markets: 5, arts: 6 },
+        budgetTier: 'budget',
+        groupTypes: ['solo', 'couple', 'family'],
+        paces: ['balanced', 'packed'],
       },
       {
-        city: 'Delhi',
-        scores: { food: 6, monuments: 4, heritage: 4, markets: 4, crafts: 2 },
-      },
-      {
-        city: 'Amritsar',
-        scores: { food: 5, rituals: 5, crafts: 3, heritage: 3, monuments: 2 },
-      },
-      {
-        city: 'Udaipur',
-        scores: { nature: 4, monuments: 4, heritage: 4, arts: 4, crafts: 3 },
+        city: 'Rishikesh',
+        scores: { wellness: 10, rituals: 9, nature: 8, offbeat: 7, food: 5, arts: 4, heritage: 4, monuments: 3, markets: 4, crafts: 3 },
+        budgetTier: 'budget',
+        groupTypes: ['solo', 'friends', 'couple'],
+        paces: ['relaxed', 'balanced'],
       },
       {
         city: 'Jaipur',
-        scores: { crafts: 6, heritage: 4, markets: 4, monuments: 3, food: 2 },
+        scores: { crafts: 10, heritage: 10, markets: 9, monuments: 8, food: 7, arts: 7, offbeat: 5, rituals: 5, nature: 3, wellness: 4 },
+        budgetTier: 'all',
+        groupTypes: ['family', 'couple', 'friends'],
+        paces: ['balanced', 'packed'],
+      },
+      {
+        city: 'Udaipur',
+        scores: { heritage: 9, nature: 9, arts: 8, crafts: 7, wellness: 6, monuments: 7, food: 6, offbeat: 6, markets: 6, rituals: 4 },
+        budgetTier: 'luxury',
+        groupTypes: ['couple', 'family'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Jaisalmer',
+        scores: { offbeat: 9, heritage: 9, monuments: 8, crafts: 7, arts: 7, markets: 6, nature: 6, food: 5, rituals: 3, wellness: 3 },
+        budgetTier: 'all',
+        groupTypes: ['couple', 'friends', 'solo'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Leh',
+        scores: { nature: 10, offbeat: 10, rituals: 8, monuments: 7, heritage: 6, wellness: 5, crafts: 5, food: 4, markets: 4, arts: 4 },
+        budgetTier: 'luxury',
+        groupTypes: ['solo', 'friends', 'couple'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Kochi',
+        scores: { wellness: 9, nature: 8, arts: 8, heritage: 7, food: 7, markets: 6, offbeat: 6, crafts: 5, rituals: 5, monuments: 4 },
+        budgetTier: 'all',
+        groupTypes: ['couple', 'solo', 'family'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Amritsar',
+        scores: { rituals: 10, food: 10, heritage: 7, monuments: 6, crafts: 6, markets: 7, offbeat: 5, wellness: 4, arts: 4, nature: 2 },
+        budgetTier: 'budget',
+        groupTypes: ['family', 'solo', 'friends'],
+        paces: ['balanced', 'packed'],
+      },
+      {
+        city: 'Delhi',
+        scores: { food: 10, monuments: 10, heritage: 9, markets: 10, offbeat: 7, arts: 6, crafts: 5, rituals: 5, nature: 3, wellness: 2 },
+        budgetTier: 'all',
+        groupTypes: ['family', 'friends', 'solo'],
+        paces: ['packed', 'balanced'],
+      },
+      {
+        city: 'Mumbai',
+        scores: { arts: 9, markets: 8, food: 9, heritage: 7, offbeat: 8, nature: 4, monuments: 5, rituals: 4, crafts: 4, wellness: 3 },
+        budgetTier: 'luxury',
+        groupTypes: ['friends', 'couple', 'solo'],
+        paces: ['packed', 'balanced'],
+      },
+      {
+        city: 'Kolkata',
+        scores: { food: 10, arts: 10, heritage: 8, crafts: 8, offbeat: 8, markets: 7, rituals: 6, monuments: 5, nature: 3, wellness: 3 },
+        budgetTier: 'all',
+        groupTypes: ['solo', 'couple', 'family'],
+        paces: ['packed', 'balanced'],
+      },
+      {
+        city: 'Shillong',
+        scores: { nature: 10, offbeat: 9, arts: 8, wellness: 6, food: 6, crafts: 5, markets: 5, heritage: 4, monuments: 2, rituals: 2 },
+        budgetTier: 'all',
+        groupTypes: ['friends', 'couple', 'solo'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Bhubaneswar',
+        scores: { monuments: 10, crafts: 9, rituals: 8, heritage: 8, arts: 8, offbeat: 6, food: 6, nature: 5, markets: 5, wellness: 3 },
+        budgetTier: 'budget',
+        groupTypes: ['family', 'solo', 'couple'],
+        paces: ['balanced', 'relaxed'],
+      },
+      {
+        city: 'Ahmedabad',
+        scores: { crafts: 9, heritage: 9, food: 8, offbeat: 8, markets: 8, monuments: 7, rituals: 5, arts: 5, wellness: 3, nature: 2 },
+        budgetTier: 'all',
+        groupTypes: ['family', 'couple', 'solo'],
+        paces: ['balanced', 'packed'],
+      },
+      {
+        city: 'Goa',
+        scores: { nature: 9, wellness: 8, offbeat: 8, food: 8, markets: 7, heritage: 7, arts: 6, rituals: 4, monuments: 4, crafts: 4 },
+        budgetTier: 'luxury',
+        groupTypes: ['friends', 'couple'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Hyderabad',
+        scores: { food: 10, heritage: 8, monuments: 8, markets: 8, crafts: 7, offbeat: 6, arts: 5, rituals: 4, wellness: 3, nature: 3 },
+        budgetTier: 'all',
+        groupTypes: ['family', 'friends', 'couple'],
+        paces: ['packed', 'balanced'],
+      },
+      {
+        city: 'Chennai',
+        scores: { arts: 10, rituals: 9, food: 8, heritage: 7, crafts: 7, monuments: 6, markets: 6, wellness: 5, offbeat: 5, nature: 4 },
+        budgetTier: 'all',
+        groupTypes: ['family', 'solo', 'couple'],
+        paces: ['balanced', 'packed'],
+      },
+      {
+        city: 'Srinagar',
+        scores: { nature: 10, crafts: 9, heritage: 7, food: 7, offbeat: 7, wellness: 6, markets: 6, monuments: 5, arts: 5, rituals: 4 },
+        budgetTier: 'luxury',
+        groupTypes: ['couple', 'family'],
+        paces: ['relaxed', 'balanced'],
+      },
+      {
+        city: 'Bhopal',
+        scores: { monuments: 9, arts: 8, heritage: 8, crafts: 8, nature: 7, offbeat: 7, food: 6, markets: 5, rituals: 4, wellness: 4 },
+        budgetTier: 'budget',
+        groupTypes: ['family', 'solo'],
+        paces: ['balanced', 'relaxed'],
+      },
+      {
+        city: 'Shimla',
+        scores: { nature: 9, heritage: 7, offbeat: 7, wellness: 6, monuments: 6, food: 5, arts: 4, markets: 5, crafts: 4, rituals: 3 },
+        budgetTier: 'all',
+        groupTypes: ['couple', 'family', 'friends'],
+        paces: ['relaxed', 'balanced'],
       },
     ];
 
     const scoredHubs = hubs.map((hub) => {
       let score = 0;
+
+      // 1. Direct interest score match
       for (const interest of validInterests) {
         score += (hub.scores as Record<string, number>)[interest] || 0;
       }
+
+      // 2. Budget affinity calibration
+      if (dailyBudget <= 3000 && (hub.budgetTier === 'budget' || hub.budgetTier === 'all')) {
+        score += 3;
+      } else if (dailyBudget >= 8000 && (hub.budgetTier === 'luxury' || hub.budgetTier === 'all')) {
+        score += 3;
+      } else if (dailyBudget > 3000 && dailyBudget < 8000) {
+        score += 2;
+      }
+
+      // 3. Group type affinity
+      if (hub.groupTypes.includes(chosenGroup)) {
+        score += 3;
+      }
+
+      // 4. Pace category affinity
+      if (hub.paces.includes(chosenPace)) {
+        score += 2;
+      }
+
       return { city: hub.city, score };
     });
 
     scoredHubs.sort((a, b) => b.score - a.score);
 
-    const highestScore = scoredHubs[0].score;
-    const topContenders = scoredHubs.filter((h) => h.score >= highestScore - 1);
-    const chosen = topContenders[Math.floor(Math.random() * topContenders.length)] || scoredHubs[0];
-    return chosen.city;
+    // If top contenders are tied, use deterministic hash to select consistently
+    const topScore = scoredHubs[0].score;
+    const candidates = scoredHubs.filter((h) => h.score >= topScore - 1);
+    if (candidates.length === 1) return candidates[0].city;
+
+    const seedString = `${validInterests.join('-')}_${dailyBudget}_${chosenGroup}_${chosenPace}`;
+    let hash = 0;
+    for (let i = 0; i < seedString.length; i++) {
+      hash = (hash << 5) - hash + seedString.charCodeAt(i);
+      hash |= 0;
+    }
+    const index = Math.abs(hash) % candidates.length;
+    return candidates[index].city;
   };
 
   const handleStartSynthesis = async () => {
@@ -346,7 +491,7 @@ export function DiscoveryOnboardingFlow({
 
     const pace = getPaceCategory(paceVal);
     const groupMeta = GROUP_OPTIONS.find((g) => g.id === groupType);
-    const finalCity = resolveSmartCity(destination, interests);
+    const finalCity = resolveSmartCity(destination, interests, budgetDaily, groupType, pace);
     setComputedCity(finalCity);
 
     const answers: DiscoveryAnswers = {

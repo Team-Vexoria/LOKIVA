@@ -19,6 +19,7 @@ export interface GenerateTripOptions {
   daysCount?: number;
   pace?: 'relaxed' | 'balanced' | 'packed';
   focusCategory?: string;
+  interests?: string[];
   budgetLimit?: number;
   travelers?: number;
   startDate?: string;
@@ -319,6 +320,13 @@ export function recalculateDaySchedule(
 
   const localImpactScore = Math.min(96, Math.max(78, 88 + ((day.dayNumber * 3) % 9)));
 
+  const dailyMealAllowancePerPerson = day.mealBudgetPerPerson !== undefined
+    ? day.mealBudgetPerPerson
+    : 350;
+  const computedFoodCost = totalFoodCost > 0
+    ? totalFoodCost
+    : (activities.length > 0 ? dailyMealAllowancePerPerson * travelers : 0);
+
   const metrics: DayFeasibilityMetrics = {
     paceScore,
     paceLabel,
@@ -331,8 +339,8 @@ export function recalculateDaySchedule(
     costBreakdown: {
       ticketCost: totalTicketCost,
       transitCost: totalTransitCost,
-      foodCost: totalFoodCost || (activities.length > 0 ? 500 * travelers : 0),
-      totalCost: totalTicketCost + totalTransitCost + (totalFoodCost || (activities.length > 0 ? 500 * travelers : 0)),
+      foodCost: computedFoodCost,
+      totalCost: totalTicketCost + totalTransitCost + computedFoodCost,
     },
   };
 
@@ -343,6 +351,54 @@ export function recalculateDaySchedule(
     },
     metrics,
   };
+}
+
+function scorePlaceForInterests(
+  exp: Experience,
+  chosenInterests: string[],
+  targetPerActivityTicket: number
+): number {
+  let score = 0;
+  const text = `${exp.title || ''} ${exp.category || ''} ${exp.description || ''} ${(exp.tags || []).join(' ')}`.toLowerCase();
+
+  for (const interest of chosenInterests) {
+    const k = interest.toLowerCase().trim();
+    if (k === 'heritage' && (text.includes('heritage') || text.includes('palace') || text.includes('fort') || text.includes('haveli') || text.includes('citadel') || text.includes('dynasty') || text.includes('royal'))) {
+      score += 15;
+    } else if (k === 'crafts' && (text.includes('craft') || text.includes('artisan') || text.includes('weav') || text.includes('potter') || text.includes('textile') || text.includes('block') || text.includes('guild') || text.includes('sculpt'))) {
+      score += 15;
+    } else if (k === 'food' && (text.includes('food') || text.includes('culinary') || text.includes('bazaar') || text.includes('sweet') || text.includes('thali') || text.includes('chai') || text.includes('tasting') || text.includes('snack') || text.includes('spice') || text.includes('chaat'))) {
+      score += 15;
+    } else if (k === 'rituals' && (text.includes('temple') || text.includes('ghat') || text.includes('aarti') || text.includes('mandir') || text.includes('puja') || text.includes('monastery') || text.includes('spiritual') || text.includes('sanctum') || text.includes('darshan') || text.includes('shrine'))) {
+      score += 15;
+    } else if (k === 'monuments' && (text.includes('monument') || text.includes('stepwell') || text.includes('ruin') || text.includes('archaeolog') || text.includes('pillar') || text.includes('tomb') || text.includes('stupa') || text.includes('minar'))) {
+      score += 15;
+    } else if (k === 'nature' && (text.includes('lake') || text.includes('nature') || text.includes('valley') || text.includes('river') || text.includes('wildlife') || text.includes('garden') || text.includes('forest') || text.includes('mountain') || text.includes('canal') || text.includes('backwater') || text.includes('waterfall') || text.includes('view') || text.includes('hill'))) {
+      score += 15;
+    } else if (k === 'markets' && (text.includes('market') || text.includes('bazaar') || text.includes('shopping') || text.includes('souk') || text.includes('perfum') || text.includes('ittar') || text.includes('lane') || text.includes('silk') || text.includes('spices'))) {
+      score += 15;
+    } else if (k === 'arts' && (text.includes('art') || text.includes('music') || text.includes('dance') || text.includes('folk') || text.includes('museum') || text.includes('gallery') || text.includes('theatre') || text.includes('kathakali') || text.includes('painting'))) {
+      score += 15;
+    } else if (k === 'offbeat' && (text.includes('hidden') || text.includes('secret') || text.includes('courtyard') || text.includes('alley') || text.includes('walk') || text.includes('unexplored') || text.includes('quarter') || text.includes('stepwell') || text.includes('nook'))) {
+      score += 15;
+    } else if (k === 'wellness' && (text.includes('wellness') || text.includes('ayurved') || text.includes('yoga') || text.includes('ashram') || text.includes('mindful') || text.includes('sanctuary') || text.includes('herbal') || text.includes('meditation') || text.includes('serene'))) {
+      score += 15;
+    } else if (text.includes(k)) {
+      score += 10;
+    }
+  }
+
+  // Budget fit adjustment
+  const rawPrice = exp.price || 0;
+  if (targetPerActivityTicket > 0) {
+    if (rawPrice <= targetPerActivityTicket * 1.3) {
+      score += 6;
+    } else if (rawPrice > targetPerActivityTicket * 2.5) {
+      score -= 10;
+    }
+  }
+
+  return score;
 }
 
 /**
@@ -359,13 +415,40 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     daysCount = 3,
     pace = 'balanced',
     focusCategory = '',
+    interests = [],
     budgetLimit = 25000,
     travelers = 2,
     startDate,
   } = options;
 
+  const safeDays = Math.max(1, daysCount);
+  const safeTravelers = Math.max(1, travelers);
+  const targetDailyTotal = Math.max(800, Math.round(budgetLimit / safeDays));
+  const targetDailyPerPerson = Math.max(400, Math.round(targetDailyTotal / safeTravelers));
+
+  // Partition the daily budget responsibly
+  let dailyMealPerPerson = 350;
+  if (targetDailyPerPerson <= 1500) {
+    dailyMealPerPerson = Math.max(180, Math.round(targetDailyPerPerson * 0.28));
+  } else if (targetDailyPerPerson <= 4500) {
+    dailyMealPerPerson = Math.round(targetDailyPerPerson * 0.30);
+  } else if (targetDailyPerPerson <= 10000) {
+    dailyMealPerPerson = Math.round(targetDailyPerPerson * 0.28);
+  } else {
+    dailyMealPerPerson = Math.min(3000, Math.round(targetDailyPerPerson * 0.25));
+  }
+
+  const estDailyTransitGroup = Math.min(1200, Math.max(90, Math.round(targetDailyTotal * 0.12)));
+  const activitiesPerDay = pace === 'relaxed' ? 3 : pace === 'packed' ? 5 : 4;
+  const targetDailyActivitiesGroup = Math.max(0, targetDailyTotal - (dailyMealPerPerson * safeTravelers) - estDailyTransitGroup);
+  const targetPerActivityTicket = Math.max(0, Math.round((targetDailyActivitiesGroup / activitiesPerDay) / safeTravelers));
+
+  const userInterests = (interests && interests.length > 0)
+    ? interests
+    : (focusCategory ? [focusCategory] : ['heritage', 'crafts', 'food']);
+
   let candidates = getPlacesByCity(city);
-  if (candidates.length < daysCount * 4) {
+  if (candidates.length < safeDays * activitiesPerDay) {
     const pool = USER_CURATED_PLACES.length > 0 ? USER_CURATED_PLACES : ALL_LOKIVA_PLACES;
     const backupPlaces = pool.filter(
       (p) =>
@@ -376,7 +459,7 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
   }
 
   if (candidates.length === 0) {
-    candidates = ALL_LOKIVA_PLACES.slice(0, 30);
+    candidates = ALL_LOKIVA_PLACES.slice(0, 40);
   }
 
   // Deduplicate candidates by unique ID
@@ -389,23 +472,17 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     }
   }
 
-  // Sort by focusCategory if specified
-  if (focusCategory && focusCategory.trim()) {
-    const fc = focusCategory.toLowerCase().trim();
-    uniqueCandidates.sort((a, b) => {
-      const aMatches = (a.category || '').toLowerCase().includes(fc);
-      const bMatches = (b.category || '').toLowerCase().includes(fc);
-      if (aMatches && !bMatches) return -1;
-      if (!aMatches && bMatches) return 1;
-      return 0;
-    });
-  }
+  // Score candidates against ALL user interests and budget alignment
+  uniqueCandidates.sort((a, b) => {
+    const scoreA = scorePlaceForInterests(a, userInterests, targetPerActivityTicket);
+    const scoreB = scorePlaceForInterests(b, userInterests, targetPerActivityTicket);
+    return scoreB - scoreA;
+  });
 
-  const activitiesPerDay = pace === 'relaxed' ? 3 : pace === 'packed' ? 5 : 4;
   const days: ItineraryDay[] = [];
   const baseDate = startDate ? new Date(startDate) : new Date();
 
-  for (let d = 0; d < daysCount; d++) {
+  for (let d = 0; d < safeDays; d++) {
     const curDate = new Date(baseDate);
     curDate.setDate(baseDate.getDate() + d);
 
@@ -451,6 +528,20 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       const lat = exp.latitude || 26.9124 + d * 0.01;
       const lng = exp.longitude || 75.7873 + actIdx * 0.01;
 
+      // Realistic ticket cost calibration aligned with budget ceiling
+      let calibratedCost = exp.price || 0;
+      if (calibratedCost > targetPerActivityTicket * 1.4) {
+        if (targetDailyPerPerson <= 1500) {
+          calibratedCost = isIndoor ? Math.min(100, calibratedCost) : Math.min(50, calibratedCost);
+        } else {
+          calibratedCost = Math.round(targetPerActivityTicket * (0.8 + (actIdx % 3) * 0.15));
+        }
+      } else if (calibratedCost === 0 && targetDailyPerPerson >= 5000) {
+        calibratedCost = Math.round(targetPerActivityTicket * 0.65);
+      } else if (calibratedCost === 0 && targetDailyPerPerson > 2000 && isIndoor) {
+        calibratedCost = Math.min(250, Math.max(80, Math.round(targetPerActivityTicket * 0.5)));
+      }
+
       return {
         id: exp.id * 100 + d * 10 + actIdx,
         experienceId: exp.id,
@@ -476,7 +567,7 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
         crowdLevel,
         coordinates: [lat, lng],
         includes: exp.tags || ['Verified host guide', 'Cultural field notes'],
-        costPerPerson: exp.price || 0,
+        costPerPerson: calibratedCost,
         bookingStatus: 'available',
         gettingThere: 'Local auto or walking navigation',
         transitCost: 45,
@@ -497,17 +588,39 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       dayNumber: d + 1,
       date: dateStr,
       dayOfWeek: dayOfWeekStr,
-      title: `${city} Cultural Traditions & Heritage Circuit - Day ${d + 1}`,
+      title: `${city} Cultural Traditions & Heritage Circuit: Day ${d + 1}`,
       heroImage: heroImg,
       hotel: `${city} Heritage Quarter Suites`,
       activities: initialActivities,
       dayStartTime: '08:30',
       activeFilter: 'none',
       originalActivities: initialActivities,
+      mealBudgetPerPerson: dailyMealPerPerson,
     };
 
-    const { day: calculatedDay } = recalculateDaySchedule(rawDay, travelers);
+    const { day: calculatedDay, metrics: dayMetrics } = recalculateDaySchedule(rawDay, safeTravelers);
+    calculatedDay.metrics = dayMetrics;
     days.push(calculatedDay);
+  }
+
+  // Enforce overall budget ceiling so total plan spend stays safely within user budget
+  const initialTotalSpend = days.reduce(
+    (sum, d) => sum + (d.metrics?.costBreakdown?.totalCost || 0),
+    0
+  );
+
+  if (initialTotalSpend > budgetLimit && budgetLimit > 0) {
+    const scaleFactor = Math.max(0.5, (budgetLimit * 0.92) / initialTotalSpend);
+    days.forEach((d) => {
+      d.activities.forEach((act) => {
+        act.costPerPerson = Math.round((act.costPerPerson || 0) * scaleFactor);
+      });
+      if (d.mealBudgetPerPerson) {
+        d.mealBudgetPerPerson = Math.round(d.mealBudgetPerPerson * scaleFactor);
+      }
+      const recalculated = recalculateDaySchedule(d, safeTravelers);
+      d.metrics = recalculated.metrics;
+    });
   }
 
   const tripDetails: ItineraryTripDetails = {

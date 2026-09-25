@@ -5,9 +5,9 @@ import { SOUTH_REGIONAL_PLACES } from './southPlacesData';
 import { WEST_REGIONAL_PLACES } from './westPlacesData';
 import { EAST_REGIONAL_PLACES } from './eastPlacesData';
 import { CENTRAL_REGIONAL_PLACES } from './centralPlacesData';
-import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST, StateCityInfo } from './statesData';
+import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST, StateCityInfo, getStateForCity } from './statesData';
 
-export { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST };
+export { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST, getStateForCity };
 export type { StateCityInfo };
 
 export const ALL_LOKIVA_PLACES: Experience[] = [
