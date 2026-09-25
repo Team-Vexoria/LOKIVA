@@ -87,7 +87,7 @@ Current conversation is about: ${city}, India`;
       model: 'gpt-4o-mini', // Cost-effective and fast
       messages,
       temperature: 0.7, // Balanced creativity and consistency
-      max_tokens: 800, // Keep responses concise but informative
+      max_tokens: 2000, // Ample tokens for full explanations and budget breakdowns without truncation
       presence_penalty: 0.1, // Slight penalty to reduce repetition
       frequency_penalty: 0.1,
     });

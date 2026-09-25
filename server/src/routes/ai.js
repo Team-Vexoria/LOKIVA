@@ -184,18 +184,28 @@ aiRouter.post('/concierge', async (req, res) => {
 
     // 2. CASE: General inquiries, multi-day plans, or region discovery (No single city fixed)
     if (!activeCity || isGreeting) {
-      const aiResponse = await chatWithCulturalConcierge({
-        userMessage: message,
-        chatHistory: chat_history,
-        city: null,
-        availableExperiences: [],
-      });
+      let aiResponse;
+      try {
+        aiResponse = await chatWithCulturalConcierge({
+          userMessage: message,
+          chatHistory: chat_history,
+          city: null,
+          availableExperiences: [],
+        });
+      } catch (aiErr) {
+        console.warn('AI Concierge (general) model unavailable, using fallback:', aiErr.message);
+        aiResponse = {
+          reply: generateFallbackResponse(message, 'India', []),
+          tokensUsed: 0,
+          model: 'cultural-concierge-local',
+        };
+      }
 
       // Strict Rule: Never attach recommended experience cards when destination has not been decided or on greetings
       return res.json({
         reply: sanitizeAiText(aiResponse.reply),
         tokens_used: aiResponse.tokensUsed || 0,
-        model: aiResponse.model || 'lokiva-cultural-engine',
+        model: aiResponse.model || 'gemini-3.5-flash',
         extracted_intent: intent,
         suggested_experiences: [],
         context_destination: null,

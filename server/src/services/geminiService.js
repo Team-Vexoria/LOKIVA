@@ -101,11 +101,11 @@ async function generateWithFallback(prompt, { systemInstruction, generationConfi
     throw new Error('Quota temporarily exceeded; routing directly to intelligent cultural engine.');
   }
 
-  // Allow up to 4 models to try. 28 seconds per model allows Gemini free-tier to return full responses.
+  // Allow up to 4 models to try. 35 seconds per model allows Gemini to return full, complete responses.
   const queue = candidateOrder().slice(0, 4);
   const tried = new Set();
   let lastError = null;
-  const timeoutMs = 28000;
+  const timeoutMs = 35000;
 
   while (queue.length > 0) {
     const modelName = queue.shift();
@@ -325,7 +325,8 @@ Your Core Rules:
 2. If the user mentions an expense (e.g., "I spent 200rs on rickshaw"), acknowledge it naturally and conversationally without generating an unsolicited trip budget breakdown.
 3. If the user asks an off-topic or greeting question, reply warmly and naturally without forcing travel recommendations.
 4. If the traveler is specifically asking about things to do in ${city || 'their destination'} and experiences are provided above, weave in 1 or 2 relevant experiences naturally.
-5. Keep your tone culturally authentic, warm, and concise (2 to 4 readable paragraphs max). Avoid filler or repetitive generic scripts.`;
+5. Keep your tone culturally authentic, warm, and concise (2 to 4 readable paragraphs max). Avoid filler or repetitive generic scripts.
+6. Always complete all sentences, sections, and paragraphs fully. Never stop mid-thought or mid-sentence.`;
 
   try {
     const history = sanitizeHistory(chatHistory);
@@ -334,7 +335,7 @@ Your Core Rules:
       systemInstruction: systemPrompt,
       history,
       generationConfig: {
-        maxOutputTokens: 800,
+        maxOutputTokens: 2000,
         temperature: 0.65,
       },
     });
