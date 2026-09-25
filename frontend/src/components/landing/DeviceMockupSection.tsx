@@ -34,7 +34,9 @@ import {
   Bot,
   User,
   Ticket,
+  Users,
 } from 'lucide-react';
+import { useAuth } from '../../lib/auth-context';
 
 export type FeatureTab = 'itinerary' | 'vernacular' | 'checkout';
 
@@ -48,7 +50,16 @@ interface ChatMessage {
 
 export function DeviceMockupSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<FeatureTab>('itinerary');
+
+  const handlePlanGroupTrip = () => {
+    if (isAuthenticated) {
+      navigate('/group/new');
+    } else {
+      navigate('/login?redirect=/group/new');
+    }
+  };
 
   // Desktop Window State: boolean toggling between full Safari Window and centered mobile view
   const [isDesktopOpen, setIsDesktopOpen] = useState(true);
@@ -215,17 +226,38 @@ export function DeviceMockupSection() {
   return (
     <div className="w-full pt-6 sm:pt-8 pb-8 px-4 sm:px-6 lg:px-8 bg-[#FAF7F2] border-t border-b border-[#E5DFD5]">
       {/* Section Header */}
-      <div className="max-w-4xl mx-auto text-center space-y-2 mb-4">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-ink tracking-tight">
-          Live Cultural Intelligence &amp; On-Ground Sync
-        </h2>
+      <div className="max-w-6xl mx-auto mb-6">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-2">
+          {/* Main Title and Narrative */}
+          <div className="text-center lg:text-left space-y-2 max-w-2xl">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-ink tracking-tight">
+              Live Cultural Intelligence &amp; On-Ground Sync
+            </h2>
 
-        <p className="text-xs sm:text-sm text-dusk-700 max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-          Synthesize hyper-local micro-itineraries on your desktop while synchronizing real-time vernacular audio, verified artisan passes, and live AI guidance directly to your mobile device.
-        </p>
+            <p className="text-xs sm:text-sm text-dusk-700 font-sans leading-relaxed font-medium">
+              Synthesize hyper-local micro-itineraries on your desktop while synchronizing real-time vernacular audio, verified artisan passes, and live AI guidance directly to your mobile device.
+            </p>
+          </div>
+
+          {/* Group Plan Itinerary CTA Card on the Right Side */}
+          <div className="flex flex-col items-center lg:items-end shrink-0">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-[10px] font-meta font-extrabold uppercase tracking-widest text-[#C85A32] mb-2 shadow-2xs">
+              <Sparkles className="w-3 h-3 text-[#D99B43]" />
+              <span>NEW · SOLVE WHATSAPP TRIP CHAOS</span>
+            </div>
+            <button
+              onClick={handlePlanGroupTrip}
+              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C85A32] to-[#D99B43] hover:from-[#B84E28] hover:to-[#C88A33] text-white font-heading font-bold text-xs sm:text-sm shadow-lg shadow-[#C85A32]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group"
+            >
+              <Users className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+              <span>Plan Group Itinerary</span>
+              <ArrowRight className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
 
         {/* Feature Tab Switcher */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-4">
           <button
             onClick={() => setActiveTab('itinerary')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${

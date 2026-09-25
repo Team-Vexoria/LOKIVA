@@ -25,6 +25,8 @@ import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
 import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { GroupTripHubPage } from './pages/GroupTripHubPage';
+import { RequireAuth } from './components/auth/RequireAuth';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function AppShell() {
@@ -48,6 +50,24 @@ function AppShell() {
           <Route path="/saved" element={<SavedPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/discovery-map" element={<DiscoveryMapPage />} />
+
+          {/* Lokiva Group Hub Routes - Protected by RequireAuth */}
+          <Route
+            path="/group/new"
+            element={
+              <RequireAuth>
+                <GroupTripHubPage mode="create" />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/group/:groupId"
+            element={
+              <RequireAuth>
+                <GroupTripHubPage mode="room" />
+              </RequireAuth>
+            }
+          />
 
           {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />

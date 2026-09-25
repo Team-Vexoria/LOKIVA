@@ -5,7 +5,6 @@ import { ArrowRight, Compass, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   SquiggleUnderline,
-  HandDrawnArrow,
   StampBadge,
 } from '../ui/HandDrawnAnnotations';
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
@@ -153,7 +152,8 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           {/* ── HERO CONTENT (fades out / floats up during scrub) ─────────────── */}
           <div
             ref={heroContentRef}
-            className="absolute inset-x-0 top-0 z-10 flex flex-col items-center text-center pt-20 sm:pt-24 px-4 pointer-events-auto"
+            className="absolute inset-x-0 z-10 flex flex-col items-center justify-center text-center px-4 pointer-events-auto"
+            style={{ top: '52px', bottom: '7%' }}
           >
           {/* Decorative monument cutouts - background layer */}
           <div
@@ -179,7 +179,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* Stamp badge */}
-          <div className="flex items-center justify-center gap-2 mb-5 relative z-10">
+          <div className="flex items-center justify-center gap-2 mb-4 relative z-10">
             <StampBadge text="PAN-INDIA CULTURAL DISCOVERY ENGINE" />
           </div>
 
@@ -197,12 +197,12 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </h1>
 
           {/* Supporting line */}
-          <p className="relative z-10 pt-5 sm:pt-6 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
+          <p className="relative z-10 mt-4 sm:mt-5 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
             Discover authentic artisan guilds and living heritage, packed into feasible cultural circuits built around your time and budget.
           </p>
 
           {/* Verification line */}
-          <div className="relative z-10 flex items-center justify-center gap-2 pt-4 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
+          <div className="relative z-10 flex items-center justify-center gap-2 mt-3 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
             <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
             <span>Curated Across</span>
             <span className="font-mono text-[#12213B] font-extrabold text-sm">36</span>
@@ -210,13 +210,23 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* CTAs */}
-          <div className="relative z-10 pt-6 sm:pt-7 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
+          <div className="relative z-10 mt-5 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
             <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
-              <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
-                <span className="font-display italic text-xs font-bold text-[#C1443B] transform -rotate-6 whitespace-nowrap">
-                  Takes 60s
-                </span>
-                <HandDrawnArrow className="w-11 h-6 -mr-1 text-[#C1443B]" />
+              {/* Character pointing finger directly at the Plan Instant Micro-Itinerary button */}
+              <div
+                className="hidden md:block absolute pointer-events-none select-none z-20 w-[130px] h-[130px] md:w-[150px] md:h-[150px] lg:w-[170px] lg:h-[170px]"
+                style={{
+                  right: 'calc(100% - 6px)',
+                  top: '50%',
+                  transform: 'translateY(-29%) rotate(2.5deg)',
+                }}
+                aria-hidden="true"
+              >
+                <img
+                  src="/assets/character-pointing.png"
+                  alt="Character pointing to plan instant micro-itinerary"
+                  className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(18,33,59,0.15)]"
+                />
               </div>
               <button
                 type="button"
