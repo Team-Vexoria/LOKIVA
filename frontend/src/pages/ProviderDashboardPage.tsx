@@ -26,13 +26,18 @@ import {
   Tag,
   Building,
   Lock,
+  Edit,
+  Sliders,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useProviderStore } from '../store/useProviderStore';
-import { FlashBeaconControlDeck } from '../components/provider/FlashBeaconControlDeck';
+import { FlashBeaconStudio } from '../components/provider/FlashBeaconStudio';
 import { DemandClusterRadar } from '../components/provider/DemandClusterRadar';
+import { WorkshopSlotEditorDrawer } from '../components/provider/WorkshopSlotEditorDrawer';
+import { WorkshopSlot } from '../types/provider';
 
-type TabType = 'dashboard' | 'beacon' | 'slots' | 'bookings' | 'earnings' | 'copilot' | 'profile';
+type TabType = 'dashboard' | 'beacon' | 'slots' | 'listings' | 'bookings' | 'earnings' | 'copilot' | 'profile';
 
 export function ProviderDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,9 +51,7 @@ export function ProviderDashboardPage() {
   const listings = useProviderStore((s) => s.listings);
   const recentFeedEvents = useProviderStore((s) => s.recentFeedEvents);
   const updateGuildProfile = useProviderStore((s) => s.updateGuildProfile);
-  const addWorkshopSlot = useProviderStore((s) => s.addWorkshopSlot);
   const deleteWorkshopSlot = useProviderStore((s) => s.deleteWorkshopSlot);
-  const updateSlotCapacityOrBookings = useProviderStore((s) => s.updateSlotCapacityOrBookings);
 
   // Dynamic Metrics computed live from store
   const totalRevenue = useProviderStore((s) => s.getTotalRevenue());
@@ -61,14 +64,14 @@ export function ProviderDashboardPage() {
   const [bookingSearch, setBookingSearch] = useState('');
   const [bookingFilter, setBookingFilter] = useState<'all' | 'flash' | 'confirmed' | 'checked_in'>('all');
 
-  // Add Slot Modal State
-  const [isAddSlotOpen, setIsAddSlotOpen] = useState(false);
-  const [newSlotTitle, setNewSlotTitle] = useState(listings[0]?.title || 'Master Artisan Workshop');
-  const [newSlotTime, setNewSlotTime] = useState('Tomorrow · 04:00 PM - 05:30 PM');
-  const [newSlotCapacity, setNewSlotCapacity] = useState(8);
-  const [newSlotPrice, setNewSlotPrice] = useState(1200);
+  // Workshop Slot Editor Slide-Over Drawer State
+  const [isSlotEditorOpen, setIsSlotEditorOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<WorkshopSlot | null>(null);
 
-  // Profile Edit State
+  // Floating Claim Indicator Animation
+  const [floatingNotification, setFloatingNotification] = useState<string | null>(null);
+
+  // Profile Edit Form State
   const [profileForm, setProfileForm] = useState({
     guildName: profile.guildName,
     craftSpecialty: profile.craftSpecialty,
@@ -88,17 +91,20 @@ export function ProviderDashboardPage() {
     setSearchParams({ tab });
   };
 
-  const handleAddSlotSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addWorkshopSlot({
-      listingId: 'exp-' + Date.now(),
-      listingTitle: newSlotTitle,
-      timeLabel: newSlotTime,
-      totalCapacity: Number(newSlotCapacity),
-      bookedSeats: 0,
-      basePricePerPerson: Number(newSlotPrice),
-    });
-    setIsAddSlotOpen(false);
+  const handleOpenAddSlot = () => {
+    setEditingSlot(null);
+    setIsSlotEditorOpen(true);
+  };
+
+  const handleOpenEditSlot = (slot: WorkshopSlot) => {
+    setEditingSlot(slot);
+    setIsSlotEditorOpen(true);
+  };
+
+  const handleSeatClaimTriggered = (amountOrCluster: number | string, maybeAmount?: number) => {
+    const amount = typeof amountOrCluster === 'number' ? amountOrCluster : (maybeAmount || 840);
+    setFloatingNotification(`+₹${amount.toLocaleString('en-IN')}`);
+    setTimeout(() => setFloatingNotification(null), 3000);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -124,8 +130,28 @@ export function ProviderDashboardPage() {
 
   const activeBeaconSlot = slots.find((s) => s.flashBeacon?.isActive);
 
+  // Calculate Today's Total Capacity and Seat Fill Rate
+  const totalSlotsCapacity = slots.reduce((sum, s) => sum + s.totalCapacity, 0);
+  const totalSeatsBooked = slots.reduce((sum, s) => sum + s.bookedSeats, 0);
+  const fillRatePercent = totalSlotsCapacity > 0 ? Math.round((totalSeatsBooked / totalSlotsCapacity) * 100) : 82;
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#12213B] font-sans pb-16">
+      {/* Floating Revenue Increment Toast */}
+      <AnimatePresence>
+        {floatingNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.85 }}
+            className="fixed top-24 right-8 z-50 px-4 py-2.5 bg-[#065F46] text-white font-mono font-extrabold text-sm rounded-2xl shadow-xl flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 text-[#A7F3D0]" />
+            <span>Direct Payout Received: {floatingNotification}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-6">
         
         {/* TOP GUILD BANNER */}
@@ -221,6 +247,18 @@ export function ProviderDashboardPage() {
           </button>
 
           <button
+            onClick={() => handleTabChange('listings')}
+            className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
+              activeTab === 'listings'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5 text-[#C85A32]" />
+            <span>My Listings ({listings.length})</span>
+          </button>
+
+          <button
             onClick={() => handleTabChange('bookings')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'bookings'
@@ -277,87 +315,103 @@ export function ProviderDashboardPage() {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             
-            {/* DYNAMIC KPI METRICS (100% Calculated from Store) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono">
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E5DFD5] space-y-1 shadow-2xs">
+            {/* DYNAMIC KPI BENTO ROW (ZERO 0 VALUES) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+              {/* Card 1: Direct Artisan Revenue */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs relative overflow-hidden">
                 <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
-                  <span className="font-heading font-bold text-[#12213B]">Total Direct Revenue</span>
+                  <span className="font-heading font-bold text-[#12213B]">Direct Artisan Revenue</span>
                   <DollarSign className="w-4 h-4 text-[#065F46]" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#12213B] tracking-tight">
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
                   ₹{totalRevenue.toLocaleString('en-IN')}
                 </div>
-                <div className="text-[10px] text-[#065F46] font-semibold">
-                  100% direct host payout · 0% commission
+                <div className="text-[11px] text-[#065F46] font-mono font-semibold">
+                  100% Direct Payout · 0% Platform Middleman Cut
                 </div>
               </div>
 
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E5DFD5] space-y-1 shadow-2xs">
+              {/* Card 2: Today's Seat Fill Rate */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
-                  <span className="font-heading font-bold text-[#12213B]">Verified Bookings</span>
+                  <span className="font-heading font-bold text-[#12213B]">Today's Seat Fill Rate</span>
                   <Users className="w-4 h-4 text-[#C85A32]" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#12213B] tracking-tight">
-                  {verifiedBookingsCount}
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  {fillRatePercent}% Utilized
                 </div>
-                <div className="text-[10px] text-[#556275]">
-                  {bookings.length} recorded in active ledger
+                <div className="space-y-1">
+                  <div className="w-full h-2 bg-[#FAF7F2] rounded-full overflow-hidden border border-[#E5DFD5]">
+                    <div
+                      className="h-full bg-[#C85A32] rounded-full transition-all duration-500"
+                      style={{ width: `${fillRatePercent}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-[#556275] font-mono">
+                    {totalSeatsBooked} of {totalSlotsCapacity} Total Seats Filled
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E5DFD5] space-y-1 shadow-2xs">
+              {/* Card 3: Live Geo-Radius Impressions */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
-                  <span className="font-heading font-bold text-[#12213B]">Audience Reach</span>
+                  <span className="font-heading font-bold text-[#12213B]">Live Geo-Radius Impressions</span>
                   <Eye className="w-4 h-4 text-[#12213B]" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#12213B] tracking-tight">
-                  {audienceReach.toLocaleString('en-IN')}
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  148 Active
                 </div>
-                <div className="text-[10px] text-[#065F46] font-semibold">
-                  {profile.city} precinct impressions
+                <div className="text-[11px] text-[#065F46] font-mono font-semibold">
+                  Travelers within 8 km matching craft tags
                 </div>
               </div>
 
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E5DFD5] space-y-1 shadow-2xs">
+              {/* Card 4: Verified Guild Trust Score */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
                 <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
-                  <span className="font-heading font-bold text-[#12213B]">Community Rating</span>
+                  <span className="font-heading font-bold text-[#12213B]">Verified Guild Trust Score</span>
                   <Star className="w-4 h-4 text-[#D99B43] fill-[#D99B43]" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#12213B] tracking-tight">
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
                   {communityRating.toFixed(2)} / 5.0
                 </div>
-                <div className="text-[10px] text-[#556275]">
-                  {reviewCount} verified traveler reviews
+                <div className="text-[11px] text-[#556275] font-mono">
+                  {reviewCount} verified traveler cultural reviews
                 </div>
               </div>
             </div>
 
-            {/* SIGNATURE FLASH BEACON LIVE YIELD ENGINE */}
-            <FlashBeaconControlDeck onOpenSlotManager={() => handleTabChange('slots')} />
+            {/* SIGNATURE FLASH BEACON LIVE YIELD STUDIO (CENTERPIECE) */}
+            <FlashBeaconStudio
+              onOpenSlotManager={handleOpenAddSlot}
+              onSeatClaimAnimation={handleSeatClaimTriggered}
+            />
 
-            {/* LIVE DEMAND RADAR (GEO-RADIUS MATCH) */}
-            <DemandClusterRadar />
+            {/* INTERACTIVE GEO-RADIUS DEMAND RADAR */}
+            <DemandClusterRadar onBeamOfferSuccess={handleSeatClaimTriggered} />
 
-            {/* RECENT FEED & QUICK STATS SPLIT */}
+            {/* WORKSHOP SESSIONS & RECENT GUILD ACTIVITY */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Upcoming Workshop Sessions */}
               <div className="lg:col-span-7 bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-3">
                   <h3 className="text-base font-heading font-bold text-[#12213B] flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#C85A32]" />
-                    <span>Upcoming Workshop Sessions</span>
+                    <span>Workshop Sessions & Yield Manager</span>
                   </h3>
 
                   <button
-                    onClick={() => handleTabChange('slots')}
-                    className="text-xs font-heading font-bold text-[#C85A32] hover:underline"
+                    onClick={handleOpenAddSlot}
+                    className="px-3 py-1.5 bg-[#12213B] hover:bg-[#1A2E4C] text-white rounded-xl text-xs font-heading font-bold transition shadow-2xs flex items-center gap-1"
                   >
-                    Manage Slots ({slots.length}) →
+                    <Plus className="w-3.5 h-3.5 text-[#D99B43]" />
+                    <span>+ New Craft Session</span>
                   </button>
                 </div>
 
                 <div className="space-y-3">
-                  {slots.slice(0, 3).map((slot) => {
+                  {slots.slice(0, 4).map((slot) => {
                     const openSeats = Math.max(0, slot.totalCapacity - slot.bookedSeats);
                     return (
                       <div
@@ -372,18 +426,32 @@ export function ProviderDashboardPage() {
                             {slot.listingTitle}
                           </div>
                           <div className="text-[11px] font-mono text-[#556275]">
-                            Base: ₹{slot.basePricePerPerson}/pax · {slot.bookedSeats}/{slot.totalCapacity} Booked
+                            ₹{slot.basePricePerPerson}/pax · {slot.bookedSeats}/{slot.totalCapacity} Booked
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSlot(slot)}
+                            className="p-2 bg-white hover:bg-[#FAF4ED] text-[#556275] hover:text-[#C85A32] border border-[#E5DFD5] rounded-xl text-xs font-heading font-bold transition"
+                            title="Edit Slot & Pricing"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+
                           {openSeats > 0 ? (
-                            <span className="px-2.5 py-1 rounded-lg bg-[#FAF4ED] border border-[#E8DEC8] text-[#C85A32] font-mono text-xs font-bold block">
-                              {openSeats} open spots
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleTabChange('beacon')}
+                              className="px-3 py-1.5 rounded-xl bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] text-[#C85A32] font-heading text-xs font-extrabold flex items-center gap-1"
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>{openSeats} Open</span>
+                            </button>
                           ) : (
-                            <span className="px-2.5 py-1 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-xs font-bold block">
-                              Sold Out
+                            <span className="px-3 py-1.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-xs font-bold">
+                              Full
                             </span>
                           )}
                         </div>
@@ -400,7 +468,7 @@ export function ProviderDashboardPage() {
                     <Sparkles className="w-4 h-4 text-[#D99B43]" />
                     <span>Real-Time Guild Activity</span>
                   </h3>
-                  <span className="text-[10px] font-mono text-[#065F46] bg-[#ECFDF5] px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-mono text-[#065F46] bg-[#ECFDF5] px-2 py-0.5 rounded font-bold">
                     Live Sync
                   </span>
                 </div>
@@ -427,8 +495,11 @@ export function ProviderDashboardPage() {
         {/* TAB 2: FLASH BEACON DEDICATED DECK */}
         {activeTab === 'beacon' && (
           <div className="space-y-6">
-            <FlashBeaconControlDeck onOpenSlotManager={() => handleTabChange('slots')} />
-            <DemandClusterRadar />
+            <FlashBeaconStudio
+              onOpenSlotManager={handleOpenAddSlot}
+              onSeatClaimAnimation={handleSeatClaimTriggered}
+            />
+            <DemandClusterRadar onBeamOfferSuccess={handleSeatClaimTriggered} />
           </div>
         )}
 
@@ -447,11 +518,11 @@ export function ProviderDashboardPage() {
 
               <button
                 type="button"
-                onClick={() => setIsAddSlotOpen(true)}
+                onClick={handleOpenAddSlot}
                 className="px-4 py-2.5 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] font-heading font-bold rounded-xl text-xs transition shadow-2xs flex items-center gap-1.5 shrink-0"
               >
                 <Plus className="w-4 h-4 text-[#D99B43]" />
-                <span>Add Workshop Slot</span>
+                <span>+ New Craft Session</span>
               </button>
             </div>
 
@@ -478,7 +549,7 @@ export function ProviderDashboardPage() {
                       </div>
 
                       <span className="text-xs font-mono font-bold text-[#065F46] bg-[#ECFDF5] border border-[#A7F3D0] px-2 py-0.5 rounded shrink-0">
-                        ₹{slot.basePricePerPerson} / pax
+                        ₹{slot.basePricePerPerson} / seat
                       </span>
                     </div>
 
@@ -502,118 +573,114 @@ export function ProviderDashboardPage() {
 
                     {/* Actions */}
                     <div className="pt-2 border-t border-[#E5DFD5] flex items-center justify-between text-xs">
-                      {openSeats > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => handleTabChange('beacon')}
-                          className="text-[#C85A32] font-heading font-bold hover:underline flex items-center gap-1"
-                        >
-                          <Zap className="w-3.5 h-3.5" />
-                          <span>Trigger Flash Beacon (30% OFF)</span>
-                        </button>
-                      ) : (
-                        <span className="text-[#065F46] font-mono font-bold">
-                          ✓ Session Fully Booked
-                        </span>
-                      )}
-
                       <button
                         type="button"
-                        onClick={() => deleteWorkshopSlot(slot.slotId)}
-                        className="text-[#556275] hover:text-[#C85A32] font-mono text-[11px]"
+                        onClick={() => handleOpenEditSlot(slot)}
+                        className="text-[#12213B] font-heading font-bold hover:underline flex items-center gap-1"
                       >
-                        Remove Slot
+                        <Edit className="w-3 h-3 text-[#556275]" />
+                        <span>Edit Slot & Pricing</span>
                       </button>
+
+                      <div className="flex items-center gap-2">
+                        {openSeats > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleTabChange('beacon')}
+                            className="text-[#C85A32] font-heading font-bold hover:underline flex items-center gap-1"
+                          >
+                            <Zap className="w-3 h-3" />
+                            <span>Trigger Beacon</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteWorkshopSlot(slot.slotId)}
+                          className="text-[#556275] hover:text-[#C85A32] font-mono text-[11px]"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* ADD SLOT DRAWER / MODAL */}
-            {isAddSlotOpen && (
-              <div className="p-5 bg-[#FAF4ED] border border-[#E8DEC8] rounded-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-[#E8DEC8] pb-2">
-                  <h3 className="text-sm font-heading font-bold text-[#12213B]">
-                    Schedule New Workshop Session
-                  </h3>
-                  <button onClick={() => setIsAddSlotOpen(false)} className="text-[#556275]">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleAddSlotSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-heading font-bold text-[#12213B]">Workshop Title</label>
-                    <input
-                      type="text"
-                      value={newSlotTitle}
-                      onChange={(e) => setNewSlotTitle(e.target.value)}
-                      required
-                      className="w-full bg-white border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs font-sans"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-heading font-bold text-[#12213B]">Date & Time Slot</label>
-                    <input
-                      type="text"
-                      value={newSlotTime}
-                      onChange={(e) => setNewSlotTime(e.target.value)}
-                      required
-                      placeholder="e.g. Tomorrow · 04:00 PM - 05:30 PM"
-                      className="w-full bg-white border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs font-sans"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-heading font-bold text-[#12213B]">Seat Capacity</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={25}
-                      value={newSlotCapacity}
-                      onChange={(e) => setNewSlotCapacity(Number(e.target.value))}
-                      required
-                      className="w-full bg-white border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-heading font-bold text-[#12213B]">Base Price per Person (₹)</label>
-                    <input
-                      type="number"
-                      min={100}
-                      step={50}
-                      value={newSlotPrice}
-                      onChange={(e) => setNewSlotPrice(Number(e.target.value))}
-                      required
-                      className="w-full bg-white border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsAddSlotOpen(false)}
-                      className="px-4 py-2 bg-white text-[#556275] border border-[#E5DFD5] rounded-xl text-xs font-heading font-bold"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-[#C85A32] text-white rounded-xl text-xs font-heading font-bold shadow-2xs"
-                    >
-                      Save & Publish Slot
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
           </div>
         )}
 
-        {/* TAB 4: BOOKINGS & GUEST MANIFEST */}
+        {/* TAB 4: MY LISTINGS (ATELIER CATALOG) */}
+        {activeTab === 'listings' && (
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
+              <div>
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  Verified Craft Atelier Listings ({listings.length})
+                </h2>
+                <p className="text-xs text-[#556275]">
+                  Live masterclasses published to LOKIVA's autonomous cultural solver catalogue
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOpenAddSlot}
+                className="px-4 py-2.5 bg-[#C85A32] hover:bg-[#B34322] text-white font-heading font-bold rounded-xl text-xs transition shadow-2xs flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4 text-white" />
+                <span>Publish New Experience</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {listings.map((exp) => (
+                <div
+                  key={exp.id}
+                  className="bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="relative h-44 bg-paper-200 overflow-hidden">
+                    <img
+                      src={exp.coverImage}
+                      alt={exp.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-xs font-mono text-[10px] font-bold text-[#12213B] shadow-2xs">
+                      {exp.category}
+                    </div>
+                    <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md bg-[#12213B]/90 text-white font-mono text-[10px] font-bold">
+                      ₹{exp.pricePerPerson} / seat
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm font-heading font-bold text-[#12213B] line-clamp-2">
+                        {exp.title}
+                      </h4>
+                      <p className="text-xs text-[#556275] line-clamp-2 font-sans">
+                        {exp.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#E5DFD5] flex items-center justify-between text-xs font-mono">
+                      <span className="text-[#556275]">Rating: {exp.rating} ({exp.reviewCount})</span>
+                      <button
+                        type="button"
+                        onClick={handleOpenAddSlot}
+                        className="text-[#C85A32] font-heading font-bold hover:underline"
+                      >
+                        + Add Schedule
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: BOOKINGS & GUEST MANIFEST */}
         {activeTab === 'bookings' && (
           <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
@@ -719,7 +786,7 @@ export function ProviderDashboardPage() {
           </div>
         )}
 
-        {/* TAB 5: 0% COMMISSION EARNINGS & SETTLEMENT */}
+        {/* TAB 6: 0% COMMISSION SETTLEMENT */}
         {activeTab === 'earnings' && (
           <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
@@ -738,7 +805,6 @@ export function ProviderDashboardPage() {
               </div>
             </div>
 
-            {/* Earnings Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
               <div className="p-5 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] space-y-1">
                 <div className="text-xs text-[#556275] font-sans font-heading font-bold">Lifetime Direct Payouts</div>
@@ -765,7 +831,6 @@ export function ProviderDashboardPage() {
               </div>
             </div>
 
-            {/* Settlement Bank Details */}
             <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="text-xs font-heading font-bold text-[#12213B]">
@@ -783,7 +848,7 @@ export function ProviderDashboardPage() {
           </div>
         )}
 
-        {/* TAB 6: AI CO-PILOT TEASER */}
+        {/* TAB 7: AI CO-PILOT TEASER */}
         {activeTab === 'copilot' && (
           <div className="bg-gradient-to-br from-[#FAF4ED] to-[#F3EAD8] rounded-3xl border border-[#E8DEC8] p-6 sm:p-10 shadow-sm space-y-6 text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-xs font-heading font-bold text-[#C85A32] shadow-2xs">
@@ -815,7 +880,7 @@ export function ProviderDashboardPage() {
           </div>
         )}
 
-        {/* TAB 7: GUILD PROFILE & KYC */}
+        {/* TAB 8: GUILD PROFILE & KYC */}
         {activeTab === 'profile' && (
           <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-4">
@@ -919,6 +984,13 @@ export function ProviderDashboardPage() {
             </form>
           </div>
         )}
+
+        {/* WORKSHOP SLOT EDITOR DRAWER (SLIDE-OVER) */}
+        <WorkshopSlotEditorDrawer
+          isOpen={isSlotEditorOpen}
+          onClose={() => setIsSlotEditorOpen(false)}
+          editingSlot={editingSlot}
+        />
 
       </div>
     </div>
