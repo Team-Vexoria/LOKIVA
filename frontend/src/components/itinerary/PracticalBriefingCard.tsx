@@ -207,7 +207,7 @@ export function PracticalBriefingCard({ practicalInfo, cityName }: PracticalBrie
                         {place.name}
                       </h5>
                       <span className="font-mono text-[11px] text-dusk">
-                        📍 {place.area}
+                        📍 {place.districtOrArea || place.area}
                       </span>
                     </div>
                     <span className="font-mono text-[10px] uppercase bg-[#FAF7F2] text-[#C1443B] border border-[#E5DFD5] px-2.5 py-1 rounded-lg font-bold">

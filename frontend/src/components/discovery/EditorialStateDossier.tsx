@@ -11,6 +11,8 @@ import {
   Utensils,
 } from 'lucide-react';
 import { StateCulturalDossier } from '../../data/stateDossiersData';
+import { StateRegionalBento } from './StateRegionalBento';
+import { resolveRegionalIntelligence } from '../../lib/itinerarySolver';
 
 export const REGION_CHAPTERS: Record<string, string> = {
   'North India': 'NORTH INDIA CHAPTER · 01',
@@ -139,6 +141,9 @@ export function EditorialStateDossier({
   const chapterLabel =
     REGION_CHAPTERS[effectiveData.region] ||
     `${effectiveData.region.toUpperCase()} CHAPTER`;
+
+  const primaryCity = effectiveData.anchors?.[0] || effectiveData.name;
+  const regionalIntelligence = resolveRegionalIntelligence(primaryCity, effectiveData.name);
 
   return (
     <motion.section
@@ -352,6 +357,14 @@ export function EditorialStateDossier({
             ))}
           </div>
         </motion.div>
+      </div>
+
+      {/* 4. Complete Dynamic 4-Pillar Regional Intelligence Bento Dossier */}
+      <div className="mt-8 pt-8 border-t border-[#E8DEC8]">
+        <StateRegionalBento
+          data={regionalIntelligence}
+          stateName={effectiveData.name}
+        />
       </div>
     </motion.section>
   );

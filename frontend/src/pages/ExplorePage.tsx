@@ -19,7 +19,9 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
+  Zap,
 } from 'lucide-react';
+import { useProviderStore } from '../store/useProviderStore';
 import { USER_CURATED_PLACES } from '../data/userVerifiedPlacesData';
 import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST } from '../data/places';
 
@@ -60,6 +62,9 @@ export function ExplorePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState<string | null>(null);
+
+  const providerSlots = useProviderStore((s) => s.slots);
+  const activeBeaconSlot = providerSlots.find((s) => s.flashBeacon?.isActive);
 
   // Active filter count for badge
   const activeFiltersCount =
@@ -563,7 +568,46 @@ export function ExplorePage() {
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
+        {/* LIVE FLASH ARTISAN DEAL BANNER */}
+        {activeBeaconSlot && activeBeaconSlot.flashBeacon && (
+          <div className="bg-gradient-to-r from-[#FAF4ED] to-[#F3EAD8] border border-[#C85A32] rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#C85A32] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <Zap className="w-6 h-6 text-white animate-pulse" />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#C85A32] text-white font-mono text-[10px] font-extrabold uppercase tracking-wider">
+                    ⚡ Live Flash Artisan Deal ({activeBeaconSlot.flashBeacon.discountPercent}% OFF)
+                  </span>
+                  <span className="text-xs font-mono font-bold text-[#C85A32] bg-white px-2 py-0.5 rounded-md border border-[#E8DEC8]">
+                    {Math.max(0, activeBeaconSlot.totalCapacity - activeBeaconSlot.bookedSeats)} open spots remaining today
+                  </span>
+                </div>
+
+                <h3 className="text-base sm:text-lg font-heading font-bold text-[#12213B]">
+                  {activeBeaconSlot.listingTitle}
+                </h3>
+
+                <p className="text-xs text-[#556275] font-sans">
+                  {activeBeaconSlot.timeLabel} · Flash Deal: <strong className="text-[#12213B] font-mono font-bold">₹{activeBeaconSlot.flashBeacon.discountedPrice} / pax</strong> (standard rate: <span className="line-through font-mono">₹{activeBeaconSlot.basePricePerPerson}</span>)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to={`/experience/${activeBeaconSlot.listingId}`}
+                className="px-5 py-2.5 bg-[#C85A32] hover:bg-[#B34322] text-white font-heading font-bold rounded-xl text-xs sm:text-sm transition shadow-2xs whitespace-nowrap"
+              >
+                Claim Flash Spot →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* 4. CURATOR'S SPOTLIGHT (HERO IMMERSION) */}
         {!isLoading && spotlightExperience && (
           <section className="bg-paper-100/90 border border-paper-300 rounded-2xl overflow-hidden shadow-xs">

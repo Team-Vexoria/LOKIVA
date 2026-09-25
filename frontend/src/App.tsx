@@ -23,10 +23,12 @@ import { ProviderLoginPage } from './pages/ProviderLoginPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
+import { ProviderAuthPage } from './pages/ProviderAuthPage';
 import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { GroupTripHubPage } from './pages/GroupTripHubPage';
 import { RequireAuth } from './components/auth/RequireAuth';
+import { RequireProviderAuth } from './components/auth/RequireProviderAuth';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function AppShell() {
@@ -76,10 +78,35 @@ function AppShell() {
           <Route path="/login/admin" element={<AdminLoginPage />} />
           <Route path="/register/traveler" element={<TravelerRegisterPage />} />
           <Route path="/register/provider" element={<ProviderRegisterPage />} />
+          <Route path="/provider/auth" element={<ProviderAuthPage />} />
+          <Route path="/provider/login" element={<ProviderLoginPage />} />
+          <Route path="/provider/register" element={<ProviderRegisterPage />} />
 
           {/* Portal routes */}
-          <Route path="/provider" element={<ProviderDashboardPage />} />
-          <Route path="/provider/*" element={<ProviderDashboardPage />} />
+          <Route
+            path="/provider"
+            element={
+              <RequireProviderAuth>
+                <ProviderDashboardPage />
+              </RequireProviderAuth>
+            }
+          />
+          <Route
+            path="/provider/dashboard"
+            element={
+              <RequireProviderAuth>
+                <ProviderDashboardPage />
+              </RequireProviderAuth>
+            }
+          />
+          <Route
+            path="/provider/*"
+            element={
+              <RequireProviderAuth>
+                <ProviderDashboardPage />
+              </RequireProviderAuth>
+            }
+          />
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/*" element={<AdminDashboardPage />} />
 

@@ -118,94 +118,55 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Right: Actions (Persona Switcher + Sign In) */}
+          {/* Right: Actions (Artisan Portal Link, Authenticated State, or Sign In) */}
           <div className="flex items-center justify-end gap-2 flex-shrink-0">
             <div className="hidden md:flex items-center gap-2">
-              {/* Persona switcher */}
-              <div className="relative">
-                <button
-                  onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
-                  className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 bg-white/90 hover:bg-white border border-paper-400 rounded-full text-xs text-ink shadow-sm transition whitespace-nowrap"
+              {/* Authenticated Provider Console pill */}
+              {user && user.role === 'provider' && (
+                <Link
+                  to="/provider/dashboard"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FAF4ED] hover:bg-[#F3EAD8] text-[#C85A32] border border-[#E8DEC8] rounded-full text-xs font-heading font-bold transition shadow-2xs whitespace-nowrap"
+                  title="Open Artisan Command Console"
                 >
-                  <span className="w-4 h-4 rounded-full bg-paper-200 flex items-center justify-center text-[9px] font-bold text-ink">
-                    {currentPersona.label.charAt(0)}
-                  </span>
-                  <span className="font-medium text-[11px]">{currentPersona.label}</span>
-                  <ChevronDown className="w-3 h-3 text-dusk" />
-                </button>
+                  <span className="w-2 h-2 rounded-full bg-[#C85A32] animate-pulse" />
+                  <span>Artisan Console</span>
+                </Link>
+              )}
 
-                <AnimatePresence>
-                  {personaDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 bg-white border border-paper-400 rounded-2xl shadow-xl p-1.5 z-50 font-mono text-xs"
-                    >
-                      <p className="px-2.5 pt-1.5 pb-1 text-[10px] text-dusk uppercase tracking-wider">
-                        Switch Workspace
-                      </p>
-                      <button
-                        onClick={() => {
-                          demoLogin('traveler', 'Piyush Kumar', 'piyush@lokiva.com');
-                          setPersonaDropdownOpen(false);
-                          navigate('/explore');
-                        }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-xl hover:bg-paper-100 transition flex items-center justify-between"
-                      >
-                        <span className="font-semibold text-ink">Traveler Flow</span>
-                        <span className="text-[10px] text-teal">Consumer</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          demoLogin('provider');
-                          setPersonaDropdownOpen(false);
-                          navigate('/provider/dashboard');
-                        }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-xl hover:bg-paper-100 transition flex items-center justify-between"
-                      >
-                        <span className="font-semibold text-ink">Provider Console</span>
-                        <span className="text-[10px] text-marigold-700">Artisan Host</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          demoLogin('admin');
-                          setPersonaDropdownOpen(false);
-                          navigate('/admin');
-                        }}
-                        className="w-full text-left px-2.5 py-1.5 rounded-xl hover:bg-paper-100 transition flex items-center justify-between"
-                      >
-                        <span className="font-semibold text-ink">Admin Dashboard</span>
-                        <span className="text-[10px] text-dusk">Moderation</span>
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* Logged-out Artisan Portal link */}
+              {!user && (
+                <Link
+                  to="/provider/auth"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-[#FAF4ED] hover:bg-[#F3EAD8] text-[#C85A32] border border-[#E8DEC8] rounded-full text-xs font-heading font-bold transition shadow-2xs whitespace-nowrap"
+                  title="Artisan Guild & Workshop Portal"
+                >
+                  <span>Artisan / Host Portal</span>
+                  <span className="text-[11px] font-mono">↗</span>
+                </Link>
+              )}
 
               {/* User profile or login */}
               {user ? (
                 <div className="flex items-center gap-1.5 text-xs">
                   <Link
-                    to="/profile"
+                    to={user.role === 'provider' ? '/provider/dashboard' : '/profile'}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-[#FFC067]/50 text-ink font-semibold text-xs transition group"
                     title="View Profile & Settings"
                   >
-                    <div className="w-5 h-5 rounded-full bg-[#C1443B] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs overflow-hidden">
+                    <div className="w-5 h-5 rounded-full bg-[#C85A32] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs overflow-hidden">
                       {user.avatar || user.avatar_url ? (
                         <img src={user.avatar || user.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'
                       )}
                     </div>
-                    <span className="max-w-[90px] truncate text-[11px] group-hover:text-[#C1443B] transition-colors">
+                    <span className="max-w-[95px] truncate text-[11px] group-hover:text-[#C85A32] transition-colors font-heading">
                       {user.full_name?.split(' ')[0]}
                     </span>
                   </Link>
                   <button
                     onClick={() => logout()}
-                    className="p-1 text-dusk hover:text-clay hover:bg-paper-100 rounded-full transition"
+                    className="p-1 text-dusk hover:text-[#C85A32] hover:bg-paper-100 rounded-full transition"
                     title="Sign out"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -214,7 +175,7 @@ export function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className="px-3 py-1 bg-ink hover:bg-ink-800 text-paper rounded-full text-xs font-semibold transition shadow-sm whitespace-nowrap"
+                  className="px-3.5 py-1 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] rounded-full text-xs font-heading font-bold transition shadow-sm whitespace-nowrap"
                 >
                   Sign In
                 </Link>
@@ -258,46 +219,39 @@ export function Navbar() {
                 </Link>
               ))}
 
-              {/* Persona Switcher Strip */}
+              {/* Artisan Portal & Quick Action */}
               <div className="pt-2.5 pb-1 border-t border-paper-300 space-y-1.5">
-                <span className="text-[10px] font-mono text-dusk-600 uppercase tracking-wider block px-1">
-                  Workspace Persona
-                </span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      demoLogin('traveler', 'Piyush Kumar', 'piyush@lokiva.com');
-                      setMobileMenuOpen(false);
-                      navigate('/explore');
-                    }}
-                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
+                {!user ? (
+                  <Link
+                    to="/provider/auth"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2 px-3 bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] rounded-xl text-xs font-heading font-bold text-[#C85A32] flex items-center justify-between"
                   >
-                    Traveler
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      demoLogin('provider');
-                      setMobileMenuOpen(false);
-                      navigate('/provider/dashboard');
-                    }}
-                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
+                    <span>Artisan / Host Portal</span>
+                    <span className="text-[11px] font-mono">↗</span>
+                  </Link>
+                ) : user.role === 'provider' ? (
+                  <Link
+                    to="/provider/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2 px-3 bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] rounded-xl text-xs font-heading font-bold text-[#C85A32] flex items-center justify-between"
                   >
-                    Provider
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      demoLogin('admin');
-                      setMobileMenuOpen(false);
-                      navigate('/admin');
-                    }}
-                    className="py-1.5 px-2 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-lg text-[10px] font-mono font-bold text-ink text-center"
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#C85A32] animate-pulse" />
+                      <span>Artisan Command Console</span>
+                    </div>
+                    <span className="text-[11px] font-mono">Open →</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/provider/auth?upgrade=true"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2 px-3 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-between"
                   >
-                    Admin
-                  </button>
-                </div>
+                    <span>Register as Artisan Guild Host</span>
+                    <span className="text-[11px] font-mono">↗</span>
+                  </Link>
+                )}
               </div>
 
               {/* User Account / Sign In */}
@@ -305,14 +259,14 @@ export function Navbar() {
                 {user ? (
                   <>
                     <Link
-                      to="/profile"
+                      to={user.role === 'provider' ? '/provider/dashboard' : '/profile'}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-xs font-semibold text-ink flex items-center gap-1.5 hover:text-[#D85A38] transition-colors"
+                      className="text-xs font-semibold text-ink flex items-center gap-1.5 hover:text-[#C85A32] transition-colors"
                     >
-                      <div className="w-5 h-5 rounded-full bg-[#D85A38] text-white flex items-center justify-center text-[10px] font-bold">
+                      <div className="w-5 h-5 rounded-full bg-[#C85A32] text-white flex items-center justify-center text-[10px] font-bold">
                         {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
                       </div>
-                      <span className="truncate max-w-[140px]">{user.full_name || 'Profile'}</span>
+                      <span className="truncate max-w-[140px] font-heading">{user.full_name || 'Profile'}</span>
                     </Link>
                     <button
                       type="button"
@@ -320,7 +274,7 @@ export function Navbar() {
                         logout();
                         setMobileMenuOpen(false);
                       }}
-                      className="px-3 py-1 bg-paper-100 rounded-full text-xs text-clay font-medium border border-paper-300"
+                      className="px-3 py-1 bg-paper-100 rounded-full text-xs text-[#C85A32] font-medium border border-paper-300"
                     >
                       Sign Out
                     </button>
@@ -329,7 +283,7 @@ export function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2 bg-ink text-white rounded-xl text-center text-xs font-bold block"
+                    className="w-full py-2 bg-[#12213B] text-[#FAF7F2] rounded-xl text-center text-xs font-heading font-bold block"
                   >
                     Sign In
                   </Link>

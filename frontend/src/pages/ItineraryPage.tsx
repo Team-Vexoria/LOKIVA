@@ -14,6 +14,7 @@ import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView
 import { ShareItineraryModal } from '../components/itinerary/ShareItineraryModal';
 import { EditTripModal } from '../components/itinerary/EditTripModal';
 import { AddActivityModal } from '../components/itinerary/AddActivityModal';
+import { RegionalIntelligenceBento } from '../components/itinerary/RegionalIntelligenceBento';
 import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST } from '../data/places';
 import {
   Plus,
@@ -526,6 +527,15 @@ export function ItineraryPage() {
                   onSetStartTime={(dayNum, startTime) => setDayStartTime(dayNum, startTime)}
                   onStopHover={(id) => setHoveredStopId(id)}
                   onStopSelect={(id) => setActiveStopId(id)}
+                />
+              )}
+
+              {/* 4-Pillar Dynamic Regional Intelligence Bento Dossier */}
+              {practicalInfo && (
+                <RegionalIntelligenceBento
+                  data={practicalInfo}
+                  cityName={tripDetails.destination}
+                  stateName={tripDetails.state}
                 />
               )}
             </div>

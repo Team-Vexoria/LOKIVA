@@ -1,1246 +1,1000 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Provider,
-  Experience,
-  ProviderAnalyticsSummary,
-  ProviderBooking,
-  ProviderEarningsSummary,
-} from '../types';
-import { ProviderAiCopilot } from '../components/provider/ProviderAiCopilot';
-import {
-  Briefcase,
-  Users,
+  LayoutDashboard,
+  Radio,
   Calendar,
   DollarSign,
-  Plus,
-  Edit,
-  CheckCircle2,
+  Package,
+  ShieldCheck,
+  Sparkles,
+  Users,
   Eye,
   Star,
-  Sparkles,
-  Radio,
+  CheckCircle2,
+  Plus,
   Clock,
-  ShieldCheck,
-  LayoutDashboard,
-  Package,
-  AlertCircle,
-  RefreshCw,
+  MapPin,
+  TrendingUp,
+  Search,
+  Check,
+  X,
   Phone,
   Mail,
-  Save,
+  Zap,
+  Tag,
+  Building,
+  Lock,
+  Edit,
+  Sliders,
+  ChevronRight,
 } from 'lucide-react';
+import { useAuth } from '../lib/auth-context';
+import { useProviderStore } from '../store/useProviderStore';
+import { FlashBeaconStudio } from '../components/provider/FlashBeaconStudio';
+import { DemandClusterRadar } from '../components/provider/DemandClusterRadar';
+import { WorkshopSlotEditorDrawer } from '../components/provider/WorkshopSlotEditorDrawer';
+import { WorkshopSlot } from '../types/provider';
 
-type TabType = 'dashboard' | 'listings' | 'copilot' | 'bookings' | 'earnings' | 'profile';
+type TabType = 'dashboard' | 'beacon' | 'slots' | 'listings' | 'bookings' | 'earnings' | 'copilot' | 'profile';
 
 export function ProviderDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabType) || 'dashboard';
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
-  const [provider, setProvider] = useState<Provider | null>(null);
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [analytics, setAnalytics] = useState<ProviderAnalyticsSummary | null>(null);
-  const [bookings, setBookings] = useState<ProviderBooking[]>([]);
-  const [earnings, setEarnings] = useState<ProviderEarningsSummary | null>(null);
+  const { user } = useAuth();
+  const profile = useProviderStore((s) => s.profile);
+  const slots = useProviderStore((s) => s.slots);
+  const bookings = useProviderStore((s) => s.bookings);
+  const listings = useProviderStore((s) => s.listings);
+  const recentFeedEvents = useProviderStore((s) => s.recentFeedEvents);
+  const updateGuildProfile = useProviderStore((s) => s.updateGuildProfile);
+  const deleteWorkshopSlot = useProviderStore((s) => s.deleteWorkshopSlot);
 
-  const [bookingFilter, setBookingFilter] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isBookingsLoading, setIsBookingsLoading] = useState(false);
-  const [isEarningsLoading, setIsEarningsLoading] = useState(false);
-  const [reservedAlertId, setReservedAlertId] = useState<number | null>(null);
-  const [publishToast, setPublishToast] = useState<string | null>(null);
-  const [toastError, setToastError] = useState<string | null>(null);
+  // Dynamic Metrics computed live from store
+  const totalRevenue = useProviderStore((s) => s.getTotalRevenue());
+  const verifiedBookingsCount = useProviderStore((s) => s.getVerifiedBookingsCount());
+  const audienceReach = useProviderStore((s) => s.getAudienceReach());
+  const communityRating = useProviderStore((s) => s.getCommunityRating());
+  const reviewCount = useProviderStore((s) => s.getReviewCount());
 
-  // Profile Edit State
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  // Search & Filter in Bookings
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingFilter, setBookingFilter] = useState<'all' | 'flash' | 'confirmed' | 'checked_in'>('all');
+
+  // Workshop Slot Editor Slide-Over Drawer State
+  const [isSlotEditorOpen, setIsSlotEditorOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<WorkshopSlot | null>(null);
+
+  // Floating Claim Indicator Animation
+  const [floatingNotification, setFloatingNotification] = useState<string | null>(null);
+
+  // Profile Edit Form State
   const [profileForm, setProfileForm] = useState({
-    business_name: '',
-    craft_specialty: '',
-    city: '',
-    state: '',
-    address: '',
-    settlement_account: '',
-    contact_email: '',
-    phone: '',
-    accessibility_compliance: '',
-    description: '',
+    guildName: profile.guildName,
+    craftSpecialty: profile.craftSpecialty,
+    city: profile.city,
+    precinct: profile.precinct,
+    generationalHeritage: profile.generationalHeritage,
+    isStepFreeAccessible: profile.isStepFreeAccessible,
+    contactEmail: profile.contactEmail,
+    contactPhone: profile.contactPhone,
+    settlementAccount: profile.settlementAccount,
+    bio: profile.bio || '',
   });
-
-  const loadInitialData = async () => {
-    setIsLoading(true);
-    try {
-      const [p, expList, a] = await Promise.all([
-        api.getProviderProfile().catch(() => null),
-        api.getProviderExperiences().catch(() => []),
-        api.getProviderAnalytics().catch(() => null),
-      ]);
-
-      if (p) {
-        setProvider(p);
-        setProfileForm({
-          business_name: p.business_name || '',
-          craft_specialty: p.craft_specialty || '',
-          city: p.city || '',
-          state: p.state || '',
-          address: p.address || '',
-          settlement_account: p.settlement_account || '',
-          contact_email: p.contact_email || '',
-          phone: p.phone || '',
-          accessibility_compliance: p.accessibility_compliance || '',
-          description: p.description || '',
-        });
-      }
-      setExperiences(expList || []);
-      setAnalytics(a);
-    } catch (err) {
-      console.error('Failed to load provider hub:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  // Load bookings when bookings tab is selected or filter changes
-  useEffect(() => {
-    if (activeTab === 'bookings') {
-      setIsBookingsLoading(true);
-      api
-        .getProviderBookings(bookingFilter)
-        .then((data) => setBookings(data || []))
-        .catch((err) => console.error('Failed to fetch bookings:', err))
-        .finally(() => setIsBookingsLoading(false));
-    }
-  }, [activeTab, bookingFilter]);
-
-  // Load earnings when earnings tab is selected
-  useEffect(() => {
-    if (activeTab === 'earnings') {
-      setIsEarningsLoading(true);
-      api
-        .getProviderEarnings()
-        .then((data) => setEarnings(data || null))
-        .catch((err) => console.error('Failed to fetch earnings:', err))
-        .finally(() => setIsEarningsLoading(false));
-    }
-  }, [activeTab]);
+  const [profileSavedToast, setProfileSavedToast] = useState(false);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
 
-  const handlePublishNewExperience = async (newExp: Partial<Experience>) => {
-    try {
-      const created = await api.createProviderExperience(newExp);
-      setExperiences((prev) => [created, ...prev]);
-      setPublishToast(`"${created.title}" is now live in the Pan-India catalogue!`);
-      setTimeout(() => setPublishToast(null), 5000);
-      api.getProviderAnalytics().then(setAnalytics).catch(() => {});
-    } catch (err: any) {
-      console.error('Failed to save experience to DB:', err);
-      setToastError('Failed to publish to catalogue. Please check details.');
-      setTimeout(() => setToastError(null), 4000);
-    }
+  const handleOpenAddSlot = () => {
+    setEditingSlot(null);
+    setIsSlotEditorOpen(true);
   };
 
-  const handleUpdateBookingStatus = async (
-    id: number,
-    newStatus: 'confirmed' | 'completed' | 'cancelled'
-  ) => {
-    try {
-      const updated = await api.updateBookingStatus(id, newStatus);
-      setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
-      api.getProviderEarnings().then(setEarnings).catch(() => {});
-      api.getProviderAnalytics().then(setAnalytics).catch(() => {});
-      setPublishToast(`Booking #${id} status updated to ${newStatus}`);
-      setTimeout(() => setPublishToast(null), 4000);
-    } catch (err: any) {
-      setToastError(err.message || 'Failed to update booking status');
-      setTimeout(() => setToastError(null), 4000);
-    }
+  const handleOpenEditSlot = (slot: WorkshopSlot) => {
+    setEditingSlot(slot);
+    setIsSlotEditorOpen(true);
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
+  const handleSeatClaimTriggered = (amountOrCluster: number | string, maybeAmount?: number) => {
+    const amount = typeof amountOrCluster === 'number' ? amountOrCluster : (maybeAmount || 840);
+    setFloatingNotification(`+₹${amount.toLocaleString('en-IN')}`);
+    setTimeout(() => setFloatingNotification(null), 3000);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSavingProfile(true);
-    try {
-      const updated = await api.updateProviderProfile(profileForm);
-      setProvider(updated);
-      setIsEditingProfile(false);
-      setPublishToast('Artisan credentials successfully updated!');
-      setTimeout(() => setPublishToast(null), 4000);
-    } catch (err: any) {
-      setToastError(err.message || 'Failed to update credentials');
-      setTimeout(() => setToastError(null), 4000);
-    } finally {
-      setIsSavingProfile(false);
-    }
+    updateGuildProfile(profileForm);
+    setProfileSavedToast(true);
+    setTimeout(() => setProfileSavedToast(false), 3000);
   };
 
-  const handleBroadcastSlot = (alertId: number) => {
-    setReservedAlertId(alertId);
-  };
+  // Filtered bookings
+  const filteredBookings = bookings.filter((b) => {
+    const matchesSearch =
+      b.travelerName.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+      b.listingTitle.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+      b.bookingId.toLowerCase().includes(bookingSearch.toLowerCase());
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-paper flex flex-col items-center justify-center font-mono text-xs text-dusk space-y-3">
-        <div className="w-8 h-8 border-3 border-marigold border-t-transparent rounded-full animate-spin" />
-        <span>Loading Provider Hub data from database...</span>
-      </div>
-    );
-  }
+    if (!matchesSearch) return false;
+    if (bookingFilter === 'flash') return b.bookedViaFlashBeacon;
+    if (bookingFilter === 'confirmed') return b.status === 'confirmed';
+    if (bookingFilter === 'checked_in') return b.status === 'checked_in';
+    return true;
+  });
 
-  const liveRevenue = analytics?.revenue ?? 0;
-  const liveBookings = analytics?.bookings ?? 0;
-  const liveViews = analytics?.views ?? 0;
-  const liveRating = analytics?.rating ?? provider?.rating ?? 5.0;
-  const liveReviews = analytics?.review_count ?? provider?.total_reviews ?? 0;
+  const activeBeaconSlot = slots.find((s) => s.flashBeacon?.isActive);
+
+  // Calculate Today's Total Capacity and Seat Fill Rate
+  const totalSlotsCapacity = slots.reduce((sum, s) => sum + s.totalCapacity, 0);
+  const totalSeatsBooked = slots.reduce((sum, s) => sum + s.bookedSeats, 0);
+  const fillRatePercent = totalSlotsCapacity > 0 ? Math.round((totalSeatsBooked / totalSlotsCapacity) * 100) : 82;
 
   return (
-    <div className="min-h-screen bg-paper text-ink py-6 sm:py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
-        {/* Global Toast Notification */}
-        {publishToast && (
-          <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl text-xs font-mono text-teal-900 flex items-center justify-between shadow-sm animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-teal flex-shrink-0" />
-              <span>{publishToast}</span>
-            </div>
-            <button
-              onClick={() => handleTabChange('listings')}
-              className="text-xs font-bold text-teal underline hover:text-teal-950"
-            >
-              View in My Listings →
-            </button>
-          </div>
+    <div className="min-h-screen bg-[#FAF7F2] text-[#12213B] font-sans pb-16">
+      {/* Floating Revenue Increment Toast */}
+      <AnimatePresence>
+        {floatingNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.85 }}
+            className="fixed top-24 right-8 z-50 px-4 py-2.5 bg-[#065F46] text-white font-mono font-extrabold text-sm rounded-2xl shadow-xl flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 text-[#A7F3D0]" />
+            <span>Direct Payout Received: {floatingNotification}</span>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Global Error Notification */}
-        {toastError && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs font-mono text-red-900 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-              <span>{toastError}</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-6">
+        
+        {/* TOP GUILD BANNER */}
+        <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32] bg-[#FAF4ED] border border-[#E8DEC8] px-3 py-0.5 rounded-full">
+                Artisan Command Console
+              </span>
+              <span className="text-[11px] font-mono text-[#556275] bg-[#FAF8F5] border border-[#E5DFD5] px-2.5 py-0.5 rounded-md">
+                {profile.generationalHeritage}
+              </span>
             </div>
-            <button
-              onClick={() => setToastError(null)}
-              className="text-xs font-bold text-red-700 underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-paper-300">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-paper-400 text-teal rounded-full text-xs font-mono font-bold shadow-sm">
-              <Briefcase className="w-3.5 h-3.5 text-marigold" />
-              <span>Providers Console · Verified Artisan & Cultural Guide Portal</span>
-            </div>
-            <h1 className="text-3xl font-display font-bold text-ink">
-              {provider?.business_name || 'India Local Craft & Culinary Collective'}
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B]">
+              {profile.guildName}
             </h1>
-            <p className="text-xs font-mono text-dusk">
-              {provider?.city || 'Mumbai'}, {provider?.state || 'Maharashtra'} ·{' '}
-              {provider?.craft_specialty || 'Generational Artisan Guild & Heritage Walks'}
-            </p>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[#556275]">
+              <span className="flex items-center gap-1 font-mono">
+                <MapPin className="w-3.5 h-3.5 text-[#C85A32]" />
+                <span>{profile.city} · {profile.precinct}</span>
+              </span>
+              <span>·</span>
+              <span className="font-heading font-bold text-[#12213B]">
+                {profile.craftSpecialty}
+              </span>
+              {profile.isStepFreeAccessible && (
+                <>
+                  <span>·</span>
+                  <span className="text-[#065F46] font-mono font-bold">
+                    ♿ Step-Free Ground Floor
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 font-mono text-xs font-bold shadow-sm">
-              <CheckCircle2 className="w-4 h-4 text-teal" />
-              <span>{provider?.is_verified ? 'KYC Level 2 Verified' : 'KYC Pending'}</span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {activeBeaconSlot && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF4ED] border border-[#C85A32] text-[#C85A32] font-mono text-xs font-bold animate-pulse shadow-2xs">
+                <Radio className="w-4 h-4 text-[#C85A32]" />
+                <span>Flash Beacon Active</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-xs font-bold shadow-2xs">
+              <CheckCircle2 className="w-4 h-4 text-[#065F46]" />
+              <span>KYC Level 2 Verified</span>
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-paper-300 max-w-full scrollbar-none [-webkit-overflow-scrolling:touch] font-mono text-xs">
+        {/* NAVIGATION TABS */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#E5DFD5] scrollbar-none font-heading text-xs">
           <button
             onClick={() => handleTabChange('dashboard')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'dashboard'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
             }`}
           >
-            <LayoutDashboard className="w-3.5 h-3.5 text-marigold" />
-            <span>Dashboard</span>
+            <LayoutDashboard className="w-3.5 h-3.5 text-[#D99B43]" />
+            <span>Command Center</span>
+          </button>
+
+          <button
+            onClick={() => handleTabChange('beacon')}
+            className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 relative ${
+              activeTab === 'beacon'
+                ? 'bg-[#C85A32] text-white shadow-2xs'
+                : 'bg-[#FAF4ED] hover:bg-[#F3EAD8] text-[#C85A32] border border-[#E8DEC8]'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5 text-[#C85A32] animate-pulse" />
+            <span>Flash Beacon Live Yield</span>
+            {activeBeaconSlot && (
+              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+            )}
+          </button>
+
+          <button
+            onClick={() => handleTabChange('slots')}
+            className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
+              activeTab === 'slots'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-[#065F46]" />
+            <span>Workshop Slots ({slots.length})</span>
           </button>
 
           <button
             onClick={() => handleTabChange('listings')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'listings'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
             }`}
           >
-            <Package className="w-3.5 h-3.5 text-teal" />
-            <span>My Listings ({experiences.length})</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange('copilot')}
-            className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 relative ${
-              activeTab === 'copilot'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-marigold" />
-            <span>AI Co-Pilot</span>
-            <span className="px-1.5 py-0.2 rounded bg-teal-800 text-white font-mono text-[9px] uppercase">
-              Live
-            </span>
+            <Package className="w-3.5 h-3.5 text-[#C85A32]" />
+            <span>My Listings ({listings.length})</span>
           </button>
 
           <button
             onClick={() => handleTabChange('bookings')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'bookings'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5 text-dusk" />
-            <span>Bookings</span>
+            <Calendar className="w-3.5 h-3.5 text-[#556275]" />
+            <span>Bookings & Manifest ({bookings.length})</span>
           </button>
 
           <button
             onClick={() => handleTabChange('earnings')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'earnings'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
             }`}
           >
-            <DollarSign className="w-3.5 h-3.5 text-teal" />
-            <span>Earnings</span>
+            <DollarSign className="w-3.5 h-3.5 text-[#065F46]" />
+            <span>0% Commission Earnings</span>
+          </button>
+
+          {/* AI Co-Pilot Teaser Tab */}
+          <button
+            onClick={() => handleTabChange('copilot')}
+            className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
+              activeTab === 'copilot'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#D99B43]" />
+            <span>AI Co-Pilot Studio</span>
+            <span className="px-1.5 py-0.2 rounded bg-[#FAF4ED] text-[#C85A32] border border-[#E8DEC8] font-mono text-[9px] uppercase font-bold">
+              Teaser
+            </span>
           </button>
 
           <button
             onClick={() => handleTabChange('profile')}
             className={`px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 flex-shrink-0 ${
               activeTab === 'profile'
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk hover:text-ink border border-paper-300'
+                ? 'bg-[#12213B] text-white shadow-2xs'
+                : 'bg-white hover:bg-[#FAF8F5] text-[#556275] hover:text-[#12213B] border border-[#E5DFD5]'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-marigold" />
-            <span>Profile</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#D99B43]" />
+            <span>Guild Profile</span>
           </button>
         </div>
 
-        {/* TAB 1: DASHBOARD OVERVIEW */}
+        {/* TAB 1: COMMAND CENTER (MAIN DASHBOARD) */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-8">
-            {/* AI Co-Pilot CTA Hero Card */}
-            <div className="p-6 sm:p-8 bg-gradient-to-r from-ink via-ink-900 to-teal-950 text-paper rounded-3xl shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-teal/20 text-marigold border border-teal/30 font-mono text-[11px] font-bold">
-                    Provider AI Co-Pilot
-                  </span>
-                  <span className="text-[11px] font-mono text-paper-300">
-                    ● Powered by Gemini & DB Persistence
-                  </span>
+          <div className="space-y-6">
+            
+            {/* DYNAMIC KPI BENTO ROW (ZERO 0 VALUES) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+              {/* Card 1: Direct Artisan Revenue */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs relative overflow-hidden">
+                <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
+                  <span className="font-heading font-bold text-[#12213B]">Direct Artisan Revenue</span>
+                  <DollarSign className="w-4 h-4 text-[#065F46]" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-display font-bold">
-                  Turn your craft or walking tour into a verified experience.
-                </h3>
-                <p className="text-xs sm:text-sm text-paper-300 font-sans leading-relaxed">
-                  Describe your workshop in plain words. Our AI extracts timings, fair pricing,
-                  group caps, and accessibility tags, then directly publishes to LOKIVA's solver catalogue.
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleTabChange('copilot')}
-                className="px-6 py-3.5 bg-marigold hover:bg-marigold-600 text-ink rounded-2xl font-mono text-xs sm:text-sm font-bold transition shadow-md flex items-center gap-2 flex-shrink-0"
-              >
-                <Sparkles className="w-4 h-4 text-ink" />
-                <span>Open AI Co-Pilot Studio →</span>
-              </button>
-            </div>
-
-            {/* KPI Metrics Grid (100% Real DB-driven) */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono">
-              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-xs text-dusk">
-                  <span>Total Direct Revenue</span>
-                  <DollarSign className="w-4 h-4 text-teal" />
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  ₹{totalRevenue.toLocaleString('en-IN')}
                 </div>
-                <div className="text-2xl font-extrabold text-ink">
-                  ₹{liveRevenue.toLocaleString('en-IN')}
-                </div>
-                <span className="text-[10px] text-teal font-semibold">
-                  100% direct host payout · 0% commission
-                </span>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-xs text-dusk">
-                  <span>Verified Bookings</span>
-                  <Users className="w-4 h-4 text-marigold" />
-                </div>
-                <div className="text-2xl font-extrabold text-ink">{liveBookings}</div>
-                <span className="text-[10px] text-dusk">
-                  {liveBookings > 0 ? 'Recorded in database' : 'No bookings yet'}
-                </span>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-xs text-dusk">
-                  <span>Audience Reach</span>
-                  <Eye className="w-4 h-4 text-ink" />
-                </div>
-                <div className="text-2xl font-extrabold text-ink">
-                  {liveViews.toLocaleString('en-IN')}
-                </div>
-                <span className="text-[10px] text-teal font-semibold">
-                  {liveViews > 0
-                    ? `${experiences.length} listings indexed`
-                    : 'Awaiting organic impressions'}
-                </span>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-xs text-dusk">
-                  <span>Community Rating</span>
-                  <Star className="w-4 h-4 text-marigold fill-marigold" />
-                </div>
-                <div className="text-2xl font-extrabold text-ink">
-                  {liveRating.toFixed(2)} / 5.0
-                </div>
-                <span className="text-[10px] text-dusk">
-                  {liveReviews} verified traveler {liveReviews === 1 ? 'review' : 'reviews'}
-                </span>
-              </div>
-            </div>
-
-            {/* Live Demand-Alert Banner */}
-            <div className="bg-white rounded-3xl border border-paper-400 p-5 sm:p-6 shadow-md space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-marigold-700">
-                  <Radio className="w-4 h-4 text-marigold animate-pulse" />
-                  <span>Live Demand-Aware Push Alerts (Geo-Radius Match)</span>
-                </div>
-                <span className="text-[11px] font-mono text-dusk">Live Engine Active</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Alert 1 */}
-                <div className="p-4 bg-paper-50 hover:bg-white rounded-2xl border border-paper-300 space-y-2 transition shadow-sm">
-                  <div className="flex items-center justify-between font-mono text-xs">
-                    <span className="font-bold text-ink">3 Families Near Bandra West</span>
-                    <span className="text-teal font-extrabold">₹500 / pax ceiling</span>
-                  </div>
-                  <p className="text-xs text-dusk-600 font-sans leading-relaxed">
-                    Searching for <strong>artisan craft & food workshops</strong> within a 2-hour afternoon window.
-                  </p>
-                  <div className="pt-2 flex items-center justify-between border-t border-paper-300 text-xs font-mono">
-                    <span className="text-dusk text-[10px]">12 min travel radius</span>
-                    {reservedAlertId === 1 ? (
-                      <span className="px-2.5 py-1 bg-teal-50 text-teal-800 rounded-lg font-bold text-[10px] border border-teal-200 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-teal" /> Broadcasted to 3 Families
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleBroadcastSlot(1)}
-                        className="px-3 py-1 bg-ink hover:bg-ink-800 text-paper rounded-lg font-bold text-[10px] transition shadow-sm"
-                      >
-                        Broadcast 3:30 PM Slot
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Alert 2 */}
-                <div className="p-4 bg-paper-50 hover:bg-white rounded-2xl border border-paper-300 space-y-2 transition shadow-sm">
-                  <div className="flex items-center justify-between font-mono text-xs">
-                    <span className="font-bold text-ink">Sharma Family (4 pax · Wheelchair)</span>
-                    <span className="text-teal font-extrabold">₹1,500 budget</span>
-                  </div>
-                  <p className="text-xs text-dusk-600 font-sans leading-relaxed">
-                    Looking for <strong>step-free seated experiences</strong> near Pali Hill starting at 4:30 PM.
-                  </p>
-                  <div className="pt-2 flex items-center justify-between border-t border-paper-300 text-xs font-mono">
-                    <span className="text-teal font-semibold text-[10px]">✓ Ramp Access Matches</span>
-                    {reservedAlertId === 2 ? (
-                      <span className="px-2.5 py-1 bg-teal-50 text-teal-800 rounded-lg font-bold text-[10px] border border-teal-200 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-teal" /> Matched to Sharma Itinerary
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleBroadcastSlot(2)}
-                        className="px-3 py-1 bg-marigold hover:bg-marigold-600 text-ink rounded-lg font-bold text-[10px] transition shadow-sm"
-                      >
-                        Accept & Push to Sharma Plan
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Offerings Preview */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-display font-bold text-ink">
-                    Active Cultural Offerings ({experiences.length})
-                  </h3>
-                  <p className="text-xs font-mono text-dusk">
-                    Live in Bandra & Pan-India solver itineraries
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleTabChange('copilot')}
-                    className="px-3.5 py-1.5 bg-teal hover:bg-teal-700 text-white rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>New Listing (AI)</span>
-                  </button>
-                  <button
-                    onClick={() => handleTabChange('listings')}
-                    className="text-xs font-mono text-teal hover:underline font-bold px-2 py-1"
-                  >
-                    View All →
-                  </button>
+                <div className="text-[11px] text-[#065F46] font-mono font-semibold">
+                  100% Direct Payout · 0% Platform Middleman Cut
                 </div>
               </div>
 
-              {experiences.length === 0 ? (
-                <div className="p-8 bg-white rounded-2xl border border-paper-300 text-center space-y-3 font-mono text-xs text-dusk">
-                  <p>You have no active listings yet.</p>
-                  <button
-                    onClick={() => handleTabChange('copilot')}
-                    className="px-4 py-2 bg-teal text-white rounded-xl font-bold hover:bg-teal-700 transition"
-                  >
-                    Create Your First Experience with AI Co-Pilot
-                  </button>
+              {/* Card 2: Today's Seat Fill Rate */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
+                  <span className="font-heading font-bold text-[#12213B]">Today's Seat Fill Rate</span>
+                  <Users className="w-4 h-4 text-[#C85A32]" />
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {experiences.slice(0, 3).map((exp) => (
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  {fillRatePercent}% Utilized
+                </div>
+                <div className="space-y-1">
+                  <div className="w-full h-2 bg-[#FAF7F2] rounded-full overflow-hidden border border-[#E5DFD5]">
                     <div
-                      key={exp.id}
-                      className="bg-white rounded-2xl border border-paper-400 p-5 space-y-3 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-mono">
-                          <span className="px-2 py-0.5 rounded-full bg-paper-200 text-ink font-bold uppercase text-[10px]">
-                            {exp.category}
-                          </span>
-                          <span className="font-bold text-teal font-mono">
-                            {exp.price > 0 ? `₹${exp.price} / pax` : 'Free entry'}
-                          </span>
+                      className="h-full bg-[#C85A32] rounded-full transition-all duration-500"
+                      style={{ width: `${fillRatePercent}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-[#556275] font-mono">
+                    {totalSeatsBooked} of {totalSlotsCapacity} Total Seats Filled
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Live Geo-Radius Impressions */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
+                  <span className="font-heading font-bold text-[#12213B]">Live Geo-Radius Impressions</span>
+                  <Eye className="w-4 h-4 text-[#12213B]" />
+                </div>
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  148 Active
+                </div>
+                <div className="text-[11px] text-[#065F46] font-mono font-semibold">
+                  Travelers within 8 km matching craft tags
+                </div>
+              </div>
+
+              {/* Card 4: Verified Guild Trust Score */}
+              <div className="bg-white p-5 rounded-3xl border border-[#E5DFD5] space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between text-xs text-[#556275] font-sans">
+                  <span className="font-heading font-bold text-[#12213B]">Verified Guild Trust Score</span>
+                  <Star className="w-4 h-4 text-[#D99B43] fill-[#D99B43]" />
+                </div>
+                <div className="text-3xl font-display font-extrabold text-[#12213B] tracking-tight">
+                  {communityRating.toFixed(2)} / 5.0
+                </div>
+                <div className="text-[11px] text-[#556275] font-mono">
+                  {reviewCount} verified traveler cultural reviews
+                </div>
+              </div>
+            </div>
+
+            {/* SIGNATURE FLASH BEACON LIVE YIELD STUDIO (CENTERPIECE) */}
+            <FlashBeaconStudio
+              onOpenSlotManager={handleOpenAddSlot}
+              onSeatClaimAnimation={handleSeatClaimTriggered}
+            />
+
+            {/* INTERACTIVE GEO-RADIUS DEMAND RADAR */}
+            <DemandClusterRadar onBeamOfferSuccess={handleSeatClaimTriggered} />
+
+            {/* WORKSHOP SESSIONS & RECENT GUILD ACTIVITY */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Upcoming Workshop Sessions */}
+              <div className="lg:col-span-7 bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-3">
+                  <h3 className="text-base font-heading font-bold text-[#12213B] flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#C85A32]" />
+                    <span>Workshop Sessions & Yield Manager</span>
+                  </h3>
+
+                  <button
+                    onClick={handleOpenAddSlot}
+                    className="px-3 py-1.5 bg-[#12213B] hover:bg-[#1A2E4C] text-white rounded-xl text-xs font-heading font-bold transition shadow-2xs flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#D99B43]" />
+                    <span>+ New Craft Session</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {slots.slice(0, 4).map((slot) => {
+                    const openSeats = Math.max(0, slot.totalCapacity - slot.bookedSeats);
+                    return (
+                      <div
+                        key={slot.slotId}
+                        className="p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] flex items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="text-xs font-mono font-bold text-[#556275]">
+                            {slot.timeLabel}
+                          </div>
+                          <div className="text-xs sm:text-sm font-heading font-bold text-[#12213B] line-clamp-1">
+                            {slot.listingTitle}
+                          </div>
+                          <div className="text-[11px] font-mono text-[#556275]">
+                            ₹{slot.basePricePerPerson}/pax · {slot.bookedSeats}/{slot.totalCapacity} Booked
+                          </div>
                         </div>
 
-                        <h4 className="text-base font-display font-bold text-ink line-clamp-1">
-                          {exp.title}
-                        </h4>
-                        <p className="text-xs text-dusk-600 font-sans line-clamp-2 leading-relaxed">
-                          {exp.description}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-paper-300 flex items-center justify-between text-xs font-mono">
-                        <span className="text-dusk">
-                          ⏱ {exp.approx_duration_mins || exp.duration_mins || 60} mins
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-teal font-semibold">● Active</span>
-                          <Link
-                            to={`/experience/${exp.id}`}
-                            className="p-1 text-dusk hover:text-ink transition"
-                            title="View Experience"
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSlot(slot)}
+                            className="p-2 bg-white hover:bg-[#FAF4ED] text-[#556275] hover:text-[#C85A32] border border-[#E5DFD5] rounded-xl text-xs font-heading font-bold transition"
+                            title="Edit Slot & Pricing"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                          </Link>
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+
+                          {openSeats > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => handleTabChange('beacon')}
+                              className="px-3 py-1.5 rounded-xl bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] text-[#C85A32] font-heading text-xs font-extrabold flex items-center gap-1"
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>{openSeats} Open</span>
+                            </button>
+                          ) : (
+                            <span className="px-3 py-1.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-xs font-bold">
+                              Full
+                            </span>
+                          )}
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Real-time Activity Feed */}
+              <div className="lg:col-span-5 bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-3">
+                  <h3 className="text-base font-heading font-bold text-[#12213B] flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D99B43]" />
+                    <span>Real-Time Guild Activity</span>
+                  </h3>
+                  <span className="text-[10px] font-mono text-[#065F46] bg-[#ECFDF5] px-2 py-0.5 rounded font-bold">
+                    Live Sync
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {recentFeedEvents.slice(0, 5).map((ev) => (
+                    <div key={ev.id} className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E5DFD5] space-y-1">
+                      <div className="flex items-center justify-between text-xs font-heading font-bold text-[#12213B]">
+                        <span>{ev.title}</span>
+                        <span className="text-[10px] font-mono text-[#556275]">{ev.time}</span>
+                      </div>
+                      <p className="text-[11px] text-[#556275] font-sans leading-normal">
+                        {ev.subtitle}
+                      </p>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
+
           </div>
         )}
 
-        {/* TAB 2: MY LISTINGS */}
-        {activeTab === 'listings' && (
+        {/* TAB 2: FLASH BEACON DEDICATED DECK */}
+        {activeTab === 'beacon' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <FlashBeaconStudio
+              onOpenSlotManager={handleOpenAddSlot}
+              onSeatClaimAnimation={handleSeatClaimTriggered}
+            />
+            <DemandClusterRadar onBeamOfferSuccess={handleSeatClaimTriggered} />
+          </div>
+        )}
+
+        {/* TAB 3: WORKSHOP SLOTS & YIELD MANAGER */}
+        {activeTab === 'slots' && (
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
               <div>
-                <h2 className="text-2xl font-display font-bold text-ink">
-                  My Active Cultural Offerings
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  Workshop Slots & Seat Capacity Manager
                 </h2>
-                <p className="text-xs font-mono text-dusk">
-                  {experiences.length} verified listings indexed in the database for itineraries & discovery
+                <p className="text-xs text-[#556275]">
+                  Add upcoming calendar slots, adjust seat caps, and monitor live booking occupancy
                 </p>
               </div>
 
               <button
-                onClick={() => handleTabChange('copilot')}
-                className="px-4 py-2 bg-teal hover:bg-teal-700 text-white rounded-xl font-mono text-xs font-bold transition flex items-center gap-2 shadow-sm"
+                type="button"
+                onClick={handleOpenAddSlot}
+                className="px-4 py-2.5 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] font-heading font-bold rounded-xl text-xs transition shadow-2xs flex items-center gap-1.5 shrink-0"
               >
-                <Sparkles className="w-4 h-4 text-marigold" />
-                <span>Create Experience with AI Co-Pilot</span>
+                <Plus className="w-4 h-4 text-[#D99B43]" />
+                <span>+ New Craft Session</span>
               </button>
             </div>
 
-            {experiences.length === 0 ? (
-              <div className="p-12 bg-white rounded-3xl border border-paper-300 text-center space-y-4 font-mono text-xs text-dusk">
-                <Package className="w-12 h-12 text-paper-400 mx-auto" />
-                <div>
-                  <h3 className="text-sm font-bold text-ink">No Cultural Listings Yet</h3>
-                  <p className="text-xs text-dusk mt-1">
-                    Describe your workshop or walking trail to list it in LOKIVA's discovery solver.
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleTabChange('copilot')}
-                  className="px-5 py-2.5 bg-teal text-white rounded-xl font-bold hover:bg-teal-700 transition"
-                >
-                  Launch AI Co-Pilot
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {experiences.map((exp) => (
+            {/* Slot List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {slots.map((slot) => {
+                const openSeats = Math.max(0, slot.totalCapacity - slot.bookedSeats);
+                const occupancyPercent = (slot.bookedSeats / slot.totalCapacity) * 100;
+
+                return (
                   <div
-                    key={exp.id}
-                    className="bg-white rounded-2xl border border-paper-400 p-5 space-y-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                    key={slot.slotId}
+                    className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] space-y-3"
                   >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs font-mono">
-                        <span className="px-2.5 py-0.5 rounded-full bg-paper-200 text-ink font-bold uppercase text-[10px]">
-                          {exp.category}
-                        </span>
-                        <span className="font-extrabold text-teal font-mono text-sm">
-                          {exp.price > 0 ? `₹${exp.price} / pax` : 'Free entry'}
-                        </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="text-xs font-mono font-bold text-[#556275] flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-[#C85A32]" />
+                          <span>{slot.timeLabel}</span>
+                        </div>
+                        <h4 className="text-sm font-heading font-bold text-[#12213B]">
+                          {slot.listingTitle}
+                        </h4>
                       </div>
 
-                      <h4 className="text-base font-display font-bold text-ink leading-snug">
+                      <span className="text-xs font-mono font-bold text-[#065F46] bg-[#ECFDF5] border border-[#A7F3D0] px-2 py-0.5 rounded shrink-0">
+                        ₹{slot.basePricePerPerson} / seat
+                      </span>
+                    </div>
+
+                    {/* Occupancy Progress */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-[#556275]">Occupancy ({Math.round(occupancyPercent)}%):</span>
+                        <span className="font-bold text-[#12213B]">
+                          {slot.bookedSeats} of {slot.totalCapacity} Seats Booked ({openSeats} open)
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-[#FAF7F2] rounded-full border border-[#E5DFD5] overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            openSeats === 0 ? 'bg-[#065F46]' : 'bg-[#C85A32]'
+                          }`}
+                          style={{ width: `${occupancyPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2 border-t border-[#E5DFD5] flex items-center justify-between text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditSlot(slot)}
+                        className="text-[#12213B] font-heading font-bold hover:underline flex items-center gap-1"
+                      >
+                        <Edit className="w-3 h-3 text-[#556275]" />
+                        <span>Edit Slot & Pricing</span>
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        {openSeats > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleTabChange('beacon')}
+                            className="text-[#C85A32] font-heading font-bold hover:underline flex items-center gap-1"
+                          >
+                            <Zap className="w-3 h-3" />
+                            <span>Trigger Beacon</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteWorkshopSlot(slot.slotId)}
+                          className="text-[#556275] hover:text-[#C85A32] font-mono text-[11px]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: MY LISTINGS (ATELIER CATALOG) */}
+        {activeTab === 'listings' && (
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
+              <div>
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  Verified Craft Atelier Listings ({listings.length})
+                </h2>
+                <p className="text-xs text-[#556275]">
+                  Live masterclasses published to LOKIVA's autonomous cultural solver catalogue
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOpenAddSlot}
+                className="px-4 py-2.5 bg-[#C85A32] hover:bg-[#B34322] text-white font-heading font-bold rounded-xl text-xs transition shadow-2xs flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4 text-white" />
+                <span>Publish New Experience</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {listings.map((exp) => (
+                <div
+                  key={exp.id}
+                  className="bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="relative h-44 bg-paper-200 overflow-hidden">
+                    <img
+                      src={exp.coverImage}
+                      alt={exp.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-xs font-mono text-[10px] font-bold text-[#12213B] shadow-2xs">
+                      {exp.category}
+                    </div>
+                    <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md bg-[#12213B]/90 text-white font-mono text-[10px] font-bold">
+                      ₹{exp.pricePerPerson} / seat
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
+                      <h4 className="text-sm font-heading font-bold text-[#12213B] line-clamp-2">
                         {exp.title}
                       </h4>
-
-                      <p className="text-xs text-dusk-600 font-sans line-clamp-3 leading-relaxed">
+                      <p className="text-xs text-[#556275] line-clamp-2 font-sans">
                         {exp.description}
                       </p>
-
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {exp.wheelchair_accessible && (
-                          <span className="px-2 py-0.5 bg-teal-50 text-teal-800 border border-teal-200 rounded text-[10px] font-bold">
-                            ✓ Wheelchair Ramp
-                          </span>
-                        )}
-                        {exp.is_indoor && (
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold">
-                            ✓ Indoor Studio
-                          </span>
-                        )}
-                        <span className="px-2 py-0.5 bg-paper-100 text-dusk rounded text-[10px] font-mono">
-                          ⏱ {exp.approx_duration_mins || exp.duration_mins || 60} mins
-                        </span>
-                      </div>
                     </div>
 
-                    <div className="pt-3 border-t border-paper-300 flex items-center justify-between text-xs font-mono">
-                      <span className="text-teal font-semibold flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-teal" /> Active in Catalogue
-                      </span>
-                      <Link
-                        to={`/experience/${exp.id}`}
-                        className="px-3 py-1 bg-paper-100 hover:bg-paper-200 text-ink rounded-lg font-bold transition flex items-center gap-1"
+                    <div className="pt-2 border-t border-[#E5DFD5] flex items-center justify-between text-xs font-mono">
+                      <span className="text-[#556275]">Rating: {exp.rating} ({exp.reviewCount})</span>
+                      <button
+                        type="button"
+                        onClick={handleOpenAddSlot}
+                        className="text-[#C85A32] font-heading font-bold hover:underline"
                       >
-                        <Eye className="w-3 h-3" />
-                        <span>View</span>
-                      </Link>
+                        + Add Schedule
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* TAB 3: DEDICATED AI CO-PILOT STUDIO */}
-        {activeTab === 'copilot' && (
-          <ProviderAiCopilot
-            onPublishExperience={handlePublishNewExperience}
-            existingListingCount={experiences.length}
-          />
-        )}
-
-        {/* TAB 4: BOOKINGS (Live from SQLite) */}
+        {/* TAB 5: BOOKINGS & GUEST MANIFEST */}
         {activeTab === 'bookings' && (
-          <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 space-y-6 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-paper-200">
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
               <div>
-                <h2 className="text-2xl font-display font-bold text-ink">
-                  Verified Traveler Bookings
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  Guest Bookings & Session Manifest
                 </h2>
-                <p className="text-xs font-mono text-dusk">
-                  Real bookings recorded in database · 100% Direct Payouts
+                <p className="text-xs text-[#556275]">
+                  Real-time traveler attendance, flash deal claims, and instant check-in verification
                 </p>
               </div>
 
-              {/* Status Filter Buttons */}
-              <div className="flex items-center gap-1.5 bg-paper-100 p-1 rounded-xl border border-paper-300 font-mono text-xs">
-                {(['all', 'confirmed', 'completed', 'pending', 'cancelled'] as const).map(
-                  (status) => (
+              {/* Filters & Search */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-[#556275] absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                    placeholder="Search guest or ID..."
+                    className="bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#12213B] font-sans focus:outline-none focus:border-[#C85A32]"
+                  />
+                </div>
+
+                <div className="flex p-0.5 bg-[#FAF8F5] rounded-xl border border-[#E5DFD5] text-xs font-heading font-bold">
+                  {(['all', 'confirmed', 'checked_in', 'flash'] as const).map((filter) => (
                     <button
-                      key={status}
-                      onClick={() => setBookingFilter(status)}
-                      className={`px-3 py-1 rounded-lg font-bold capitalize transition ${
-                        bookingFilter === status
-                          ? 'bg-ink text-paper shadow-sm'
-                          : 'text-dusk hover:text-ink'
+                      key={filter}
+                      type="button"
+                      onClick={() => setBookingFilter(filter)}
+                      className={`px-2.5 py-1 rounded-lg capitalize transition ${
+                        bookingFilter === filter
+                          ? 'bg-[#12213B] text-white shadow-2xs'
+                          : 'text-[#556275] hover:text-[#12213B]'
                       }`}
                     >
-                      {status}
+                      {filter === 'flash' ? '⚡ Flash' : filter.replace('_', ' ')}
                     </button>
-                  )
-                )}
+                  ))}
+                </div>
               </div>
             </div>
 
-            {isBookingsLoading ? (
-              <div className="p-8 text-center font-mono text-xs text-dusk flex items-center justify-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-teal" />
-                <span>Loading bookings from database...</span>
-              </div>
-            ) : bookings.length === 0 ? (
-              <div className="p-12 text-center space-y-3 font-mono text-xs text-dusk bg-paper-50 rounded-2xl border border-paper-200">
-                <Calendar className="w-10 h-10 text-paper-400 mx-auto" />
-                <p className="font-bold text-ink">
-                  No {bookingFilter !== 'all' ? bookingFilter : ''} bookings found.
-                </p>
-                <p className="text-[11px]">
-                  When travelers reserve your experience via the solver or discovery catalogue, their bookings appear here in real time.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="p-5 bg-paper-50 hover:bg-white rounded-2xl border border-paper-300 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-mono transition shadow-sm"
-                  >
-                    <div className="space-y-2 max-w-xl">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <strong className="text-sm text-ink">{booking.guest_name}</strong>
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-paper-200 text-dusk">
-                          {booking.party_size} {booking.party_size === 1 ? 'traveler' : 'travelers'}
-                        </span>
-                        {booking.guest_phone && (
-                          <span className="text-[11px] text-dusk flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-dusk" /> {booking.guest_phone}
+            {/* Bookings Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse font-sans text-xs">
+                <thead>
+                  <tr className="border-b border-[#E5DFD5] bg-[#FAF8F5] text-[#556275] font-heading font-bold text-[11px] uppercase tracking-wider">
+                    <th className="p-3">Booking ID & Time</th>
+                    <th className="p-3">Guest / Party</th>
+                    <th className="p-3">Workshop & Slot</th>
+                    <th className="p-3">Amount Paid</th>
+                    <th className="p-3">Source & Channel</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5DFD5]">
+                  {filteredBookings.map((b) => (
+                    <tr key={b.bookingId} className="hover:bg-[#FAF8F5]/60 transition">
+                      <td className="p-3 font-mono">
+                        <div className="font-bold text-[#12213B]">{b.bookingId}</div>
+                        <div className="text-[10px] text-[#556275]">{b.timestamp}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="font-heading font-bold text-[#12213B]">{b.travelerName}</div>
+                        <div className="text-[11px] text-[#556275] font-mono">{b.guestEmail || 'Verified LOKIVA Guest'}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="font-semibold text-[#12213B] line-clamp-1">{b.listingTitle}</div>
+                        <div className="text-[11px] font-mono text-[#556275]">{b.slotTime}</div>
+                      </td>
+                      <td className="p-3 font-mono font-bold text-[#065F46]">
+                        ₹{b.amountPaid.toLocaleString('en-IN')}
+                      </td>
+                      <td className="p-3 font-mono">
+                        {b.bookedViaFlashBeacon ? (
+                          <span className="px-2 py-0.5 rounded bg-[#FAF4ED] text-[#C85A32] border border-[#E8DEC8] text-[10px] font-bold">
+                            ⚡ Flash Beacon (30% OFF)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded bg-[#FAF8F5] text-[#556275] border border-[#E5DFD5] text-[10px]">
+                            Standard Booking
                           </span>
                         )}
-                        {booking.guest_email && (
-                          <span className="text-[11px] text-dusk flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-dusk" /> {booking.guest_email}
+                      </td>
+                      <td className="p-3 font-mono">
+                        {b.status === 'checked_in' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] text-[10px] font-bold">
+                            ✓ Checked In
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-[#FAF4ED] text-[#C85A32] border border-[#E8DEC8] text-[10px] font-bold">
+                            Confirmed
                           </span>
                         )}
-                      </div>
-
-                      <div className="text-xs font-sans text-ink font-semibold">
-                        {booking.experience_title || 'Cultural Heritage Atelier Session'}
-                      </div>
-
-                      <div className="flex items-center gap-3 text-[11px] text-dusk flex-wrap">
-                        <span className="flex items-center gap-1 text-teal font-semibold">
-                          <Calendar className="w-3 h-3" /> {booking.booking_date}
-                        </span>
-                        {booking.time_slot && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {booking.time_slot}
-                          </span>
-                        )}
-                        {booking.special_requests && (
-                          <span className="text-marigold-800 bg-marigold/10 px-2 py-0.5 rounded">
-                            Note: {booking.special_requests}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex md:flex-col items-center md:items-end justify-between gap-2 border-t md:border-t-0 pt-3 md:pt-0 border-paper-200 flex-shrink-0">
-                      <span className="text-base font-bold text-teal font-mono">
-                        ₹{booking.total_price.toLocaleString('en-IN')}
-                      </span>
-
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
-                          booking.status === 'confirmed'
-                            ? 'bg-teal-50 text-teal-800 border-teal-200'
-                            : booking.status === 'completed'
-                            ? 'bg-blue-50 text-blue-800 border-blue-200'
-                            : booking.status === 'cancelled'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
-                        }`}
-                      >
-                        ● {booking.status}
-                      </span>
-
-                      {/* Action buttons to update status */}
-                      <div className="flex items-center gap-1.5 pt-1">
-                        {booking.status === 'confirmed' && (
-                          <button
-                            onClick={() => handleUpdateBookingStatus(booking.id, 'completed')}
-                            className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded font-bold text-[10px] transition"
-                            title="Mark as completed & settle payout"
-                          >
-                            Complete
-                          </button>
-                        )}
-                        {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-                          <button
-                            onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
-                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded font-bold text-[10px] transition"
-                            title="Cancel booking"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* TAB 5: EARNINGS (Live Database Calculations) */}
+        {/* TAB 6: 0% COMMISSION SETTLEMENT */}
         {activeTab === 'earnings' && (
-          <div className="space-y-6 font-mono text-xs">
-            {isEarningsLoading ? (
-              <div className="p-12 text-center font-mono text-xs text-dusk flex items-center justify-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-teal" />
-                <span>Computing settlement history from database...</span>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-5 bg-white rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                    <span className="text-[11px] text-dusk uppercase">
-                      Total Lifetime Direct Revenue
-                    </span>
-                    <div className="text-2xl font-extrabold text-ink">
-                      ₹{(earnings?.lifetime_revenue ?? liveRevenue).toLocaleString('en-IN')}
-                    </div>
-                    <span className="text-[10px] text-teal font-semibold">
-                      100% direct to artisan UPI/bank
-                    </span>
-                  </div>
-
-                  <div className="p-5 bg-white rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                    <span className="text-[11px] text-dusk uppercase">
-                      Pending Settlement Balance
-                    </span>
-                    <div className="text-2xl font-extrabold text-teal">
-                      ₹{(earnings?.pending_settlement ?? 0).toLocaleString('en-IN')}
-                    </div>
-                    <span className="text-[10px] text-dusk">
-                      Target:{' '}
-                      {provider?.settlement_account ||
-                        earnings?.settlement_account ||
-                        'Bank Account ending in 4102'}
-                    </span>
-                  </div>
-
-                  <div className="p-5 bg-white rounded-2xl border border-paper-400 space-y-1 shadow-sm">
-                    <span className="text-[11px] text-dusk uppercase">Platform Ad-Tax Rate</span>
-                    <div className="text-2xl font-extrabold text-ink">0.0%</div>
-                    <span className="text-[10px] text-teal font-semibold">
-                      Guaranteed by LOKIVA Charter
-                    </span>
-                  </div>
-                </div>
-
-                {/* Direct Host Guarantee Banner */}
-                <div className="p-6 bg-white rounded-3xl border border-paper-400 space-y-3 shadow-sm">
-                  <h3 className="text-lg font-display font-bold text-ink">
-                    Direct Host Revenue Guarantee
-                  </h3>
-                  <p className="text-xs text-dusk-600 font-sans leading-relaxed">
-                    Unlike traditional travel OTA giants that charge 25%–40% commission or demand ad spends for placement,
-                    LOKIVA indexes local experiences algorithmically based on travel time, physical accessibility, and authentic cultural flavor.
-                    100% of traveler ticket prices are credited directly to the verified cultural host.
-                  </p>
-                </div>
-
-                {/* Transaction Ledger Table */}
-                <div className="bg-white rounded-3xl border border-paper-400 p-6 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-paper-200">
-                    <h4 className="text-sm font-bold text-ink uppercase tracking-wider">
-                      Settlement & Payout Ledger ({earnings?.transactions.length || 0})
-                    </h4>
-                    <span className="text-[11px] text-dusk">Auto-cleared via IMPS / UPI</span>
-                  </div>
-
-                  {!earnings?.transactions || earnings.transactions.length === 0 ? (
-                    <div className="p-8 text-center text-dusk text-xs bg-paper-50 rounded-2xl">
-                      No payout records found in database yet.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs font-mono">
-                        <thead>
-                          <tr className="border-b border-paper-200 text-dusk text-[10px] uppercase">
-                            <th className="py-2.5 px-3">Date</th>
-                            <th className="py-2.5 px-3">Experience</th>
-                            <th className="py-2.5 px-3">Guest</th>
-                            <th className="py-2.5 px-3 text-right">Gross</th>
-                            <th className="py-2.5 px-3 text-right">Fee</th>
-                            <th className="py-2.5 px-3 text-right">Net Payout</th>
-                            <th className="py-2.5 px-3 text-center">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-paper-200">
-                          {earnings.transactions.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-paper-50 transition">
-                              <td className="py-3 px-3 text-dusk">{tx.date}</td>
-                              <td className="py-3 px-3 font-semibold text-ink">
-                                {tx.experience_title}
-                              </td>
-                              <td className="py-3 px-3 text-dusk">{tx.guest_name}</td>
-                              <td className="py-3 px-3 text-right text-ink">
-                                ₹{tx.amount.toLocaleString('en-IN')}
-                              </td>
-                              <td className="py-3 px-3 text-right text-teal font-bold">₹0</td>
-                              <td className="py-3 px-3 text-right font-bold text-teal">
-                                ₹{tx.net_payout.toLocaleString('en-IN')}
-                              </td>
-                              <td className="py-3 px-3 text-center">
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                                    tx.status === 'settled'
-                                      ? 'bg-teal-50 text-teal-800'
-                                      : 'bg-amber-50 text-amber-800'
-                                  }`}
-                                >
-                                  {tx.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* TAB 6: PROFILE (Editable & DB-Backed) */}
-        {activeTab === 'profile' && (
-          <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-8 space-y-6 shadow-md font-mono text-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-paper-200">
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5DFD5] pb-4">
               <div>
-                <h2 className="text-2xl font-display font-bold text-ink">
-                  Artisan & Host Credentials
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  0% Commission Settlement & Earnings
                 </h2>
-                <p className="text-xs text-dusk mt-0.5">
-                  Verified Local Cultural Partner Badge & Settlement Information
+                <p className="text-xs text-[#556275]">
+                  100% direct payouts to your verified settlement account with zero aggregator take rates
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-teal-50 text-teal-800 rounded-xl text-xs font-bold border border-teal-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-teal" />
-                  <span>
-                    {provider?.is_verified ? 'KYC Level 2 Verified' : 'KYC Under Review'}
-                  </span>
-                </span>
-
-                {!isEditingProfile && (
-                  <button
-                    onClick={() => setIsEditingProfile(true)}
-                    className="px-4 py-2 bg-ink hover:bg-ink-800 text-paper rounded-xl font-bold transition flex items-center gap-1.5"
-                  >
-                    <Edit className="w-3.5 h-3.5 text-marigold" />
-                    <span>Edit Profile</span>
-                  </button>
-                )}
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl text-xs font-mono font-bold text-[#065F46]">
+                <ShieldCheck className="w-4 h-4 text-[#065F46]" />
+                <span>Zero Platform Fees Active</span>
               </div>
             </div>
 
-            {isEditingProfile ? (
-              <form onSubmit={handleSaveProfile} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Registered Entity / Guild Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={profileForm.business_name}
-                        onChange={(e) =>
-                          setProfileForm({ ...profileForm, business_name: e.target.value })
-                        }
-                        className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Craft Specialty / Heritage Technique
-                      </label>
-                      <input
-                        type="text"
-                        value={profileForm.craft_specialty}
-                        onChange={(e) =>
-                          setProfileForm({ ...profileForm, craft_specialty: e.target.value })
-                        }
-                        placeholder="e.g. Heritage Hand-Block Printing & Natural Dyeing"
-                        className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={profileForm.city}
-                          onChange={(e) =>
-                            setProfileForm({ ...profileForm, city: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                          State
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={profileForm.state}
-                          onChange={(e) =>
-                            setProfileForm({ ...profileForm, state: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Physical Studio / Meeting Point Address
-                      </label>
-                      <input
-                        type="text"
-                        value={profileForm.address}
-                        onChange={(e) =>
-                          setProfileForm({ ...profileForm, address: e.target.value })
-                        }
-                        placeholder="e.g. Pali Hill & Ranwar Village, Bandra West"
-                        className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Settlement Account / UPI VPA
-                      </label>
-                      <input
-                        type="text"
-                        value={profileForm.settlement_account}
-                        onChange={(e) =>
-                          setProfileForm({ ...profileForm, settlement_account: e.target.value })
-                        }
-                        placeholder="e.g. HDFC Bank ****4102 or artisan@upi"
-                        className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Physical Accessibility Compliance
-                      </label>
-                      <input
-                        type="text"
-                        value={profileForm.accessibility_compliance}
-                        onChange={(e) =>
-                          setProfileForm({
-                            ...profileForm,
-                            accessibility_compliance: e.target.value,
-                          })
-                        }
-                        placeholder="e.g. Ground-floor step-free ramp with wide wheelchair doorway"
-                        className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                          Contact Email
-                        </label>
-                        <input
-                          type="email"
-                          value={profileForm.contact_email}
-                          onChange={(e) =>
-                            setProfileForm({ ...profileForm, contact_email: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                          Phone
-                        </label>
-                        <input
-                          type="text"
-                          value={profileForm.phone}
-                          onChange={(e) =>
-                            setProfileForm({ ...profileForm, phone: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2.5 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-dusk uppercase font-bold block mb-1">
-                        Artisan Story & Guild Bio
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={profileForm.description}
-                        onChange={(e) =>
-                          setProfileForm({ ...profileForm, description: e.target.value })
-                        }
-                        placeholder="Share your heritage background and craft tradition..."
-                        className="w-full px-3.5 py-2 bg-paper-50 border border-paper-300 rounded-xl font-mono text-xs text-ink focus:outline-none focus:border-teal"
-                      />
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+              <div className="p-5 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] space-y-1">
+                <div className="text-xs text-[#556275] font-sans font-heading font-bold">Lifetime Direct Payouts</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#12213B]">
+                  ₹{totalRevenue.toLocaleString('en-IN')}
                 </div>
+                <div className="text-[10px] text-[#065F46]">Settled directly via UPI/IMPS</div>
+              </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-paper-200">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingProfile(false)}
-                    className="px-4 py-2.5 bg-paper-100 hover:bg-paper-200 text-dusk rounded-xl font-bold transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingProfile}
-                    className="px-6 py-2.5 bg-teal hover:bg-teal-700 disabled:opacity-60 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-sm"
-                  >
-                    {isSavingProfile ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3.5 h-3.5" />
-                        <span>Save Changes to Database</span>
-                      </>
-                    )}
-                  </button>
+              <div className="p-5 bg-[#FAF4ED] rounded-2xl border border-[#E8DEC8] space-y-1">
+                <div className="text-xs text-[#C85A32] font-sans font-heading font-bold">Today's Unsettled Balance</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#C85A32]">
+                  ₹4,800
                 </div>
-              </form>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Registered Entity</span>
-                    <strong className="text-sm text-ink">
-                      {provider?.business_name || 'India Local Craft & Culinary Collective'}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Location Base</span>
-                    <p className="text-ink">
-                      {provider?.address || 'Pali Hill & Ranwar Village'}, {provider?.city},{' '}
-                      {provider?.state}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Craft Specialty</span>
-                    <p className="text-ink">
-                      {provider?.craft_specialty ||
-                        'Heritage Hand-Block Printing, Indigo Vat Dyeing, Coastal Walks'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Host Bio</span>
-                    <p className="text-dusk-600 font-sans leading-relaxed">
-                      {provider?.description ||
-                        'Generational local artisans, guides, and culinary custodians sharing living heritage with travelers.'}
-                    </p>
-                  </div>
-                </div>
+                <div className="text-[10px] text-[#556275]">Auto-settles tonight at 11:59 PM</div>
+              </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Settlement Account</span>
-                    <p className="text-ink">
-                      {provider?.settlement_account ||
-                        'HDFC Bank Limited · Account ending in 4102'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">
-                      Accessibility Compliance
-                    </span>
-                    <p className="text-teal font-semibold">
-                      {provider?.accessibility_compliance ||
-                        'Verified Ground-Floor Step-Free Ramp at Studio Base'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">
-                      Community Standing
-                    </span>
-                    <p className="text-ink">
-                      {liveRating.toFixed(2)} / 5.0 Rating across {liveReviews} verified traveler journeys
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-dusk uppercase block">Contact Channels</span>
-                    <p className="text-ink">
-                      {provider?.contact_email || 'artisan@lokiva.in'} ·{' '}
-                      {provider?.phone || '+91 98200 12345'}
-                    </p>
-                  </div>
+              <div className="p-5 bg-[#ECFDF5] rounded-2xl border border-[#A7F3D0] space-y-1">
+                <div className="text-xs text-[#065F46] font-sans font-heading font-bold">OTA Fee You Saved</div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#065F46]">
+                  +₹{Math.round(totalRevenue * 0.2).toLocaleString('en-IN')}
+                </div>
+                <div className="text-[10px] text-[#065F46]">Saved vs standard 20% commission apps</div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#E5DFD5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-xs font-heading font-bold text-[#12213B]">
+                  Verified Bank Settlement Account
+                </div>
+                <div className="text-xs font-mono text-[#556275]">
+                  {profile.settlementAccount}
                 </div>
               </div>
-            )}
+
+              <span className="text-xs font-mono font-bold text-[#065F46] bg-white border border-[#A7F3D0] px-3 py-1.5 rounded-xl">
+                ✓ Active Direct Deposit
+              </span>
+            </div>
           </div>
         )}
+
+        {/* TAB 7: AI CO-PILOT TEASER */}
+        {activeTab === 'copilot' && (
+          <div className="bg-gradient-to-br from-[#FAF4ED] to-[#F3EAD8] rounded-3xl border border-[#E8DEC8] p-6 sm:p-10 shadow-sm space-y-6 text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E8DEC8] text-xs font-heading font-bold text-[#C85A32] shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#C85A32]" />
+              <span>Provider AI Co-Pilot Studio (Preview)</span>
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B]">
+                Natural Language Workshop & Masterclass Creator
+              </h2>
+              <p className="text-xs sm:text-sm text-[#556275] max-w-xl mx-auto leading-relaxed">
+                Describe your craft, tools, and atelier in plain words in any Indian language. Our AI extracts optimal timings, group caps, accessibility badges, and automatically submits your masterclass to LOKIVA's solver catalogue.
+              </p>
+            </div>
+
+            <div className="p-4 bg-white/80 rounded-2xl border border-[#E5DFD5] text-left max-w-lg mx-auto font-mono text-xs text-[#556275] space-y-1">
+              <div className="text-[#12213B] font-bold">Example Input:</div>
+              <p className="italic text-[#12213B]">
+                "I host a 2-hour Kutch Rogan painting session for 6 people on weekends in Bandra, wheelchair friendly, ₹1,200 per head."
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <span className="inline-block px-4 py-2 bg-[#12213B] text-[#FAF7F2] font-heading font-bold rounded-xl text-xs">
+                Full AI Co-Pilot Studio Coming In Next Phase
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: GUILD PROFILE & KYC */}
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded-3xl border border-[#E8DEC8] p-5 sm:p-7 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-4">
+              <div>
+                <h2 className="text-xl font-display font-bold text-[#12213B]">
+                  Artisan Guild Profile & Trust Settings
+                </h2>
+                <p className="text-xs text-[#556275]">
+                  Update your public craft heritage bio, precinct coordinates, and settlement account
+                </p>
+              </div>
+
+              {profileSavedToast && (
+                <span className="px-3 py-1 bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] rounded-xl text-xs font-mono font-bold">
+                  ✓ Profile Updated
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 font-sans text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Guild / Studio Name</label>
+                  <input
+                    type="text"
+                    value={profileForm.guildName}
+                    onChange={(e) => setProfileForm({ ...profileForm, guildName: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Craft Discipline & Specialty</label>
+                  <input
+                    type="text"
+                    value={profileForm.craftSpecialty}
+                    onChange={(e) => setProfileForm({ ...profileForm, craftSpecialty: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Operating City</label>
+                  <input
+                    type="text"
+                    value={profileForm.city}
+                    onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Heritage Precinct / Quarter</label>
+                  <input
+                    type="text"
+                    value={profileForm.precinct}
+                    onChange={(e) => setProfileForm({ ...profileForm, precinct: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Generational Heritage Lineage</label>
+                  <input
+                    type="text"
+                    value={profileForm.generationalHeritage}
+                    onChange={(e) => setProfileForm({ ...profileForm, generationalHeritage: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-heading font-bold text-[#12213B]">Settlement Bank Details</label>
+                  <input
+                    type="text"
+                    value={profileForm.settlementAccount}
+                    onChange={(e) => setProfileForm({ ...profileForm, settlementAccount: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-heading font-bold text-[#12213B]">Studio Bio & Cultural Heritage Context</label>
+                <textarea
+                  rows={3}
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                  className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl p-2.5 text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#C85A32] hover:bg-[#B34322] text-white font-heading font-bold rounded-xl text-xs transition shadow-2xs"
+                >
+                  Save Guild Profile Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* WORKSHOP SLOT EDITOR DRAWER (SLIDE-OVER) */}
+        <WorkshopSlotEditorDrawer
+          isOpen={isSlotEditorOpen}
+          onClose={() => setIsSlotEditorOpen(false)}
+          editingSlot={editingSlot}
+        />
+
       </div>
     </div>
   );
 }
+
+export default ProviderDashboardPage;

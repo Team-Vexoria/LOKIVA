@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOKIVA Group Hub - Executive Summary Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Josefin+Sans:wght@600;700;800&family=Nunito:wght@400;600;700&family=Raleway:wght@600;700;800&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 10mm 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      color: #12213B;
+      background-color: #FFFFFF;
+      line-height: 1.38;
+      font-size: 9pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page-break-after {
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .header-banner {
+      background: #FAF7F2;
+      border: 1.5px solid #E5DFD5;
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {
+      max-width: 68%;
+    }
+
+    .brand-pill {
+      display: inline-block;
+      font-family: 'Raleway', sans-serif;
+      font-size: 7.5pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #C85A32;
+      background: #FAF4ED;
+      border: 1px solid #E8DEC8;
+      padding: 2px 8px;
+      border-radius: 14px;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-family: 'Josefin Sans', sans-serif;
+      font-size: 17pt;
+      font-weight: 800;
+      color: #12213B;
+      line-height: 1.15;
+      letter-spacing: -0.4px;
+    }
+
+    .subtitle {
+      font-size: 8.5pt;
+      color: #556275;
+      margin-top: 2px;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .meta-box {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5pt;
+      color: #556275;
+      line-height: 1.35;
+      background: #FFFFFF;
+      border: 1px solid #E5DFD5;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    .section-title {
+      font-family: 'Raleway', sans-serif;
+      font-size: 11pt;
+      font-weight: 800;
+      color: #12213B;
+      border-bottom: 1.5px solid #E8DEC8;
+      padding-bottom: 3px;
+      margin-top: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title span.number {
+      background: #C85A32;
+      color: #FFFFFF;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8pt;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    p {
+      margin-bottom: 6px;
+      color: #2D3748;
+      font-size: 8.5pt;
+      text-align: justify;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .card {
+      background: #FAF8F5;
+      border: 1px solid #E5DFD5;
+      border-radius: 10px;
+      padding: 8px 11px;
+      page-break-inside: avoid;
+    }
+
+    .card-title {
+      font-family: 'Raleway', sans-serif;
+      font-size: 8.5pt;
+      font-weight: 800;
+      color: #12213B;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-desc {
+      font-size: 8pt;
+      color: #4A5568;
+      line-height: 1.35;
+    }
+
+    .alert-box {
+      background: #FAF4ED;
+      border-left: 3.5px solid #C85A32;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin: 7px 0;
+      font-size: 8pt;
+      color: #12213B;
+      page-break-inside: avoid;
+    }
+
+    .alert-title {
+      font-family: 'Raleway', sans-serif;
+      font-weight: 800;
+      color: #C85A32;
+      margin-bottom: 2px;
+      font-size: 8.5pt;
+    }
+
+    .formula-box {
+      background: #FFFFFF;
+      border: 1.5px solid #D99B43;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin: 6px 0;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #12213B;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 7px 0;
+      font-size: 8pt;
+      page-break-inside: avoid;
+    }
+
+    th {
+      background: #FAF4ED;
+      color: #12213B;
+      font-family: 'Raleway', sans-serif;
+      font-weight: 800;
+      text-align: left;
+      padding: 5px 8px;
+      border-bottom: 1.5px solid #E8DEC8;
+    }
+
+    td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #E5DFD5;
+      color: #2D3748;
+      vertical-align: top;
+      line-height: 1.35;
+    }
+
+    tr:nth-child(even) td {
+      background: #FAF8F5;
+    }
+
+    .tag-emerald {
+      display: inline-block;
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+      padding: 1.5px 6px;
+      border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7pt;
+      font-weight: 700;
+    }
+
+    .tag-amber {
+      display: inline-block;
+      background: #FFFBEB;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+      padding: 1.5px 6px;
+      border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7pt;
+      font-weight: 700;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 4px 0;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 14px;
+      margin-bottom: 4px;
+      font-size: 8pt;
+      color: #2D3748;
+      line-height: 1.35;
+    }
+
+    .feature-list li::before {
+      content: "✦";
+      position: absolute;
+      left: 0;
+      color: #C85A32;
+      font-size: 7pt;
+    }
+
+    .footer {
+      margin-top: 14px;
+      padding-top: 6px;
+      border-top: 1px solid #E5DFD5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 7.5pt;
+      color: #718096;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-break-after">
+    <div class="header-banner">
+      <div class="header-left">
+        <span class="brand-pill">LOKIVA Product Engineering Report</span>
+        <h1 class="title">Lokiva Group Hub</h1>
+        <p class="subtitle">Collaborative Group Travel Synthesis, Real-Time Conflict Mediation, and Autonomous Itinerary Solver</p>
+      </div>
+      <div class="meta-box">
+        <div><strong>Status:</strong> Shipped & Synced</div>
+        <div><strong>Repository:</strong> Team-Vexoria/LOKIVA</div>
+        <div><strong>Branch:</strong> main (Up to date)</div>
+        <div><strong>Build:</strong> Passing (0 errors)</div>
+        <div><strong>Date:</strong> September 25, 2026</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span class="number">1</span>
+      <span>The Problem: The WhatsApp Group Trip Planning Paradox</span>
+    </div>
+
+    <p>
+      Group travel planning across India is notorious for high excitement followed by complete paralysis. More than 70% of planned group trips fail to materialize due to unstructured WhatsApp chatter, unexpressed financial anxiety, and incompatible vacation styles.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">
+          <span>💰 The Asymmetrical Budget Taboo</span>
+        </div>
+        <div class="card-desc">
+          Friends rarely share their private spending ceilings openly. Low-budget travelers fear embarrassment and quietly drop out, while higher-budget travelers unwittingly propose stays or activities that stretch friends beyond their financial comfort.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🧭 Incompatible Cultural & Pace Tastes</span>
+        </div>
+        <div class="card-desc">
+          One friend seeks high-energy Himalayan ridge trails, another wants slow riverside cafes and artisan handlooms, and a third expects royal fort photography. Standard booking apps only cater to single users, leaving groups in perpetual debate.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📱 The 500-Message WhatsApp Deadlock</span>
+        </div>
+        <div class="card-desc">
+          Ideas get buried in WhatsApp threads, Instagram reels, and fragmented polls. Without a structured synthesis mechanism, decision fatigue sets in and groups default to inaction ("Let's plan next month").
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>⚡ Fragmented Execution & Itinerary Drift</span>
+        </div>
+        <div class="card-desc">
+          Even when a city is chosen, planning daily logistics causes friction. Allocating stops, managing transit buffer times, and calculating fair per-person expense splits becomes a manual headache for the trip organizer.
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-box">
+      <div class="alert-title">Lokiva Core Mission</div>
+      Replace chaotic WhatsApp travel planning with an intelligent, collective 60/40 workspace. One person creates a Group Room, invites friends with a link, each traveler completes a 60-second private preference quiz, and Lokiva autonomously synthesizes everyone's constraints into a harmonious consensus plan.
+    </div>
+
+    <div class="section-title">
+      <span class="number">2</span>
+      <span>What We Have Built: 3-Phase Engineering Blueprint</span>
+    </div>
+
+    <p>
+      We engineered <strong>Lokiva Group Hub</strong> directly into the LOKIVA core platform across three tightly integrated phases:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 22%;">Phase</th>
+          <th style="width: 38%;">Delivered Modules</th>
+          <th style="width: 40%;">Core Capabilities</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Phase 1: Entry, Auth & Quiz</strong></td>
+          <td>
+            • Hero CTA & Section Banner<br>
+            • <code>RequireAuth</code> Route Guard<br>
+            • Host Room Creator (<code>/group/new</code>)<br>
+            • 5-Step Member Preference Quiz
+          </td>
+          <td>
+            Protected access ensuring only authenticated users enter room hubs. Members complete private budget, trip duration, pace, and cultural passion profiles in 60 seconds.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Phase 2: 60% Board & Sweet-Spot</strong></td>
+          <td>
+            • <code>groupRecommendationEngine.ts</code><br>
+            • <code>CrewSynergyRadar.tsx</code><br>
+            • <code>GroupRecommendationBoard.tsx</code><br>
+            • Sweet-Spot Budget Equalizer
+          </td>
+          <td>
+            Deterministic multi-factor synthesis across 20+ Indian hubs. Calculates consensus score without hardcoding winners. Displays exact member attribution pills and financial fit tags.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Phase 3: 40% Chat & Solver Handoff</strong></td>
+          <td>
+            • <code>GroupRealTimeChat.tsx</code><br>
+            • Card-to-Chat Drops & Live Reactions<br>
+            • <code>@Lokiva</code> AI Conflict Mediator<br>
+            • Host Lock-In to <code>/itinerary</code> Solver
+          </td>
+          <td>
+            Full-height sticky real-time chat with cross-tab broadcast synchronization. Dropped cards with live Must Go/Maybe/Pass voting. Intelligent mediator suggesting split morning tracks and collective evenings. 1-click lock-in handoff into solver.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div>
+    <div class="section-title" style="margin-top: 0;">
+      <span class="number">3</span>
+      <span>Core Engineering Innovations & Algorithms</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">
+          <span>🎯 The Budget Sweet-Spot Equalizer</span>
+        </div>
+        <div class="card-desc">
+          To prevent low-budget exclusion, the engine computes a weighted group comfort ceiling that protects lower budgets while honoring collective possibilities:
+          <div class="formula-box">
+            SweetSpot = round(0.65 × B_min + 0.35 × B_median)
+          </div>
+          Every destination card is labeled with financial transparency without exposing raw numbers:
+          <br>
+          <span class="tag-emerald">✓ Fits All 4/4 Budgets Comfortably</span>
+          &nbsp;
+          <span class="tag-amber">⚡ Fits 3/4 Budgets · Stretches 1 by ~₹2,500</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🤖 @Lokiva AI Conflict Mediator</span>
+        </div>
+        <div class="card-desc">
+          Triggered when members type <code>@lokiva</code> or click the header button. The mediator compares divergent interests and generates contextual compromise blueprints:
+          <br><br>
+          <em>"Harshit prioritizes mountain treks while Sneha favors artisan crafts, and the group sweet-spot is ₹21,000/person. <strong>Dharamshala & Bir</strong> is your 94% compromise: parallel morning trails (Triund hike vs. Norbulingka weaving studios) reuniting at sunset for Himalayan hearth dinners within budget."</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span class="number">4</span>
+      <span>The 60/40 Collaborative Workspace Architecture</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">
+          <span>📊 Left 60%: Collaborative Intelligence Board</span>
+        </div>
+        <ul class="feature-list">
+          <li><strong>Crew Readiness Radar:</strong> Displays all joined members, readiness pills (<code>✓ Ready</code> vs <code>⏳ Answering</code>), and empty dashed waiting slots.</li>
+          <li><strong>Simulate Friend Injector:</strong> Allows one-click injection of realistic demo friends (Sneha, Aarav, Rohan, Ananya) to test multi-user synthesis on localhost.</li>
+          <li><strong>Filter Tabs:</strong> Top Group Consensus, Recommended For Me, and individual member filter chips (e.g. <code>Harshit's Picks</code>).</li>
+          <li><strong>Exact Member Attribution:</strong> Every card highlights who this place is recommended for (e.g. <code>Recommended for 3 of 4: [✦ Harshit (You)] [✦ Sneha]</code>).</li>
+          <li><strong>Interactive Card Actions:</strong> 🔥 Upvote (N), ❌ Pass/Veto, 💬 Drop to Chat, and 🔒 Lock Destination.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>💬 Right 40%: Real-Time Decision & Chat Dock</span>
+        </div>
+        <ul class="feature-list">
+          <li><strong>Multi-Tab Broadcast Sync:</strong> Instant communication using <code>BroadcastChannel('lokiva_group_sync')</code> with zero page reloads.</li>
+          <li><strong>Sender Visual Triad:</strong> Right-aligned terracotta bubbles for the current user, left-aligned ivory bubbles for peers, and warm amber cards for AI Mediator.</li>
+          <li><strong>One-Tap Card Drops:</strong> Dropping a place renders an embedded mini-card in the chat stream with live reaction pills (<code>🔥 Must Go</code>, <code>🤔 Maybe</code>, <code>❌ Pass</code>).</li>
+          <li><strong>Quick Prompt Chips:</strong> One-tap shortcuts for <code>@lokiva resolve our tie</code> and <code>Check our budget fit</code>.</li>
+          <li><strong>WhatsApp Crew Sharing:</strong> One-tap invite link generator with pre-formatted WhatsApp invite message.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span class="number">5</span>
+      <span>1-Click Host Lock-In to /itinerary Solver</span>
+    </div>
+
+    <p>
+      When the group reaches consensus, the Host clicks <strong><code>🔒 Lock Winner & Build Group Itinerary →</code></strong> (regular members have a <strong><code>⚡ Nudge Host</code></strong> button). This triggers an automated handoff into the Lokiva itinerary engine:
+    </p>
+
+    <div class="alert-box">
+      <div class="alert-title">Passed Parameters to /itinerary</div>
+      <code>/itinerary?city=Jaipur&groupId=grp-8492&travelers=4&budget=96000&perPersonBudget=24000&days=4&interests=crafts,food,forts&groupMode=true</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>👥 Group Trip Mode Banner on /itinerary</span>
+      </div>
+      <div class="card-desc">
+        Upon arrival at <code>/itinerary</code>, the solver displays a prominent <strong>"Group Trip Mode · Cost Split Per Person"</strong> banner showing:
+        <br>
+        • <strong>Total Group Spend:</strong> ₹96,000 for 4 travelers &nbsp;|&nbsp; <strong>Exact Per-Person Split:</strong> ₹24,000 / traveler<br>
+        • <strong>Fair Sweet-Spot:</strong> Calibrated to protect lowest member ceiling without financial stretch<br>
+        • <strong>Navigation:</strong> Direct link back to the Group Hub room.
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span class="number">6</span>
+      <span>Design Compliance & Repository Status</span>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🎨 Sandstone Palette</div>
+        <div class="card-desc">
+          Adheres strictly to zero dark fills on cards. Built with Sandstone Ivory (<code>#FAF7F2</code>), crisp ink typography (<code>#12213B</code>), terracotta (<code>#C85A32</code>), and warm borders (<code>#E5DFD5</code>).
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔤 Figma Typography Triad</div>
+        <div class="card-desc">
+          Josefin Sans for display titles, Raleway for section titles & action buttons, Nunito for chat & body copy, JetBrains Mono for prices & telemetry. Zero serif fonts.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🚀 Git & Build Status</div>
+        <div class="card-desc">
+          Fully pushed to <code>Team-Vexoria/LOKIVA</code> on branch <code>main</code>. Production build <code>npm run build</code> (<code>tsc && vite build</code>) passes in 8.07s with 0 errors.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>LOKIVA CULTURAL TRIP ENGINE · EXECUTIVE TECHNICAL SUMMARY</div>
+      <div>CONFIDENTIAL & PROPRIETARY · TEAM VEXORIA</div>
+    </div>
+  </div>
+
+</body>
+</html>
