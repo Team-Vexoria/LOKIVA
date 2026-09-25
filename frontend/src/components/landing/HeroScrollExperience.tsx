@@ -54,9 +54,8 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       const vh = window.innerHeight;
 
-      // Start playing only when user scrolls down into expanding media view (scrollY > 60px)
-      // Keep playing through fullscreen and until half of next section (scrollY < vh * 2.2)
-      if (scrollY > 60 && scrollY < vh * 2.2) {
+      // Keep playing from initial hero preview through fullscreen and until past section (scrollY < vh * 2.2)
+      if (scrollY < vh * 2.2) {
         if (vid.paused) {
           vid.muted = true;
           const playPromise = vid.play();
@@ -159,7 +158,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             className="pointer-events-none select-none absolute inset-0 overflow-hidden hidden lg:block"
             aria-hidden="true"
           >
-            <div className="absolute left-0 xl:left-4 top-4 w-36 lg:w-44 xl:w-52 -rotate-3">
+            <div className="absolute left-0 xl:left-4 top-20 lg:top-24 xl:top-28 w-36 lg:w-44 xl:w-52 -rotate-3">
               <img
                 src="/assets/monuments/hawa-mahal-cutout.png"
                 alt=""
@@ -167,7 +166,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
                 className="w-full h-auto object-contain opacity-60 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
               />
             </div>
-            <div className="absolute right-0 xl:right-4 top-2 w-36 lg:w-40 xl:w-48 -rotate-2">
+            <div className="absolute right-0 xl:right-4 top-20 lg:top-24 xl:top-28 w-36 lg:w-40 xl:w-48 -rotate-2">
               <img
                 src="/assets/monuments/taj-mahal-cutout.png"
                 alt=""
@@ -246,7 +245,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           ref={mediaCardRef}
           className="absolute overflow-hidden will-change-transform z-20"
           style={{
-            top: '85%',
+            top: '93%',
             left: '8%',
             right: '8%',
             bottom: '0%',
@@ -254,11 +253,11 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             boxShadow: '0 -8px 30px rgba(18, 33, 59, 0.12)',
           }}
         >
-          {/* Scroll-activated Landing Video */}
+          {/* Autoplay Landing Video */}
           <video
             ref={videoRef}
             src="/landing_video.mp4"
-            poster="/lokiva_background.avif"
+            autoPlay
             playsInline
             muted
             loop
