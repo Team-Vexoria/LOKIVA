@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EvenlySpacedSlider } from '../ui/EvenlySpacedSlider';
 import {
   ArrowLeft,
   ArrowRight,
@@ -50,6 +51,26 @@ export const DAY_MILESTONES = [1, 3, 5, 7, 10, 14, 21];
 export const BUDGET_VALUES = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000];
 export const BUDGET_MILESTONES = [1000, 3000, 5000, 10000, 15000, 25000];
 export const BUDGET_OPTIONS = BUDGET_VALUES;
+
+// Milestones for EvenlySpacedSlider: visually even spacing with piecewise interpolation
+export const DAY_MARKS = [
+  { value: 1,  label: '1 Day'   },
+  { value: 3,  label: '3 Days'  },
+  { value: 5,  label: '5 Days'  },
+  { value: 7,  label: '7 Days'  },
+  { value: 10, label: '10 Days' },
+  { value: 14, label: '14 Days' },
+  { value: 21, label: '21 Days' },
+];
+
+export const BUDGET_MARKS = [
+  { value: 1000,  label: '₹1k'   },
+  { value: 3000,  label: '₹3k'   },
+  { value: 5000,  label: '₹5k'   },
+  { value: 10000, label: '₹10k'  },
+  { value: 15000, label: '₹15k'  },
+  { value: 25000, label: '₹25k+' },
+];
 
 export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
   destination: 'Smart Match',
@@ -858,43 +879,14 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Days Slider - slider index maps 1:1 to milestone array, labels evenly distributed */}
-                  <div className="space-y-3 px-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={DAY_MILESTONES.length - 1}
-                      step={1}
-                      value={(() => {
-                        const exact = DAY_MILESTONES.indexOf(days);
-                        if (exact !== -1) return exact;
-                        return DAY_MILESTONES.reduce(
-                          (best, val, idx) =>
-                            Math.abs(val - days) < Math.abs(DAY_MILESTONES[best] - days) ? idx : best,
-                          0
-                        );
-                      })()}
-                      onChange={(e) => setDays(DAY_MILESTONES[parseInt(e.target.value, 10)])}
-                      className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
-                      aria-label="Trip duration in days"
-                    />
-
-                    {/* flex justify-between works perfectly because slider steps equal label count */}
-                    <div className="flex justify-between text-[11px] font-mono font-semibold">
-                      {DAY_MILESTONES.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setDays(d)}
-                          className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
-                            days === d ? 'text-[#C85A32] font-bold underline' : 'text-dusk-600'
-                          }`}
-                        >
-                          {d} {d === 1 ? 'Day' : 'Days'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Days Slider - piecewise interpolation, ticks evenly distributed visually */}
+                  <EvenlySpacedSlider
+                    milestones={DAY_MARKS}
+                    value={days}
+                    onChange={setDays}
+                    granularity={1}
+                    ariaLabel="Trip duration in days"
+                  />
 
                   {/* Editorial Helper Badge */}
                   <div className="p-3.5 bg-white border border-[#E5DFD5] rounded-2xl text-xs font-sans text-[#12213B]">
@@ -971,43 +963,14 @@ export function DiscoveryOnboardingFlow({
                     </p>
                   </div>
 
-                  {/* Budget Slider - slider index maps 1:1 to milestone array, labels evenly distributed */}
-                  <div className="space-y-3 px-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={BUDGET_MILESTONES.length - 1}
-                      step={1}
-                      value={(() => {
-                        const exact = BUDGET_MILESTONES.indexOf(budgetDaily);
-                        if (exact !== -1) return exact;
-                        return BUDGET_MILESTONES.reduce(
-                          (best, val, idx) =>
-                            Math.abs(val - budgetDaily) < Math.abs(BUDGET_MILESTONES[best] - budgetDaily) ? idx : best,
-                          0
-                        );
-                      })()}
-                      onChange={(e) => setBudgetDaily(BUDGET_MILESTONES[parseInt(e.target.value, 10)])}
-                      className="w-full h-2.5 bg-[#E5DFD5] rounded-lg appearance-none cursor-pointer accent-[#C85A32]"
-                      aria-label="Daily budget in INR"
-                    />
-
-                    {/* flex justify-between works perfectly because slider steps equal label count */}
-                    <div className="flex justify-between text-[11px] font-mono font-semibold">
-                      {BUDGET_MILESTONES.map((b) => (
-                        <button
-                          key={b}
-                          type="button"
-                          onClick={() => setBudgetDaily(b)}
-                          className={`transition-colors hover:text-[#C85A32] cursor-pointer ${
-                            budgetDaily === b ? 'text-[#C85A32] font-bold underline' : 'text-dusk-600'
-                          }`}
-                        >
-                          ₹{b >= 1000 ? `${b / 1000}k` : b}{b >= 25000 ? '+' : ''}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Budget Slider - EvenlySpacedSlider: piecewise interpolation, ticks evenly distributed visually */}
+                  <EvenlySpacedSlider
+                    milestones={BUDGET_MARKS}
+                    value={budgetDaily}
+                    onChange={setBudgetDaily}
+                    granularity={500}
+                    ariaLabel="Daily budget in INR"
+                  />
 
                   {/* Editorial Tier Explanation */}
                   <div className="p-3.5 bg-white border border-[#E5DFD5] rounded-2xl text-xs font-sans text-[#12213B]">
