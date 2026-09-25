@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { ItineraryDay, ItineraryTripDetails, ItineraryPracticalInfo } from '../../types/itinerary';
+import { PracticalBriefingCard } from './PracticalBriefingCard';
 
 interface TripSummarySidebarProps {
   tripDetails: ItineraryTripDetails;
@@ -173,42 +174,11 @@ export function TripSummarySidebar({
         </div>
       </div>
 
-      {/* 3. Practical Field Notes Card */}
-      <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-5 space-y-4 shadow-sm text-xs font-sans text-ink">
-        <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B] block">
-          Practical Field Briefing
-        </span>
-
-        <div className="space-y-3">
-          <div className="flex items-start gap-2.5">
-            <CloudSun className="w-4 h-4 text-[#FFC067] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Climate & Weather</strong>
-              <span className="text-dusk">{practicalInfo.weatherSummary} ({practicalInfo.temperature})</span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Luggage className="w-4 h-4 text-[#C1443B] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Packing Essentials</strong>
-              <ul className="text-dusk list-disc list-inside space-y-0.5 mt-0.5">
-                {practicalInfo.packingList.slice(0, 3).map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Languages className="w-4 h-4 text-[#12213B] shrink-0 mt-0.5" />
-            <div>
-              <strong className="block font-heading font-bold text-ink">Spoken Dialects</strong>
-              <span className="text-dusk">{practicalInfo.languages.join(', ')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 3. Practical Field Intelligence Dossier Bento */}
+      <PracticalBriefingCard
+        practicalInfo={practicalInfo}
+        cityName={tripDetails.destination}
+      />
     </aside>
   );
 }

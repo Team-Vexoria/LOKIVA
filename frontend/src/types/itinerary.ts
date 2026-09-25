@@ -107,6 +107,12 @@ export interface ItineraryTripDetails {
   pace?: 'relaxed' | 'balanced' | 'packed';
 }
 
+export interface FoodRecommendation {
+  locale: string;
+  dishes: string[];
+  notes?: string;
+}
+
 export interface ItineraryPracticalInfo {
   weatherSummary: string;
   temperature: string;
@@ -114,4 +120,16 @@ export interface ItineraryPracticalInfo {
   accessibilityNotes: string;
   transitNotes: string;
   languages: string[];
+  foodRecommendations: FoodRecommendation[];
+  travelTips: string[];
+  bestTimeToVisit: {
+    idealMonths: string;
+    crowdPacing: string;
+    advisory: string;
+  };
+  nearbyPlaces: Array<{
+    name: string;
+    area: string;
+    tag: string;
+  }>;
 }
