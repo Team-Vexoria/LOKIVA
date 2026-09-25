@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EvenlySpacedSlider } from '../ui/EvenlySpacedSlider';
@@ -26,7 +26,13 @@ import {
   Footprints,
   Navigation,
   MapPin,
+  Search,
+  Snowflake,
+  CloudRain,
+  Wind,
+  Sun,
 } from 'lucide-react';
+import { ALL_INDIAN_STATES_BY_ZONE, IndianStateZoneInfo } from '../../data/places';
 
 export interface DiscoveryAnswers {
   destination: string;
@@ -76,35 +82,47 @@ export const BUDGET_MARKS = [
 export const WEATHER_OPTIONS = [
   {
     id: 'winter' as const,
-    label: 'Winter Heritage & Desert Sun',
+    title: 'Winter Heritage & Desert Breeze',
+    label: 'Winter Heritage & Desert Breeze',
     season: 'Oct to Mar',
-    icon: Sparkles,
-    tagline: 'Crisp Days & Desert Nights',
-    desc: 'Golden havelis, stepwells, royal citadels and cool desert breezes in Rajasthan and North India.',
+    temp: '14°C - 24°C',
+    icon: Snowflake,
+    tagline: 'Golden Havelis & Desert Nights',
+    desc: 'Golden sunlit havelis, crisp dawn ghats, and open stepwells.',
+    hubs: 'Rajasthan, Varanasi, Delhi, Hampi',
   },
   {
     id: 'monsoon' as const,
+    title: 'Lush Monsoon & Backwaters',
     label: 'Lush Monsoon & Backwaters',
     season: 'Jun to Sep',
-    icon: Mountain,
+    temp: '22°C - 28°C',
+    icon: CloudRain,
     tagline: 'Verdant Green & Rains',
-    desc: 'Rain-washed palm canals, spice plantations, mist-covered valleys and soothing Ayurvedic retreats.',
+    desc: 'Verdant spice trails, petrichor, tea tastings, and Ayurvedic calm.',
+    hubs: 'Kerala, Western Ghats, Goa, Meghalaya',
   },
   {
     id: 'summer_hills' as const,
-    label: 'Cool Mountain Frontiers',
+    title: 'High-Altitude Mountain Sanctuaries',
+    label: 'High-Altitude Mountain Sanctuaries',
     season: 'Apr to Jun',
-    icon: Mountain,
+    temp: '12°C - 20°C',
+    icon: Wind,
     tagline: 'High-Altitude Serenity',
-    desc: 'Pine forests, ancient Buddhist gompas, panoramic Himalayan ridges and alpine fresh air.',
+    desc: 'Pine forests, glacial valleys, and cliffside monasteries.',
+    hubs: 'Ladakh, Spiti, Himachal, Sikkim',
   },
   {
     id: 'temperate' as const,
-    label: 'Temperate Coastal / Plateau Breeze',
+    title: 'Temperate Maritime & Deccan Plateau',
+    label: 'Temperate Maritime & Deccan Plateau',
     season: 'Year-Round',
-    icon: Compass,
+    temp: '24°C - 30°C',
+    icon: Sun,
     tagline: 'Pleasant Cultural Strolls',
-    desc: 'Colonial stone enclaves, maritime promenades, temple towns and vibrant plateau craft studios.',
+    desc: 'Coastal art districts, evening promenades, and shaded bazaars.',
+    hubs: 'Mumbai, Bengaluru, Kolkata, Chettinad',
   },
 ];
 
@@ -125,72 +143,6 @@ export const DEFAULT_DISCOVERY_ANSWERS: DiscoveryAnswers = {
     step_free: false,
   },
 };
-
-const DESTINATION_HUBS = [
-  {
-    id: 'Smart Match',
-    title: 'Smart Match for my Vibe',
-    subtitle: 'Recommended: Automatically matches the ideal Indian hub based on your cultural interests',
-    badge: 'AI Curated',
-    icon: Sparkles,
-  },
-  {
-    id: 'Kochi',
-    title: 'Kochi, Kerala',
-    subtitle: 'Backwater canals, spice warehouses, Kathakali dance & Ayurvedic sanctuaries',
-    badge: 'Wellness & Nature',
-    icon: Mountain,
-  },
-  {
-    id: 'Ladakh',
-    title: 'Leh, Ladakh',
-    subtitle: 'High-altitude monasteries, ancient Silk Route passes & starry mountain valleys',
-    badge: 'Frontiers & Monasteries',
-    icon: Mountain,
-  },
-  {
-    id: 'Mumbai',
-    title: 'Mumbai, Maharashtra',
-    subtitle: 'Art Deco enclaves, colonial architecture, Parsi cafes & coastal bazaars',
-    badge: 'Arts & Culture',
-    icon: Compass,
-  },
-  {
-    id: 'Jaipur',
-    title: 'Jaipur, Rajasthan',
-    subtitle: 'Golden havelis, royal citadels & living hand-block printing guilds',
-    badge: 'Crafts & Palaces',
-    icon: Landmark,
-  },
-  {
-    id: 'Varanasi',
-    title: 'Varanasi, Uttar Pradesh',
-    subtitle: 'Ancient stone ghats, silk handlooms & evening Ganga Aarti ceremonies',
-    badge: 'Sacred Rituals',
-    icon: Flame,
-  },
-  {
-    id: 'Delhi',
-    title: 'Delhi, National Capital',
-    subtitle: 'Mughal sandstone masterpieces, spice markets & century-old culinary lanes',
-    badge: 'Gastronomy & History',
-    icon: Utensils,
-  },
-  {
-    id: 'Udaipur',
-    title: 'Udaipur, Rajasthan',
-    subtitle: 'Lakeside palaces, marble stepwells & Mewari miniature painting guilds',
-    badge: 'Romantic Heritage',
-    icon: Heart,
-  },
-  {
-    id: 'Amritsar',
-    title: 'Amritsar, Punjab',
-    subtitle: 'Harmandir Sahib golden sanctuary, community langar & Phulkari handcraft',
-    badge: 'Spiritual & Food',
-    icon: Landmark,
-  },
-];
 
 const INTEREST_OPTIONS = [
   { id: 'heritage', label: 'Living Heritage & Citadels', icon: Landmark },
@@ -240,6 +192,8 @@ const GROUP_OPTIONS = [
   },
 ];
 
+const ZONE_TABS = ['All', 'North', 'West', 'South', 'East & Central', 'Northeast', 'Islands'] as const;
+
 interface DiscoveryOnboardingFlowProps {
   isOpen: boolean;
   onClose: () => void;
@@ -260,6 +214,9 @@ export function DiscoveryOnboardingFlow({
   const [destination, setDestination] = useState<string>(
     initialAnswers?.destination || 'Smart Match'
   );
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedZone, setSelectedZone] = useState<string>('All');
+
   const [interests, setInterests] = useState<string[]>(
     initialAnswers?.interests || DEFAULT_DISCOVERY_ANSWERS.interests
   );
@@ -286,6 +243,20 @@ export function DiscoveryOnboardingFlow({
   const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
   const [synthesisStage, setSynthesisStage] = useState<number>(1);
   const [computedCity, setComputedCity] = useState<string>('Jaipur');
+
+  // Filtered States based on Search & Zone for Question 1
+  const filteredStates = useMemo(() => {
+    return ALL_INDIAN_STATES_BY_ZONE.filter((item) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        item.highlight.toLowerCase().includes(q) ||
+        item.popularHubs.some((h) => h.toLowerCase().includes(q));
+      const matchesZone = selectedZone === 'All' || item.zone === selectedZone;
+      return matchesSearch && matchesZone;
+    });
+  }, [searchQuery, selectedZone]);
 
   // Prefers reduced motion
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -379,6 +350,15 @@ export function DiscoveryOnboardingFlow({
   ): string => {
     if (dest && dest !== 'Smart Match') {
       if (dest === 'Ladakh') return 'Leh';
+      if (dest === 'Goa') return 'Goa';
+      if (dest === 'Delhi') return 'Delhi';
+      // If user selected a State or Union Territory from the 36 registry
+      const stateMatch = ALL_INDIAN_STATES_BY_ZONE.find(
+        (s) => s.name.toLowerCase() === dest.toLowerCase()
+      );
+      if (stateMatch && stateMatch.popularHubs.length > 0) {
+        return stateMatch.popularHubs[0];
+      }
       return dest;
     }
 
@@ -614,7 +594,7 @@ export function DiscoveryOnboardingFlow({
     await new Promise((r) => setTimeout(r, 600));
     setSynthesisStage(3);
 
-    // Keep synthesis view displayed while onComplete executes (prevents bouncing back to question 6/7)
+    // Keep synthesis view displayed while onComplete executes (prevents bouncing back to questions)
     try {
       await onComplete(answers);
     } catch (err) {
@@ -631,23 +611,23 @@ export function DiscoveryOnboardingFlow({
   // Spring animation variants
   const slideVariants = {
     enter: (d: number) => ({
-      x: prefersReducedMotion ? 0 : d * 50,
+      x: prefersReducedMotion ? 0 : d * 40,
       opacity: 0,
     }),
     center: {
       x: 0,
       opacity: 1,
       transition: {
-        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
-        opacity: { duration: 0.25 },
+        x: { type: 'spring' as const, stiffness: 320, damping: 30 },
+        opacity: { duration: 0.22 },
       },
     },
     exit: (d: number) => ({
-      x: prefersReducedMotion ? 0 : -d * 50,
+      x: prefersReducedMotion ? 0 : -d * 40,
       opacity: 0,
       transition: {
-        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
+        x: { type: 'spring' as const, stiffness: 320, damping: 30 },
+        opacity: { duration: 0.18 },
       },
     }),
   };
@@ -668,8 +648,6 @@ export function DiscoveryOnboardingFlow({
         maximumFractionDigits: 0,
       }).format(budgetDaily * days);
 
-  if (!isOpen) return null;
-
   const content = (
     <AnimatePresence>
       <motion.div
@@ -680,7 +658,7 @@ export function DiscoveryOnboardingFlow({
       >
         <motion.div
           className="relative w-full max-w-2xl bg-[#FAF7F2] border border-[#E5DFD5] rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto"
-          style={{ maxHeight: 'min(90vh, 650px)' }}
+          style={{ maxHeight: 'min(92vh, 720px)' }}
           initial={{ scale: 0.96, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.96, opacity: 0, y: 15 }}
@@ -748,10 +726,10 @@ export function DiscoveryOnboardingFlow({
           </div>
 
           {/* Central Question Stage */}
-          <div className="p-5 sm:p-7 overflow-y-auto flex-1 min-h-[360px] flex flex-col justify-between">
+          <div className="p-5 sm:p-7 overflow-y-auto flex-1 min-h-[380px] flex flex-col justify-between">
             <AnimatePresence mode="wait" custom={direction}>
               {/* ======================================================= */}
-              {/* STEP 1: DESTINATION HUB (NEW: TARGET SPECIFIC REGION)   */}
+              {/* STEP 1: DESTINATION HORIZON (SMART MATCH + 36 STATES)   */}
               {/* ======================================================= */}
               {currentStep === 1 && !isSynthesizing && (
                 <motion.div
@@ -761,67 +739,134 @@ export function DiscoveryOnboardingFlow({
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  className="space-y-5 flex-1 flex flex-col justify-between"
+                  className="space-y-4 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-1.5 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 1: Destination Context
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 01 · Territorial Horizon
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      Where would you like to explore?
+                      Where is your curiosity pulling you?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Choose a cultural hub or select Smart Match to let Lokiva pair you with the best region.
+                      Let our spatiotemporal concierge handpick a hidden frontier, or drop a pin directly onto your dream state.
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-1 max-h-[260px] overflow-y-auto pr-1">
-                    {DESTINATION_HUBS.map((hub) => {
-                      const isSelected = destination === hub.id;
-                      const Icon = hub.icon;
+                  {/* Featured AI Smart Match Card */}
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => setDestination('Smart Match')}
+                    className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer relative overflow-hidden flex items-center justify-between ${
+                      destination === 'Smart Match'
+                        ? 'bg-[#FFF9F2] border-[#C85A32] shadow-md ring-2 ring-[#C85A32]/20'
+                        : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5] shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-[#D99B43] to-[#C85A32] text-white flex items-center justify-center shadow-xs shrink-0">
+                        <Sparkles className="w-5 h-5 animate-pulse" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading font-bold text-sm sm:text-base text-[#12213B]">
+                            Smart Match for My Vibe
+                          </span>
+                          <span className="text-[10px] font-mono uppercase bg-[#FAF7F2] border border-[#E5DFD5] text-[#C85A32] px-2 py-0.5 rounded-full font-bold">
+                            Recommended
+                          </span>
+                        </div>
+                        <p className="text-xs text-dusk-600 mt-0.5 font-sans">
+                          Let Lokiva synthesize your affinities, season, and budget into the ideal route.
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        destination === 'Smart Match'
+                          ? 'bg-[#C85A32] border-[#C85A32] text-white'
+                          : 'border-[#E5DFD5]'
+                      }`}
+                    >
+                      {destination === 'Smart Match' && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </div>
+                  </motion.div>
 
+                  {/* Search & Zone Filter Bar */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-dusk-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search across all 36 States & UTs (e.g. Kerala, Ladakh, Assam, Rajasthan)..."
+                        className="w-full pl-10 pr-4 py-2 rounded-xl bg-white border border-[#E5DFD5] text-xs font-sans text-[#12213B] placeholder-dusk-600 focus:outline-none focus:border-[#C85A32] shadow-2xs"
+                      />
+                    </div>
+
+                    {/* Region Cluster Tabs */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                      {ZONE_TABS.map((zone) => (
+                        <button
+                          key={zone}
+                          type="button"
+                          onClick={() => setSelectedZone(zone)}
+                          className={`px-3 py-1 rounded-lg text-xs font-heading font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            selectedZone === zone
+                              ? 'bg-[#12213B] text-white shadow-xs'
+                              : 'bg-white border border-[#E5DFD5] text-dusk-600 hover:bg-[#FAF8F5]'
+                          }`}
+                        >
+                          {zone}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 36 States Grid Container */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[190px] overflow-y-auto pr-1">
+                    {filteredStates.map((state) => {
+                      const isSelected = destination === state.name;
                       return (
                         <motion.button
-                          key={hub.id}
+                          key={state.name}
                           type="button"
-                          onClick={() => setDestination(hub.id)}
-                          whileHover={{ scale: 1.01, y: -1 }}
                           whileTap={{ scale: 0.98 }}
-                          className={`p-3.5 rounded-2xl text-left transition-all duration-200 cursor-pointer border flex flex-col justify-between ${
+                          onClick={() => setDestination(state.name)}
+                          className={`p-2.5 sm:p-3 rounded-xl border text-left cursor-pointer transition-all duration-150 flex flex-col justify-between ${
                             isSelected
-                              ? 'bg-[#FFFDF9] border-[#FFC067] ring-2 ring-[#FFC067] shadow-[0_4px_16px_rgba(255,192,103,0.25)]'
+                              ? 'bg-[#FFF9F2] border-[#C85A32] ring-1 ring-[#C85A32] shadow-xs'
                               : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5]'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2">
-                              <Icon className={`w-4 h-4 ${isSelected ? 'text-[#C85A32]' : 'text-dusk-600'}`} />
-                              <span className="font-heading font-bold text-sm text-[#12213B]">
-                                {hub.title}
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-mono font-bold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2 py-0.5 rounded-full">
-                              {hub.badge}
+                          <div className="flex items-start justify-between gap-1">
+                            <span className="font-heading font-bold text-xs sm:text-sm text-[#12213B] line-clamp-1">
+                              {state.name}
                             </span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#C85A32] shrink-0 stroke-[3]" />}
                           </div>
-                          <p className="text-[11px] text-dusk-600 leading-snug line-clamp-2">
-                            {hub.subtitle}
-                          </p>
+                          <span className="text-[10px] text-dusk-600 font-mono mt-1 truncate block">
+                            {state.highlight}
+                          </span>
                         </motion.button>
                       );
                     })}
                   </div>
 
                   {/* Bottom Action */}
-                  <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C85A32] font-semibold">
-                      Selected: {destination}
+                  <div className="pt-3 border-t border-[#E5DFD5] flex items-center justify-between">
+                    <span className="text-xs font-mono text-dusk-600">
+                      Selected: <strong className="text-[#C85A32] font-bold">{destination}</strong>
                     </span>
 
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-2 px-6 py-2 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
                     >
                       <span>Continue</span>
                       <ArrowRight className="w-4 h-4" />
@@ -831,7 +876,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 2: INTERESTS (MULTI-SELECT CHIP CLOUD)              */}
+              {/* STEP 2: CULTURAL AFFINITIES (QUESTION 2)                 */}
               {/* ======================================================= */}
               {currentStep === 2 && !isSynthesizing && (
                 <motion.div
@@ -841,17 +886,19 @@ export function DiscoveryOnboardingFlow({
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  className="space-y-6 flex-1 flex flex-col justify-between"
+                  className="space-y-5 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 2: Cultural Affinity
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 02 · Cultural Passions
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      What experiences draw you in most?
+                      What gets your pulse racing?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Tap the cultural threads you want woven into your itinerary. Every chosen interest directly creates matching stops.
+                      Select the cultural textures, living crafts, and sacred traditions you wish to immerse within.
                     </p>
                   </div>
 
@@ -908,7 +955,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 3: TIME AVAILABLE (TACTILE SLIDER WITH BIG NUMBER)   */}
+              {/* STEP 3: DURATION (QUESTION 3)                            */}
               {/* ======================================================= */}
               {currentStep === 3 && !isSynthesizing && (
                 <motion.div
@@ -920,20 +967,22 @@ export function DiscoveryOnboardingFlow({
                   exit="exit"
                   className="space-y-6 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 3: Time Available
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 03 · Time Horizon
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      How much time do you realistically have?
+                      How many sunrises are you investing?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Drag the dial. We calculate realistic travel times, sunset timings, and opening hours so you never rush.
+                      From spontaneous 1-day micro explorations to unhurried 21-day cultural odysseys.
                     </p>
                   </div>
 
                   {/* Big Animated Duration Display */}
-                  <div className="py-4 text-center space-y-1">
+                  <div className="py-2 text-center space-y-1">
                     <div className="inline-flex items-baseline justify-center gap-2">
                       <span className="text-5xl sm:text-7xl font-display font-bold text-[#12213B] tracking-tight">
                         {days}
@@ -994,7 +1043,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 4: BUDGET CEILING (LIVE INDIAN CURRENCY SLIDER)     */}
+              {/* STEP 4: FINANCIAL COMFORT (QUESTION 4)                   */}
               {/* ======================================================= */}
               {currentStep === 4 && !isSynthesizing && (
                 <motion.div
@@ -1006,20 +1055,22 @@ export function DiscoveryOnboardingFlow({
                   exit="exit"
                   className="space-y-6 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 4: Financial Comfort
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 04 · Financial Comfort
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      What is your comfortable spending range?
+                      What is your daily sanctuary comfort?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Per day for your entire party. Stop entry passes, craft fees, and food are calculated directly from this amount.
+                      Calibrates dining tiers, heritage stays, host guides, and authentic artisan studio passes.
                     </p>
                   </div>
 
                   {/* Big Live Currency Counter */}
-                  <div className="py-4 text-center space-y-1">
+                  <div className="py-2 text-center space-y-1">
                     <div className="text-4xl sm:text-6xl font-display font-bold text-[#12213B] tracking-tight">
                       {formattedBudgetDaily}
                       <span className="text-base sm:text-lg font-heading font-bold text-dusk-600 ml-2">
@@ -1078,7 +1129,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 5: GROUP SIZE / TRAVEL TYPE (ILLUSTRATED CARDS)     */}
+              {/* STEP 5: TRAVEL COMPANIONS (QUESTION 5)                   */}
               {/* ======================================================= */}
               {currentStep === 5 && !isSynthesizing && (
                 <motion.div
@@ -1090,15 +1141,17 @@ export function DiscoveryOnboardingFlow({
                   exit="exit"
                   className="space-y-6 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 5: Travel Companions
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 05 · Travel Companions
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      Who is traveling with you?
+                      Who are you making memories with?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Calibrates itinerary pace, vehicle sizing, seating arrangements, and rest stops.
+                      Calibrates cadence, vehicle sizing, seating arrangements, and comfort pauses.
                     </p>
                   </div>
 
@@ -1166,7 +1219,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 6: TRAVEL PACE (TWO-ENDED SPECTRUM SLIDER)          */}
+              {/* STEP 6: JOURNEY RHYTHM (QUESTION 6)                      */}
               {/* ======================================================= */}
               {currentStep === 6 && !isSynthesizing && (
                 <motion.div
@@ -1178,12 +1231,14 @@ export function DiscoveryOnboardingFlow({
                   exit="exit"
                   className="space-y-6 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 6: Travel Rhythm & Pace
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 06 · Journey Rhythm
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      How do you like to pace your days?
+                      What is your cadence: slow haveli teas or dawn-to-dusk trails?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
                       Find your equilibrium between slow contemplation and high-density discovery.
@@ -1253,7 +1308,7 @@ export function DiscoveryOnboardingFlow({
               )}
 
               {/* ======================================================= */}
-              {/* STEP 7: ACCESSIBILITY NEEDS (OPTIONAL & GENTLE)          */}
+              {/* STEP 7: SEASONAL ATMOSPHERE (QUESTION 7)                 */}
               {/* ======================================================= */}
               {currentStep === 7 && !isSynthesizing && (
                 <motion.div
@@ -1263,14 +1318,113 @@ export function DiscoveryOnboardingFlow({
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  className="space-y-6 flex-1 flex flex-col justify-between"
+                  className="space-y-5 flex-1 flex flex-col justify-between"
                 >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 7: Accessibility (Optional)
-                    </span>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 07 · Seasonal Atmosphere
+                      </span>
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      Any mobility or walking preferences?
+                      Which skies inspire your senses?
+                    </h2>
+                    <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
+                      Aligns destinations and activity timings with ideal thermal comfort and seasonal magic.
+                    </p>
+                  </div>
+
+                  {/* 4 Tactile Season Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
+                    {WEATHER_OPTIONS.map((card) => {
+                      const isSelected = weatherPreference === card.id;
+                      const Icon = card.icon;
+
+                      return (
+                        <motion.button
+                          key={card.id}
+                          type="button"
+                          onClick={() => setWeatherPreference(card.id)}
+                          whileHover={{ y: -2, scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                          className={`p-3.5 sm:p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
+                            isSelected
+                              ? 'bg-[#FFFDF9] border-[#FFC067] ring-2 ring-[#FFC067] shadow-[0_6px_20px_rgba(255,192,103,0.30)]'
+                              : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5] shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div
+                              className={`p-2.5 rounded-xl shrink-0 ${
+                                isSelected
+                                  ? 'bg-[#FFC067]/20 text-[#C85A32]'
+                                  : 'bg-[#FAF7F2] text-[#12213B]'
+                              }`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </div>
+
+                            <span className="text-[10px] font-mono font-bold text-[#C85A32] bg-[#FAF7F2] px-2 py-0.5 rounded-full border border-[#E5DFD5]">
+                              {card.temp}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <h3 className="font-heading font-bold text-sm sm:text-base text-[#12213B]">
+                              {card.title}
+                            </h3>
+                            <p className="text-xs text-dusk-600 font-sans leading-snug">
+                              {card.desc}
+                            </p>
+                            <span className="text-[10px] text-dusk-600 font-mono block pt-1 truncate">
+                              Hubs: {card.hubs}
+                            </span>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Action */}
+                  <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
+                    <span className="text-xs font-mono text-dusk-600">
+                      Selected: <strong className="text-[#C85A32] font-bold">{WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.title}</strong>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ======================================================= */}
+              {/* STEP 8: GROUND COMFORT / MOBILITY (QUESTION 8)           */}
+              {/* ======================================================= */}
+              {currentStep === 8 && !isSynthesizing && (
+                <motion.div
+                  key="step-8"
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="space-y-5 flex-1 flex flex-col justify-between"
+                >
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest font-extrabold text-[#C85A32] bg-[#FAF7F2] border border-[#E5DFD5] px-2.5 py-0.5 rounded-full">
+                        Chapter 08 · Ground Comfort
+                      </span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
+                      Any ground comfort preferences to keep things seamless?
                     </h2>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
                       We optimize route stops, ramps, and walking hops accordingly. Skip anytime if not needed.
@@ -1278,7 +1432,7 @@ export function DiscoveryOnboardingFlow({
                   </div>
 
                   {/* 3 Gentle Toggle Cards */}
-                  <div className="space-y-3 py-1">
+                  <div className="space-y-2.5 py-1">
                     <button
                       type="button"
                       onClick={() =>
@@ -1402,103 +1556,11 @@ export function DiscoveryOnboardingFlow({
                   <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={handleNext}
+                      onClick={handleStartSynthesis}
                       className="text-xs font-mono text-dusk-600 hover:text-[#12213B] transition-colors cursor-pointer"
                     >
                       Skip mobility preferences
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#C85A32] hover:bg-[#B34D28] text-white text-xs sm:text-sm font-heading font-bold shadow-sm transition-colors cursor-pointer"
-                    >
-                      <span>Continue</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ======================================================= */}
-              {/* STEP 8: SEASON / WEATHER CALIBRATION                     */}
-              {/* ======================================================= */}
-              {currentStep === 8 && !isSynthesizing && (
-                <motion.div
-                  key="step-8"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  className="space-y-6 flex-1 flex flex-col justify-between"
-                >
-                  <div className="space-y-2 text-center sm:text-left">
-                    <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
-                      Question 8: Climate & Season Calibration
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#12213B] tracking-tight leading-snug">
-                      What season or weather do you prefer?
-                    </h2>
-                    <p className="text-xs sm:text-sm text-dusk-600 font-sans leading-relaxed">
-                      Matches destinations and times your activities to ideal thermal and rainfall conditions.
-                    </p>
-                  </div>
-
-                  {/* 4 Tactile Season Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 py-2">
-                    {WEATHER_OPTIONS.map((card) => {
-                      const isSelected = weatherPreference === card.id;
-                      const Icon = card.icon;
-
-                      return (
-                        <motion.button
-                          key={card.id}
-                          type="button"
-                          onClick={() => setWeatherPreference(card.id)}
-                          whileHover={{ y: -3, scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                          className={`p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
-                            isSelected
-                              ? 'bg-[#FFFDF9] border-[#FFC067] ring-2 ring-[#FFC067] shadow-[0_8px_24px_rgba(255,192,103,0.32)]'
-                              : 'bg-white hover:bg-[#FAF8F5] border-[#E5DFD5] shadow-xs'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-2">
-                            <div
-                              className={`p-2.5 rounded-xl ${
-                                isSelected
-                                  ? 'bg-[#FFC067]/20 text-[#C85A32]'
-                                  : 'bg-[#FAF7F2] text-[#12213B]'
-                              }`}
-                            >
-                              <Icon className="w-5 h-5" />
-                            </div>
-
-                            <span className="text-[10px] font-mono font-bold text-dusk-600 bg-[#FAF7F2] px-2 py-0.5 rounded-full border border-[#E5DFD5]">
-                              {card.season}
-                            </span>
-                          </div>
-
-                          <div className="space-y-1">
-                            <h3 className="font-heading font-bold text-base text-[#12213B]">
-                              {card.label}
-                            </h3>
-                            <p className="text-xs text-dusk-600 font-sans leading-relaxed">
-                              {card.desc}
-                            </p>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Bottom Action */}
-                  <div className="pt-4 border-t border-[#E5DFD5] flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C85A32] font-semibold">
-                      Selected: {WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.label}
-                    </span>
 
                     <button
                       type="button"
@@ -1537,7 +1599,7 @@ export function DiscoveryOnboardingFlow({
                       Synthesizing Your {computedCity} Route
                     </h3>
                     <p className="text-xs sm:text-sm text-dusk-600 font-sans">
-                      Aligning your exact budget of {formattedBudgetDaily}/day and {interests.length} cultural affinities with verified local artisans and live schedules.
+                      Aligning your exact budget of {formattedBudgetDaily}/day, {interests.length} cultural affinities, and seasonal comfort with verified local artisans and live schedules.
                     </p>
                   </div>
 
@@ -1585,7 +1647,7 @@ export function DiscoveryOnboardingFlow({
                       transition={{ delay: 0.45 }}
                       className="px-3 py-1 rounded-full bg-white border border-[#E5DFD5] text-xs font-mono font-bold text-[#2D8978] shadow-xs"
                     >
-                      {WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.label}
+                      {WEATHER_OPTIONS.find((w) => w.id === weatherPreference)?.title}
                     </motion.span>
                   </div>
 
