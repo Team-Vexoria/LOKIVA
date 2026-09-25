@@ -419,4 +419,5 @@ export interface DayPlanResponse {
 }
 
 export * from './groupTrip';
+export * from './provider';
 
