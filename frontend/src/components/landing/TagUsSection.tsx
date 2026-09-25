@@ -20,7 +20,7 @@ export function TagUsSection() {
       location: 'Raja Ghat, Varanasi',
       creator: '@aarav.wanders',
       image:
-        'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=800&q=80',
+        'https://kashiyatra.in/wp-content/uploads/2023/10/assi-ghat-ganga-aarti.jpeg',
       tag: 'Sacred Lineage',
     },
     {
@@ -29,7 +29,7 @@ export function TagUsSection() {
       location: 'Old City Outskirts, Jaipur',
       creator: '@priya_circuits',
       image:
-        'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=800&q=80',
+        'https://wishtogo.in/wp-content/uploads/2026/06/Luxury-Rajasthan-Trip-Cost-for-5-Days.webp',
       tag: 'Heritage Roads',
     },
     {
@@ -38,7 +38,7 @@ export function TagUsSection() {
       location: 'Abhaneri Stepwell, Rajasthan',
       creator: '@kabir_explores',
       image:
-        'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=800&q=80',
+        'https://curriculture.in/wp-content/uploads/2025/06/667x445_chand-baori-stepwell-abhaneri-2.jpg',
       tag: 'Vernacular Stone',
     },
     {
@@ -47,7 +47,7 @@ export function TagUsSection() {
       location: 'Alleppey Lagoon, Kerala',
       creator: '@neha_voyages',
       image:
-        'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
+        'https://backwoodsemerald.com/assets/images/img-3255-2000x1334.jpg',
       tag: 'Living Waters',
     },
   ];
@@ -121,11 +121,10 @@ export function TagUsSection() {
                 <button
                   type="button"
                   onClick={(e) => toggleLike(e, moment.id)}
-                  className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
-                    isLiked
+                  className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${isLiked
                       ? 'bg-rose-500 text-white border-rose-400'
                       : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600'
-                  }`}
+                    }`}
                   title={isLiked ? 'Saved to Favorites' : 'Save Moment'}
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-white' : ''}`} />
@@ -177,11 +176,10 @@ export function TagUsSection() {
                 <button
                   type="button"
                   onClick={(e) => toggleLike(e, featured.id)}
-                  className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
-                    isLiked
+                  className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
                       ? 'bg-rose-500 text-white border-rose-400 opacity-100'
                       : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
-                  }`}
+                    }`}
                   title={isLiked ? 'Saved' : 'Save Moment'}
                 >
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-white' : ''}`} />
@@ -230,11 +228,10 @@ export function TagUsSection() {
                     <button
                       type="button"
                       onClick={(e) => toggleLike(e, card.id)}
-                      className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
-                        isLiked
+                      className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
                           ? 'bg-rose-500 text-white border-rose-400 opacity-100'
                           : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
-                      }`}
+                        }`}
                       title={isLiked ? 'Saved' : 'Save Moment'}
                     >
                       <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-white' : ''}`} />
@@ -278,11 +275,10 @@ export function TagUsSection() {
                     <button
                       type="button"
                       onClick={(e) => toggleLike(e, card.id)}
-                      className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
-                        isLiked
+                      className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
                           ? 'bg-rose-500 text-white border-rose-400 opacity-100'
                           : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
-                      }`}
+                        }`}
                       title={isLiked ? 'Saved' : 'Save Moment'}
                     >
                       <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-white' : ''}`} />
@@ -327,11 +323,10 @@ export function TagUsSection() {
                   <button
                     type="button"
                     onClick={(e) => toggleLike(e, card.id)}
-                    className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
-                      isLiked
+                    className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
                         ? 'bg-rose-500 text-white border-rose-400 opacity-100'
                         : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
-                    }`}
+                      }`}
                     title={isLiked ? 'Saved' : 'Save Moment'}
                   >
                     <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-white' : ''}`} />
