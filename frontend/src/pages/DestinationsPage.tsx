@@ -10,7 +10,6 @@ import {
   Sparkles,
   Layers,
   X,
-  Camera,
 } from 'lucide-react';
 import { SHOWCASE_DESTINATIONS, ShowcaseDestination } from '../data/destinationsShowcaseData';
 
@@ -120,16 +119,7 @@ export function DestinationsPage() {
     );
   };
 
-  // Hands-free 12-second slideshow interval (only runs during video showcase mode)
-  useEffect(() => {
-    if (isShowingDirectory || selectedOtherDestination) return;
 
-    const timer = setInterval(() => {
-      handleNext();
-    }, 12000);
-
-    return () => clearInterval(timer);
-  }, [handleNext, isShowingDirectory, selectedOtherDestination]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -164,10 +154,11 @@ export function DestinationsPage() {
           {displayDestination.bgVideo ? (
             <video
               key={displayDestination.id}
+              src={displayDestination.bgVideo}
               autoPlay
-              loop
               muted
               playsInline
+              onEnded={handleNext}
               className="w-full h-full object-cover filter contrast-105"
               poster={displayDestination.bgMedia}
             >
@@ -189,8 +180,8 @@ export function DestinationsPage() {
             {incomingDestination.bgVideo ? (
               <video
                 key={`incoming-${incomingDestination.id}`}
+                src={incomingDestination.bgVideo}
                 autoPlay
-                loop
                 muted
                 playsInline
                 className="w-full h-full object-cover filter contrast-105"
@@ -218,27 +209,17 @@ export function DestinationsPage() {
           {!isShowingDirectory ? (
             /* ── VIEW A: ACTIVE DESTINATION SPOTLIGHT CARD ── */
             <div className="space-y-3.5">
-              {/* Header: State Counter & Live Indicator Badge */}
+              {/* Header: Editorial Region & Geospatial Coordinates */}
               <div className="flex items-center justify-between pb-2 border-b border-white/15">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-white/70 tracking-wider">
-                    {selectedOtherDestination
-                      ? 'OTHER DESTINATIONS'
-                      : `STATE ${String(activeIndex + 1).padStart(2, '0')} OF ${String(VIDEO_DESTINATIONS.length).padStart(2, '0')}`}
+                  <span className="text-xs font-mono font-bold text-white/85 tracking-widest uppercase">
+                    REGION · {displayDestination.region.toUpperCase()}
                   </span>
                 </div>
 
-                {isVideoMode ? (
-                  <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#C1443B]/80 border border-white/20 text-white text-[10px] font-heading font-extrabold uppercase tracking-widest shadow-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                    <span>Live Video</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[#FFC067] text-[10px] font-heading font-extrabold uppercase tracking-widest backdrop-blur-sm">
-                    <Camera className="w-3 h-3 text-[#FFC067]" />
-                    <span>Photo Canvas</span>
-                  </span>
-                )}
+                <span className="text-[11px] font-mono text-white/60 tracking-wider">
+                  {displayDestination.coordinates}
+                </span>
               </div>
 
               {/* Photography Thumbnail with Border */}
