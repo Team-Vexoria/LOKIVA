@@ -52,7 +52,7 @@ export const STATE_DOSSIERS: Record<string, StateCulturalDossier> = {
     ],
     siteCount: 65,
     guildCount: 24,
-    region: 'North India',
+    region: 'West India',
   },
 
   'Uttar Pradesh': {

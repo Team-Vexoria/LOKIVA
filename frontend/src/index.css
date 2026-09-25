@@ -280,3 +280,13 @@ input[type=range].custom-slider:active::-moz-range-thumb {
   backface-visibility: hidden;
 }
 
+/* Smooth GPU-accelerated pan and zoom for react-simple-maps */
+.rsm-zoomable-group {
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.rsm-zoomable-group.is-panning {
+  transition: none !important;
+}
+

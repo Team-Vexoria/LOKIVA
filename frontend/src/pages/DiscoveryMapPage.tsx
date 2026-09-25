@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   Sparkles,
+  ChevronDown,
+  Compass,
   MapPin,
-  ChevronUp,
+  ArrowRight,
 } from 'lucide-react';
-import { IndiaVectorMap } from '../components/discovery/IndiaVectorMap';
-import { StateBottomDrawer } from '../components/discovery/StateBottomDrawer';
+import {
+  IndiaVectorMap,
+  REGIONS,
+  RegionType,
+  STATE_REGION_MAP,
+} from '../components/discovery/IndiaVectorMap';
+import { StateEditorialDossier } from '../components/discovery/StateEditorialDossier';
 import {
   DiscoveryOnboardingFlow,
   DiscoveryAnswers,
@@ -16,7 +22,7 @@ import {
 import { getStateDossier } from '../data/stateDossiersData';
 import { getStateForCity } from '../data/places';
 
-// Map destination city/slug to Indian state name for the map
+// Map destination city or slug to Indian state name for the map
 const CITY_TO_STATE: Record<string, string> = {
   jaipur: 'Rajasthan',
   jodhpur: 'Rajasthan',
@@ -50,14 +56,28 @@ const CITY_TO_STATE: Record<string, string> = {
   hyderabad: 'Telangana',
 };
 
+// Featured states for quick zero-state discovery
+const FEATURED_STATES = [
+  { name: 'Rajasthan', region: 'West India', tag: 'Desert Citadels & Havelis' },
+  { name: 'Kerala', region: 'South India', tag: 'Spice Coast & Backwaters' },
+  { name: 'Himachal Pradesh', region: 'North India', tag: 'Himalayan Valleys & Monasteries' },
+  { name: 'Ladakh', region: 'North India', tag: 'High-Altitude Monastic Passes' },
+  { name: 'Meghalaya', region: 'Northeast', tag: 'Living Root Bridges & Sacred Groves' },
+  { name: 'Goa', region: 'West India', tag: 'Portuguese Baroque & Estuaries' },
+];
+
 export function DiscoveryMapPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const routerState = (location.state as { solvedAnswers?: { city?: string } } | null) ?? {};
 
-  // Initialize selected state from URL search params, router state, or default to Rajasthan
-  const [selectedState, setSelectedState] = useState<string>(() => {
+  const dossierSectionRef = useRef<HTMLDivElement>(null);
+
+  // Active regional filter
+  const [activeRegion, setActiveRegion] = useState<RegionType>('All India');
+
+  // Initialize selected state from URL search params or router state; strictly NO default ghost state
+  const [selectedState, setSelectedState] = useState<string | null>(() => {
     const urlState = searchParams.get('state');
     if (urlState) return urlState;
 
@@ -71,10 +91,9 @@ export function DiscoveryMapPage() {
       if (mapped) return mapped;
     }
 
-    return 'Rajasthan';
+    return null;
   });
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
   const [isGuidedFlowOpen, setIsGuidedFlowOpen] = useState<boolean>(() => {
     return searchParams.get('onboard') === 'true';
   });
@@ -82,22 +101,47 @@ export function DiscoveryMapPage() {
   // Sync selected state to URL query parameter cleanly without reload
   useEffect(() => {
     const currentParam = searchParams.get('state');
-    if (currentParam !== selectedState) {
+    if (selectedState) {
+      if (currentParam !== selectedState) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('state', selectedState);
+        setSearchParams(newParams, { replace: true });
+      }
+    } else if (currentParam) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('state', selectedState);
+      newParams.delete('state');
       setSearchParams(newParams, { replace: true });
     }
   }, [selectedState, searchParams, setSearchParams]);
 
-  const handleStateSelect = (stateName: string) => {
-    setSelectedState(stateName);
-    setIsDrawerOpen(true);
+  /**
+   * Handle region selection from top sub-header ribbon
+   * Clears any active state selection so ghost highlights never persist across regions
+   */
+  const handleRegionChange = (region: RegionType) => {
+    setActiveRegion(region);
+    setSelectedState(null);
   };
 
-  const handleLaunchItinerary = (stateName: string) => {
-    navigate(
-      `/itinerary?city=${encodeURIComponent(stateName)}&days=4&pace=balanced`
-    );
+  /**
+   * When any state is clicked on the map or quick list:
+   * Sets active state, syncs region if needed, and smoothly scrolls to the dossier section
+   */
+  const handleStateSelect = (stateName: string) => {
+    setSelectedState(stateName);
+
+    const stateRegion = STATE_REGION_MAP[stateName];
+    if (stateRegion && activeRegion !== 'All India' && activeRegion !== stateRegion) {
+      setActiveRegion(stateRegion);
+    }
+
+    if (dossierSectionRef.current) {
+      const offsetTop = dossierSectionRef.current.offsetTop - 70;
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth',
+      });
+    }
   };
 
   const handleDiscoveryFlowComplete = (answers: DiscoveryAnswers) => {
@@ -106,101 +150,158 @@ export function DiscoveryMapPage() {
       const mappedState = getStateForCity(answers.destination);
       if (mappedState && mappedState !== 'India') {
         setSelectedState(mappedState);
-        setIsDrawerOpen(true);
+        handleStateSelect(mappedState);
         return;
       }
     }
     setSelectedState('Rajasthan');
-    setIsDrawerOpen(true);
+    handleStateSelect('Rajasthan');
   };
 
-  const currentDossier = getStateDossier(selectedState);
+  const currentDossier = selectedState ? getStateDossier(selectedState) : null;
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] relative overflow-hidden bg-[#FAF7F2] select-none flex flex-col">
-      {/* ── Top Floating Minimal Header ───────────────────────────────── */}
-      <header className="absolute top-0 inset-x-0 h-14 px-4 sm:px-6 z-20 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-3 p-1.5 px-3 rounded-2xl bg-white/90 backdrop-blur-md border border-[#E5DFD5] shadow-xs pointer-events-auto">
+    <div className="w-full min-h-screen bg-[#FAF7F2] text-[#12213B] selection:bg-[#C85A32] selection:text-white">
+      {/* Top Dedicated Sub-Header Ribbon (Outside the map viewport) */}
+      <header className="sticky top-0 z-30 w-full bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E5DFD5] px-4 sm:px-8 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* Left: Home Navigation */}
           <Link
             to="/"
-            className="flex items-center gap-1.5 text-xs font-mono font-bold text-dusk-600 hover:text-[#C85A32] transition-colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-[#E5DFD5] text-xs font-mono font-bold text-[#12213B] hover:text-[#C85A32] hover:border-[#C85A32] transition-colors shadow-2xs shrink-0 cursor-pointer"
             title="Return to Home"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Home</span>
+            <ArrowLeft className="w-4 h-4 text-[#C85A32]" />
+            <span>Home</span>
           </Link>
-          <span className="text-[#D5CAB8] hidden sm:inline">/</span>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#C85A32]" />
-            <h1 className="text-xs sm:text-sm font-heading font-extrabold uppercase tracking-wider text-[#12213B]">
-              Living Discovery Canvas
-            </h1>
-          </div>
-        </div>
 
-        {/* Guided Flow Trigger */}
-        <button
-          type="button"
-          onClick={() => setIsGuidedFlowOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/95 hover:bg-white text-[#C85A32] border border-[#E5DFD5] text-xs font-heading font-extrabold shadow-sm transition-all pointer-events-auto cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#D99B43]" />
-          <span className="hidden sm:inline">Guided Match</span>
-          <span className="sm:hidden">Match</span>
-        </button>
+          {/* Center: Dedicated Region Filter Ribbon */}
+          <div className="flex items-center gap-1 p-1 bg-white rounded-2xl border border-[#E5DFD5] shadow-2xs overflow-x-auto max-w-full scrollbar-none">
+            {REGIONS.map((region) => {
+              const isActive = activeRegion === region;
+              return (
+                <button
+                  key={region}
+                  type="button"
+                  onClick={() => handleRegionChange(region)}
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-heading font-extrabold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? 'bg-[#C85A32] text-white shadow-xs'
+                      : 'bg-transparent text-[#12213B] hover:bg-[#FAF7F2] hover:text-[#C85A32]'
+                  }`}
+                >
+                  {region}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: Guided Match Flow Button */}
+          <button
+            type="button"
+            onClick={() => setIsGuidedFlowOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-white text-[#C85A32] border border-[#E5DFD5] hover:border-[#C85A32] text-xs font-heading font-extrabold shadow-2xs transition-colors shrink-0 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-[#D99B43]" />
+            <span className="hidden sm:inline">Guided Match Quiz</span>
+            <span className="sm:hidden">Quiz</span>
+          </button>
+        </div>
       </header>
 
-      {/* ── Full-Width Vibrant Vector Map ──────────────────────────────── */}
-      <main className="w-full h-full relative overflow-hidden" aria-label="Interactive Map of India">
+      {/* SECTION 1: FULL-VIEWPORT HERO MAP CANVAS (Unobstructed by navigation bars) */}
+      <section
+        className="w-full h-[78vh] sm:h-[82vh] relative overflow-hidden bg-[#FAF7F2] border-b border-[#E5DFD5]"
+        aria-label="Interactive Pan-India Discovery Map"
+      >
+        {/* Full-Width Interactive Map Stage */}
         <IndiaVectorMap
           selectedState={selectedState}
           onSelectState={handleStateSelect}
+          activeRegion={activeRegion}
           className="w-full h-full"
         />
 
-        {/* Floating Mini Re-open Pill when Drawer is Collapsed */}
-        <AnimatePresence>
-          {!isDrawerOpen && currentDossier && (
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
+        {/* Bottom Teaser Cue */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+          {currentDossier ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (dossierSectionRef.current) {
+                  dossierSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-md text-xs font-mono font-bold text-[#12213B] hover:text-[#C85A32] hover:border-[#C85A32] transition-all cursor-pointer group"
             >
-              <button
-                type="button"
-                onClick={() => setIsDrawerOpen(true)}
-                className="flex items-center gap-2.5 px-4 py-2.5 bg-white/95 backdrop-blur-md border border-[#E5DFD5] hover:border-[#C85A32] rounded-2xl shadow-lg text-[#12213B] hover:text-[#C85A32] transition-all cursor-pointer group"
-                title="Open state cultural dossier"
-              >
-                <div className="w-6 h-6 rounded-full bg-[#C85A32] text-white flex items-center justify-center shrink-0">
-                  <MapPin className="w-3.5 h-3.5" />
-                </div>
-                <div className="text-left">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-dusk-600 block leading-tight">
-                    Selected State
-                  </span>
-                  <span className="text-xs font-heading font-extrabold text-[#12213B] group-hover:text-[#C85A32]">
-                    {currentDossier.name} (View Dossier)
-                  </span>
-                </div>
-                <ChevronUp className="w-4 h-4 text-dusk-600 group-hover:text-[#C85A32] transition-colors" />
-              </button>
-            </motion.div>
+              <span>Explore {currentDossier.name} Cultural Dossier</span>
+              <ChevronDown className="w-4 h-4 text-[#C85A32] group-hover:translate-y-0.5 transition-transform" />
+            </button>
+          ) : (
+            <div className="pointer-events-none flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[#E5DFD5] shadow-xs text-xs font-mono font-bold text-dusk-600">
+              <Compass className="w-3.5 h-3.5 text-[#C85A32]" />
+              <span>Select any state on the map to unveil its cultural dossier</span>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
+      </section>
 
-        {/* ── Collapsible Slide-Up Cultural Dossier Drawer ───────────────── */}
-        <StateBottomDrawer
-          stateData={currentDossier}
-          isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-          onLaunchItinerary={handleLaunchItinerary}
-        />
+      {/* SECTION 2: EDITORIAL STATE CULTURAL DOSSIER (Natural Scroll-Down) */}
+      <main
+        ref={dossierSectionRef}
+        id="state-cultural-dossier"
+        className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+      >
+        {currentDossier ? (
+          <StateEditorialDossier dossier={currentDossier} />
+        ) : (
+          <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-8">
+            <div className="max-w-2xl space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF7F2] border border-[#E5DFD5] text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32]">
+                <Compass className="w-3.5 h-3.5" />
+                <span>Living Heritage Dossier</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-display font-extrabold text-[#12213B]">
+                Select Any State to Unveil Its Cultural Heritage
+              </h2>
+              <p className="text-sm sm:text-base font-sans text-dusk-600 leading-relaxed">
+                Filter by geographic region above or tap any state boundary directly on the interactive vector canvas to unveil verified living traditions, seasonal calendars, signature gastronomic flavors, and curated routes.
+              </p>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-[#E5DFD5]">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-dusk-600 block">
+                Featured Regional Dossiers
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {FEATURED_STATES.map((state) => (
+                  <button
+                    key={state.name}
+                    type="button"
+                    onClick={() => handleStateSelect(state.name)}
+                    className="p-4 rounded-2xl bg-[#FAF7F2] hover:bg-white border border-[#E5DFD5] hover:border-[#C85A32] text-left transition-all duration-200 cursor-pointer group space-y-1 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
+                        {state.region}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-[#C85A32] group-hover:translate-x-1 transition-transform" />
+                    </div>
+                    <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#12213B] group-hover:text-[#C85A32] transition-colors">
+                      {state.name}
+                    </h3>
+                    <p className="text-xs font-sans text-dusk-600">
+                      {state.tag}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* ── Optional Fullscreen Guided Onboarding Modal ─────────────────── */}
+      {/* Optional Fullscreen Guided Onboarding Modal */}
       {isGuidedFlowOpen && (
         <DiscoveryOnboardingFlow
           isOpen={isGuidedFlowOpen}

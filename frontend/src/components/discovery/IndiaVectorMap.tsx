@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -6,8 +6,7 @@ import {
   ZoomOut,
   RotateCcw,
   Landmark,
-  Scissors,
-  Sparkles,
+  CloudSun,
 } from 'lucide-react';
 import { getStateDossier } from '../../data/stateDossiersData';
 
@@ -25,138 +24,134 @@ export const REGIONS = [
 
 export type RegionType = (typeof REGIONS)[number];
 
-export interface RegionColorConfig {
-  region: string;
-  fill: string;
-  hover: string;
+/**
+ * State to Region Lookup Mapping
+ */
+export const STATE_REGION_MAP: Record<string, RegionType> = {
+  // North India
+  'Jammu and Kashmir': 'North India',
+  'Jammu & Kashmir': 'North India',
+  'Ladakh': 'North India',
+  'Himachal Pradesh': 'North India',
+  'Punjab': 'North India',
+  'Uttarakhand': 'North India',
+  'Haryana': 'North India',
+  'Delhi': 'North India',
+  'Uttar Pradesh': 'North India',
+  'Chandigarh': 'North India',
+
+  // West India
+  'Rajasthan': 'West India',
+  'Gujarat': 'West India',
+  'Maharashtra': 'West India',
+  'Goa': 'West India',
+  'Dadra and Nagar Haveli and Daman and Diu': 'West India',
+
+  // South India
+  'Karnataka': 'South India',
+  'Kerala': 'South India',
+  'Tamil Nadu': 'South India',
+  'Andhra Pradesh': 'South India',
+  'Telangana': 'South India',
+  'Puducherry': 'South India',
+  'Lakshadweep': 'South India',
+
+  // East & Central India
+  'Madhya Pradesh': 'East & Central',
+  'Chhattisgarh': 'East & Central',
+  'Bihar': 'East & Central',
+  'Jharkhand': 'East & Central',
+  'West Bengal': 'East & Central',
+  'Odisha': 'East & Central',
+  'Andaman and Nicobar Islands': 'East & Central',
+
+  // Northeast
+  'Assam': 'Northeast',
+  'Sikkim': 'Northeast',
+  'Meghalaya': 'Northeast',
+  'Arunachal Pradesh': 'Northeast',
+  'Nagaland': 'Northeast',
+  'Manipur': 'Northeast',
+  'Mizoram': 'Northeast',
+  'Tripura': 'Northeast',
+};
+
+/**
+ * Vibrant regional base colors:
+ * North India: Royal Amber Sandstone (#E89A3C)
+ * West India: Warm Terracotta Desert Ochre (#D96B43)
+ * South India: Lush Emerald Heritage Sage (#3D7A5A)
+ * East & Central India: Antique Bronze Rust (#B26E45)
+ * Northeast India: Deep Jade Forest Mineral (#2C5E55)
+ */
+export function getRegionBaseColor(region: string): string {
+  switch (region) {
+    case 'North India':
+      return '#E89A3C';
+    case 'West India':
+      return '#D96B43';
+    case 'South India':
+      return '#3D7A5A';
+    case 'East & Central':
+      return '#B26E45';
+    case 'Northeast':
+      return '#2C5E55';
+    default:
+      return '#B26E45';
+  }
 }
 
 /**
- * Vibrant regional color-coding based on authentic heritage palette:
- * - North India (Himachal, Punjab, Uttarakhand, J&K, Delhi, UP, etc.): Royal Amber / Sandstone (#E89A3C, hover: #D6882A)
- * - West India (Rajasthan, Gujarat, Maharashtra, Goa): Warm Terracotta / Desert Ochre (#D96B43, hover: #C4552D)
- * - South India (Kerala, Tamil Nadu, Karnataka, AP, Telangana): Lush Emerald / Heritage Sage (#3D7A5A, hover: #2E6246)
- * - East & Central India (MP, Chhattisgarh, Bengal, Odisha, Bihar, Jharkhand): Antique Bronze / Rust (#B26E45, hover: #9B5C35)
- * - Northeast India (Assam, Meghalaya, Sikkim, etc.): Deep Jade / Forest Mineral (#2C5E55, hover: #1F4740)
+ * Hardware accelerated camera bounds and zoom factors
  */
-export function getStateRegionAndColors(stateName: string): RegionColorConfig {
-  const norm = stateName.toLowerCase();
-
-  // North India
-  if (
-    norm.includes('himachal') ||
-    norm.includes('punjab') ||
-    norm.includes('uttarakhand') ||
-    norm.includes('jammu') ||
-    norm.includes('kashmir') ||
-    norm.includes('ladakh') ||
-    norm.includes('delhi') ||
-    norm.includes('uttar pradesh') ||
-    norm.includes('haryana') ||
-    norm.includes('chandigarh')
-  ) {
-    return {
-      region: 'North India',
-      fill: '#E89A3C',
-      hover: '#D6882A',
-    };
-  }
-
-  // West India
-  if (
-    norm.includes('rajasthan') ||
-    norm.includes('gujarat') ||
-    norm.includes('maharashtra') ||
-    norm.includes('goa') ||
-    norm.includes('dadra') ||
-    norm.includes('daman') ||
-    norm.includes('diu')
-  ) {
-    return {
-      region: 'West India',
-      fill: '#D96B43',
-      hover: '#C4552D',
-    };
-  }
-
-  // South India
-  if (
-    norm.includes('kerala') ||
-    norm.includes('tamil') ||
-    norm.includes('karnataka') ||
-    norm.includes('andhra') ||
-    norm.includes('telangana') ||
-    norm.includes('puducherry') ||
-    norm.includes('lakshadweep')
-  ) {
-    return {
-      region: 'South India',
-      fill: '#3D7A5A',
-      hover: '#2E6246',
-    };
-  }
-
-  // Northeast India
-  if (
-    norm.includes('assam') ||
-    norm.includes('meghalaya') ||
-    norm.includes('sikkim') ||
-    norm.includes('arunachal') ||
-    norm.includes('manipur') ||
-    norm.includes('mizoram') ||
-    norm.includes('nagaland') ||
-    norm.includes('tripura')
-  ) {
-    return {
-      region: 'Northeast',
-      fill: '#2C5E55',
-      hover: '#1F4740',
-    };
-  }
-
-  // East & Central India (MP, Chhattisgarh, Bengal, Odisha, Bihar, Jharkhand, Andaman)
-  return {
-    region: 'East & Central',
-    fill: '#B26E45',
-    hover: '#9B5C35',
-  };
-}
-
-const REGION_VIEWPORTS: Record<RegionType, { coordinates: [number, number]; zoom: number }> = {
-  'All India': { coordinates: [82.8, 22.0], zoom: 1 },
-  'North India': { coordinates: [77.2, 29.5], zoom: 2.1 },
-  'West India': { coordinates: [72.8, 21.0], zoom: 2.3 },
-  'South India': { coordinates: [77.8, 13.5], zoom: 2.3 },
-  'East & Central': { coordinates: [84.8, 22.8], zoom: 2.2 },
-  'Northeast': { coordinates: [93.2, 25.8], zoom: 2.7 },
+export const REGION_BOUNDS: Record<RegionType, { center: [number, number]; zoom: number }> = {
+  'All India': { center: [82.9, 22.5], zoom: 1 },
+  'North India': { center: [77.5, 31.0], zoom: 2.3 },
+  'South India': { center: [78.5, 14.0], zoom: 2.2 },
+  'West India': { center: [73.5, 21.0], zoom: 2.2 },
+  'East & Central': { center: [84.5, 23.0], zoom: 2.0 },
+  'Northeast': { center: [92.8, 25.8], zoom: 2.4 },
 };
 
-interface IndiaVectorMapProps {
-  selectedState: string;
+export interface IndiaVectorMapProps {
+  selectedState: string | null;
   onSelectState: (stateName: string) => void;
+  activeRegion: RegionType;
   className?: string;
 }
 
 interface HoveredStateTooltip {
   name: string;
   siteCount: number;
-  guildCount: number;
+  weather: string;
   region: string;
 }
 
 export function IndiaVectorMap({
   selectedState,
   onSelectState,
+  activeRegion,
   className = '',
 }: IndiaVectorMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [activeRegion, setActiveRegion] = useState<RegionType>('All India');
-  const [zoomPosition, setZoomPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: [82.8, 22.0],
-    zoom: 1,
-  });
+  // Hardware accelerated zoom state
+  const [center, setCenter] = useState<[number, number]>(
+    REGION_BOUNDS[activeRegion]?.center || REGION_BOUNDS['All India'].center
+  );
+  const [zoom, setZoom] = useState<number>(
+    REGION_BOUNDS[activeRegion]?.zoom || 1
+  );
+  const [isPanning, setIsPanning] = useState<boolean>(false);
 
+  // Sync camera position when activeRegion prop changes
+  useEffect(() => {
+    const target = REGION_BOUNDS[activeRegion] || REGION_BOUNDS['All India'];
+    setCenter(target.center);
+    setZoom(target.zoom);
+  }, [activeRegion]);
+
+  const [hoveredStateName, setHoveredStateName] = useState<string | null>(null);
   const [hoveredState, setHoveredState] = useState<HoveredStateTooltip | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -169,31 +164,18 @@ export function IndiaVectorMap({
     });
   };
 
-  const handleRegionSelect = (region: RegionType) => {
-    setActiveRegion(region);
-    const targetViewport = REGION_VIEWPORTS[region];
-    if (targetViewport) {
-      setZoomPosition(targetViewport);
-    }
-  };
-
   const handleZoomIn = () => {
-    setZoomPosition((prev) => ({
-      ...prev,
-      zoom: Math.min(prev.zoom * 1.35, 4.5),
-    }));
+    setZoom((prev) => Math.min(prev * 1.35, 6));
   };
 
   const handleZoomOut = () => {
-    setZoomPosition((prev) => ({
-      ...prev,
-      zoom: Math.max(prev.zoom / 1.35, 1),
-    }));
+    setZoom((prev) => Math.max(prev / 1.35, 0.8));
   };
 
   const handleResetZoom = () => {
-    setActiveRegion('All India');
-    setZoomPosition(REGION_VIEWPORTS['All India']);
+    const target = REGION_BOUNDS[activeRegion] || REGION_BOUNDS['All India'];
+    setCenter(target.center);
+    setZoom(target.zoom);
   };
 
   return (
@@ -206,48 +188,25 @@ export function IndiaVectorMap({
         backgroundSize: '24px 24px',
       }}
     >
-      {/* ── Top Bar: Floating Centered Region Filter Pills ─────────────── */}
-      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none w-full px-4">
-        <div className="flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E5DFD5] shadow-md overflow-x-auto max-w-full pointer-events-auto scrollbar-none">
-          {REGIONS.map((region) => {
-            const isActive = activeRegion === region;
-            return (
-              <button
-                key={region}
-                type="button"
-                onClick={() => handleRegionSelect(region)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-extrabold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-[#C85A32] text-white shadow-xs'
-                    : 'bg-transparent text-[#12213B] hover:bg-[#FAF7F2] hover:text-[#C85A32]'
-                }`}
-              >
-                {region}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Floating Cursor Glassmorphic Tooltip ───────────────────────── */}
+      {/* Floating Cursor Tooltip */}
       <AnimatePresence>
         {hoveredState && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 4 }}
             transition={{ duration: 0.12 }}
             style={{
               left: tooltipPos.x + 16,
               top: tooltipPos.y - 12,
               transform:
-                tooltipPos.x > (containerRef.current?.clientWidth || 700) - 220
+                tooltipPos.x > (containerRef.current?.clientWidth || 700) - 230
                   ? 'translate(-115%, 0)'
                   : 'none',
             }}
-            className="absolute z-30 pointer-events-none bg-white/95 backdrop-blur-md border border-[#E5DFD5] px-3.5 py-2.5 rounded-xl shadow-xl min-w-[170px]"
+            className="absolute z-30 pointer-events-none bg-white/95 backdrop-blur-md border border-[#E5DFD5] px-3.5 py-2 rounded-2xl shadow-xl min-w-[180px] flex flex-col gap-0.5"
           >
-            <div className="flex items-center justify-between gap-2 mb-0.5">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C85A32]">
                 {hoveredState.region}
               </span>
@@ -256,23 +215,23 @@ export function IndiaVectorMap({
             <h4 className="text-sm font-heading font-extrabold text-[#12213B] leading-tight">
               {hoveredState.name}
             </h4>
-            <div className="flex items-center gap-2 mt-1 text-[11px] font-mono text-dusk-600">
+            <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-dusk-600">
               <span className="flex items-center gap-1 font-semibold text-[#12213B]">
                 <Landmark className="w-3 h-3 text-[#C85A32]" />
                 <span>{hoveredState.siteCount} Sites</span>
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1 font-semibold text-[#12213B]">
-                <Scissors className="w-3 h-3 text-[#D99B43]" />
-                <span>{hoveredState.guildCount} Guilds</span>
+              <span className="flex items-center gap-1 font-semibold text-[#2D4A3E]">
+                <CloudSun className="w-3 h-3 text-[#D99B43]" />
+                <span>{hoveredState.weather.split(':')[0].trim()}</span>
               </span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Floating Zoom Controls ─────────────────────────────────────── */}
-      <div className="absolute top-20 right-4 sm:top-24 sm:right-6 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
+      {/* Floating Zoom Controls (Top Right) */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-[#E5DFD5] shadow-sm">
         <button
           type="button"
           onClick={handleZoomIn}
@@ -299,7 +258,7 @@ export function IndiaVectorMap({
         </button>
       </div>
 
-      {/* ── Regional Palette Legend (Bottom Left) ──────────────────────── */}
+      {/* Regional Palette Legend (Bottom Left) */}
       <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-20 hidden md:flex items-center gap-3 px-3.5 py-2 bg-white/95 backdrop-blur-md rounded-2xl border border-[#E5DFD5] text-[10px] font-mono text-[#12213B] shadow-sm">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-[#E89A3C]" />
@@ -322,30 +281,36 @@ export function IndiaVectorMap({
           <span>Northeast</span>
         </div>
         <div className="flex items-center gap-1.5 border-l border-[#E5DFD5] pl-2 font-bold text-[#C85A32]">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B35] border border-white" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#C85A32] border border-white" />
           <span>Selected</span>
         </div>
       </div>
 
-      {/* ── Vector Map Stage ───────────────────────────────────────────── */}
+      {/* Vector Map Stage with GPU accelerated ZoomableGroup */}
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{
-          scale: 1060,
-          center: [82.8, 22.0],
+          scale: 1050,
+          center: [82.9, 22.5],
         }}
         className="w-full h-full cursor-grab active:cursor-grabbing"
       >
         <ZoomableGroup
-          center={zoomPosition.coordinates}
-          zoom={zoomPosition.zoom}
-          onMoveEnd={(pos) => {
-            if (pos && pos.coordinates && typeof pos.zoom === 'number') {
-              setZoomPosition({ coordinates: pos.coordinates, zoom: pos.zoom });
+          center={center}
+          zoom={zoom}
+          minZoom={0.8}
+          maxZoom={6}
+          className={isPanning ? 'is-panning' : ''}
+          onMoveStart={() => setIsPanning(true)}
+          onMoveEnd={(props) => {
+            setIsPanning(false);
+            if (props.coordinates) {
+              setCenter(props.coordinates);
+            }
+            if (props.zoom) {
+              setZoom(props.zoom);
             }
           }}
-          maxZoom={5.5}
-          minZoom={1}
         >
           <Geographies geography={INDIA_TOPO_JSON}>
             {({ geographies }) =>
@@ -356,60 +321,95 @@ export function IndiaVectorMap({
                   geo.properties?.name ||
                   'India';
 
-                const isSelected = selectedState.toLowerCase() === stateName.toLowerCase();
-                const regionMeta = getStateRegionAndColors(stateName);
+                const stateRegion = STATE_REGION_MAP[stateName] || 'East & Central';
 
-                // Set explicit SVG fill attribute and stroke attribute to ensure no black fallback
-                const baseFill = isSelected ? '#FF6B35' : regionMeta.fill;
-                const baseStroke = isSelected ? '#FFFFFF' : '#FAF7F2';
-                const baseStrokeWidth = isSelected ? 2.0 : 0.8;
+                // Determine if state belongs to currently active region filter
+                const isRegionActive =
+                  activeRegion === 'All India' || stateRegion === activeRegion;
+
+                const isStateSelected =
+                  Boolean(selectedState) &&
+                  selectedState?.toLowerCase() === stateName.toLowerCase();
+
+                const isHovered =
+                  Boolean(hoveredStateName) &&
+                  hoveredStateName?.toLowerCase() === stateName.toLowerCase();
+
+                // Dynamic styling matrix
+                const baseFill = isStateSelected
+                  ? '#C85A32'
+                  : isHovered
+                  ? isRegionActive
+                    ? '#FF6E40'
+                    : '#C4B5A0'
+                  : getRegionBaseColor(stateRegion);
+
+                const opacityValue = isStateSelected
+                  ? 1.0
+                  : isHovered
+                  ? isRegionActive
+                    ? 1.0
+                    : 0.45
+                  : isRegionActive
+                  ? 1.0
+                  : 0.12;
+
+                const strokeColor =
+                  isStateSelected || isHovered
+                    ? '#FFFFFF'
+                    : isRegionActive
+                    ? '#FFFFFF'
+                    : '#D0C5B4';
+
+                const strokeWidthValue = isStateSelected
+                  ? 2.2
+                  : isHovered
+                  ? 1.8
+                  : isRegionActive
+                  ? 0.9
+                  : 0.4;
+
+                const filterValue = isStateSelected
+                  ? 'drop-shadow(0 4px 14px rgba(200, 90, 50, 0.6))'
+                  : isHovered
+                  ? 'drop-shadow(0 3px 10px rgba(0, 0, 0, 0.18))'
+                  : isRegionActive
+                  ? 'none'
+                  : 'grayscale(100%)';
 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     fill={baseFill}
-                    stroke={baseStroke}
-                    strokeWidth={baseStrokeWidth}
+                    stroke={strokeColor}
+                    strokeWidth={strokeWidthValue}
+                    opacity={opacityValue}
                     onMouseEnter={() => {
+                      setHoveredStateName(stateName);
                       const dossier = getStateDossier(stateName);
                       setHoveredState({
                         name: dossier.name,
                         siteCount: dossier.siteCount,
-                        guildCount: dossier.guildCount,
-                        region: regionMeta.region,
+                        weather: dossier.currentWeather,
+                        region: stateRegion,
                       });
                     }}
-                    onMouseLeave={() => setHoveredState(null)}
+                    onMouseLeave={() => {
+                      setHoveredStateName(null);
+                      setHoveredState(null);
+                    }}
                     onClick={() => onSelectState(stateName)}
                     style={{
-                      default: {
-                        fill: baseFill,
-                        stroke: baseStroke,
-                        strokeWidth: baseStrokeWidth,
-                        outline: 'none',
-                        transition: 'all 250ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        filter: isSelected
-                          ? 'drop-shadow(0 6px 16px rgba(255, 107, 53, 0.55))'
-                          : 'none',
-                      },
-                      hover: {
-                        fill: '#FF6B35',
-                        stroke: '#FFFFFF',
-                        strokeWidth: 2.0,
-                        outline: 'none',
-                        cursor: 'pointer',
-                        filter: 'drop-shadow(0 4px 12px rgba(217, 107, 67, 0.45))',
-                        transform: 'translateY(-2px)',
-                        transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                      },
-                      pressed: {
-                        fill: '#B84E26',
-                        stroke: '#FFFFFF',
-                        strokeWidth: 2.0,
-                        outline: 'none',
-                      },
-                    } as any}
+                      fill: baseFill,
+                      opacity: opacityValue,
+                      stroke: strokeColor,
+                      strokeWidth: strokeWidthValue,
+                      filter: filterValue,
+                      outline: 'none',
+                      cursor: 'pointer',
+                      transition: 'fill 300ms ease, opacity 300ms ease, stroke 300ms ease',
+                    }}
                   />
                 );
               })

@@ -31,7 +31,6 @@ function AppShell() {
   const location = useLocation();
   const { showModal, closeModal } = useOnboardingGate();
   const isFullBleedPage = location.pathname === '/' || location.pathname === '/destinations';
-  const isZeroScrollPage = location.pathname === '/discovery-map';
 
   return (
     <div className="flex flex-col min-h-screen bg-paper text-ink font-sans selection:bg-marigold selection:text-ink">
@@ -68,7 +67,7 @@ function AppShell() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-      {!isZeroScrollPage && <Footer />}
+      <Footer />
 
       {/* First-visit onboarding modal */}
       <LocationDecisionModal isOpen={showModal} onClose={closeModal} />
