@@ -160,7 +160,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
             className="pointer-events-none select-none absolute inset-0 overflow-hidden hidden lg:block"
             aria-hidden="true"
           >
-            <div className="absolute left-0 xl:left-4 top-20 lg:top-24 xl:top-28 w-36 lg:w-44 xl:w-52 -rotate-3">
+            <div className="absolute left-0 xl:left-4 top-16 lg:top-20 xl:top-24 w-44 lg:w-56 xl:w-64 -rotate-3">
               <img
                 src="/assets/monuments/hawa-mahal-cutout.png"
                 alt=""
@@ -168,7 +168,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
                 className="w-full h-auto object-contain opacity-60 filter drop-shadow-[0_8px_18px_rgba(18,33,59,0.06)]"
               />
             </div>
-            <div className="absolute right-0 xl:right-4 top-20 lg:top-24 xl:top-28 w-36 lg:w-40 xl:w-48 -rotate-2">
+            <div className="absolute right-0 xl:right-4 top-16 lg:top-20 xl:top-24 w-44 lg:w-52 xl:w-60 -rotate-2">
               <img
                 src="/assets/monuments/taj-mahal-cutout.png"
                 alt=""
@@ -179,7 +179,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* Stamp badge */}
-          <div className="flex items-center justify-center gap-2 mb-3 relative z-10">
+          <div className="flex items-center justify-center gap-2 mb-5 relative z-10">
             <StampBadge text="PAN-INDIA CULTURAL DISCOVERY ENGINE" />
           </div>
 
@@ -197,12 +197,12 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </h1>
 
           {/* Supporting line */}
-          <p className="relative z-10 pt-3 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
+          <p className="relative z-10 pt-5 sm:pt-6 text-base sm:text-lg lg:text-xl text-[#5B6B8C] font-sans max-w-2xl mx-auto leading-relaxed px-2">
             Discover authentic artisan guilds and living heritage, packed into feasible cultural circuits built around your time and budget.
           </p>
 
           {/* Verification line */}
-          <div className="relative z-10 flex items-center justify-center gap-2 pt-2 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
+          <div className="relative z-10 flex items-center justify-center gap-2 pt-4 text-xs font-heading font-bold text-[#5B6B8C] tracking-wider uppercase">
             <MapPin className="w-3.5 h-3.5 text-[#C1443B]" />
             <span>Curated Across</span>
             <span className="font-mono text-[#12213B] font-extrabold text-sm">36</span>
@@ -210,7 +210,7 @@ export function HeroScrollExperience({}: HeroScrollExperienceProps) {
           </div>
 
           {/* CTAs */}
-          <div className="relative z-10 pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
+          <div className="relative z-10 pt-6 sm:pt-7 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
             <div className="relative inline-flex items-center w-full sm:w-auto justify-center">
               <div className="hidden md:flex items-center gap-1 absolute -left-24 top-1/2 -translate-y-1/2 pointer-events-none select-none">
                 <span className="font-display italic text-xs font-bold text-[#C1443B] transform -rotate-6 whitespace-nowrap">
