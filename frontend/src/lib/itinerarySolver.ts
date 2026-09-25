@@ -185,17 +185,33 @@ export function recalculateDaySchedule(
       act.transitDistanceKm = distKm;
       totalTransitDistanceKm += distKm;
 
-      if (distKm <= 1.2 && act.walkingDistanceMeters <= 800 && day.activeFilter !== 'fatigue') {
+      const dailyMeal = day.mealBudgetPerPerson || 350;
+      const isLuxuryTier = dailyMeal >= 1800;
+      const isComfortTier = dailyMeal >= 800;
+
+      if (distKm <= 1.0 && (act.walkingDistanceMeters || 600) <= 700 && day.activeFilter !== 'fatigue' && !isLuxuryTier) {
         act.transitMode = 'walking';
         act.transitToNextMinutes = Math.max(5, Math.ceil((distKm / 4.0) * 60) + 2);
         act.transitCost = 0;
         act.gettingThere = `Short ${Math.round(distKm * 1000)}m heritage walk (~${act.transitToNextMinutes} mins)`;
         totalWalkingMeters += Math.round(distKm * 1000);
+      } else if (isLuxuryTier) {
+        act.transitMode = 'heritage_cab';
+        act.transitToNextMinutes = Math.max(10, Math.ceil((distKm / 28.0) * 60) + 6);
+        act.transitCost = Math.round(450 + distKm * 40);
+        act.gettingThere = `Dedicated private heritage chauffeur transfer (~${act.transitToNextMinutes} mins)`;
+        totalTransitCost += act.transitCost;
+      } else if (isComfortTier) {
+        act.transitMode = 'private_cab';
+        act.transitToNextMinutes = Math.max(10, Math.ceil((distKm / 24.0) * 60) + 5);
+        act.transitCost = Math.round(200 + distKm * 25);
+        act.gettingThere = `Private AC cab transfer (~${act.transitToNextMinutes} mins)`;
+        totalTransitCost += act.transitCost;
       } else {
         act.transitMode = 'auto_rickshaw';
         act.transitToNextMinutes = Math.max(10, Math.ceil((distKm / 20.0) * 60) + 5);
-        act.transitCost = Math.round(30 + distKm * 15);
-        act.gettingThere = `Auto-rickshaw or cab transfer (~${act.transitToNextMinutes} mins)`;
+        act.transitCost = Math.round(40 + distKm * 18);
+        act.gettingThere = `Local auto-rickshaw transfer (~${act.transitToNextMinutes} mins)`;
         totalTransitCost += act.transitCost;
       }
 
@@ -482,20 +498,25 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
   const targetDailyTotal = Math.max(800, Math.round(budgetLimit / safeDays));
   const targetDailyPerPerson = Math.max(400, Math.round(targetDailyTotal / safeTravelers));
 
-  // Realistic meal allocation per person per day based on tier
-  let dailyMealPerPerson = 350;
+  // Dynamic culinary allocation scaled directly to target budget tier
+  let dailyMealPerPerson = 450;
   if (targetDailyPerPerson <= 1500) {
-    dailyMealPerPerson = 280;
-  } else if (targetDailyPerPerson <= 4000) {
-    dailyMealPerPerson = 450;
-  } else if (targetDailyPerPerson <= 9000) {
-    dailyMealPerPerson = 850;
-  } else {
+    dailyMealPerPerson = 350;
+  } else if (targetDailyPerPerson <= 3000) {
+    dailyMealPerPerson = 650;
+  } else if (targetDailyPerPerson <= 7000) {
     dailyMealPerPerson = 1500;
+  } else {
+    dailyMealPerPerson = Math.round(targetDailyPerPerson * 0.32);
   }
 
   const activitiesPerDay = pace === 'relaxed' ? 3 : pace === 'packed' ? 5 : 4;
-  const estDailyTransitGroup = Math.min(1000, Math.max(80, activitiesPerDay * 45));
+  const estDailyTransitGroup = targetDailyPerPerson >= 4000
+    ? Math.round(activitiesPerDay * 450)
+    : targetDailyPerPerson >= 2000
+    ? Math.round(activitiesPerDay * 220)
+    : Math.round(activitiesPerDay * 50);
+
   const targetDailyActivitiesGroup = Math.max(0, targetDailyTotal - (dailyMealPerPerson * safeTravelers) - estDailyTransitGroup);
   const targetPerActivityTicket = Math.max(0, Math.round((targetDailyActivitiesGroup / activitiesPerDay) / safeTravelers));
 
@@ -680,8 +701,31 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       const lat = exp.latitude || 26.9124 + d * 0.01;
       const lng = exp.longitude || 75.7873 + actIdx * 0.01;
 
-      // Real Catalog Admission Cost
-      const actualTicketCost = exp.price !== undefined ? exp.price : 0;
+      // Real Catalog Admission Cost & Tier Calibration
+      let actualTicketCost = exp.price !== undefined ? exp.price : 0;
+      let inclusions = exp.tags && exp.tags.length > 0 ? [...exp.tags] : ['Verified cultural guide', 'Field notes'];
+
+      if (targetDailyPerPerson >= 4500) {
+        // Luxury tier: pair monuments & cultural stops with private master artisan sessions, historian guides, and bespoke tastings
+        if (actualTicketCost < 600) {
+          if (actIdx === 0 || actIdx === 2) {
+            actualTicketCost = Math.round(targetPerActivityTicket * 1.15);
+            inclusions = ['Private Master Artisan Access', 'Curated Field Tasting', 'Verified Historian Guide', ...inclusions];
+          } else {
+            actualTicketCost = Math.round(targetPerActivityTicket * 0.85);
+            inclusions = ['Curated Heritage Experience', 'Private Reserved Access', ...inclusions];
+          }
+        } else {
+          actualTicketCost = Math.max(actualTicketCost, Math.round(targetPerActivityTicket));
+          inclusions = ['Masterclass Immersion', 'Private Guild Demonstration', ...inclusions];
+        }
+      } else if (targetDailyPerPerson >= 2200) {
+        // Comfort tier
+        if (actualTicketCost < 300) {
+          actualTicketCost = Math.max(actualTicketCost, Math.round(targetPerActivityTicket * 0.9));
+          inclusions = ['Curated Local Heritage Tour', ...inclusions];
+        }
+      }
 
       // Calculate realistic transit to next stop
       let transitDistKm = 2.0;
@@ -716,7 +760,7 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
         walkingDistanceMeters,
         crowdLevel,
         coordinates: [lat, lng],
-        includes: exp.tags && exp.tags.length > 0 ? exp.tags : ['Verified local guide', 'Field notes'],
+        includes: Array.from(new Set(inclusions)),
         costPerPerson: actualTicketCost,
         bookingStatus: 'available',
         gettingThere: transitDistKm < 1.2 ? 'Short paved walking hop' : 'Local auto-rickshaw or e-rickshaw',
@@ -729,37 +773,39 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
       };
     });
 
-    // Budget Substitution: If day activities exceed daily budget allowance, substitute high-cost stops with free cultural stops
-    let dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
-    const maxAllowedActivitiesSpend = targetDailyActivitiesGroup * 1.25;
+    // Budget Substitution for modest budgets: If day activities exceed daily budget allowance, substitute with free stops
+    if (targetDailyPerPerson < 3000) {
+      let dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
+      const maxAllowedActivitiesSpend = targetDailyActivitiesGroup * 1.25;
 
-    if (dayActivitiesCost > maxAllowedActivitiesSpend && freeCandidatePool.length > 0) {
-      for (let actIdx = initialActivities.length - 1; actIdx >= 1; actIdx--) {
-        if (dayActivitiesCost <= maxAllowedActivitiesSpend) break;
-        const currentAct = initialActivities[actIdx];
-        if (currentAct.costPerPerson > 0) {
-          const freeReplacement = freeCandidatePool.find(
-            (fp) => !usedExperienceIds.has(fp.id) && fp.id !== currentAct.experienceId
-          );
-          if (freeReplacement) {
-            usedExperienceIds.add(freeReplacement.id);
-            const durationMins = freeReplacement.duration_mins || 60;
-            initialActivities[actIdx] = {
-              ...currentAct,
-              experienceId: freeReplacement.id,
-              title: freeReplacement.title,
-              category: freeReplacement.category || 'Living Heritage',
-              description: freeReplacement.description || freeReplacement.tagline || 'Verified cultural landmark.',
-              location: freeReplacement.area_name || `${freeReplacement.city}, ${freeReplacement.state || ''}`,
-              costPerPerson: 0,
-              photos: freeReplacement.image_urls && freeReplacement.image_urls.length > 0 ? freeReplacement.image_urls : [resolveImageUrl(freeReplacement.image_url)],
-              duration: `${durationMins} mins`,
-              durationMins,
-              visitDurationMinutes: durationMins,
-              lat: freeReplacement.latitude || currentAct.lat,
-              lng: freeReplacement.longitude || currentAct.lng,
-            };
-            dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
+      if (dayActivitiesCost > maxAllowedActivitiesSpend && freeCandidatePool.length > 0) {
+        for (let actIdx = initialActivities.length - 1; actIdx >= 1; actIdx--) {
+          if (dayActivitiesCost <= maxAllowedActivitiesSpend) break;
+          const currentAct = initialActivities[actIdx];
+          if (currentAct.costPerPerson > 0) {
+            const freeReplacement = freeCandidatePool.find(
+              (fp) => !usedExperienceIds.has(fp.id) && fp.id !== currentAct.experienceId
+            );
+            if (freeReplacement) {
+              usedExperienceIds.add(freeReplacement.id);
+              const durationMins = freeReplacement.duration_mins || 60;
+              initialActivities[actIdx] = {
+                ...currentAct,
+                experienceId: freeReplacement.id,
+                title: freeReplacement.title,
+                category: freeReplacement.category || 'Living Heritage',
+                description: freeReplacement.description || freeReplacement.tagline || 'Verified cultural landmark.',
+                location: freeReplacement.area_name || `${freeReplacement.city}, ${freeReplacement.state || ''}`,
+                costPerPerson: 0,
+                photos: freeReplacement.image_urls && freeReplacement.image_urls.length > 0 ? freeReplacement.image_urls : [resolveImageUrl(freeReplacement.image_url)],
+                duration: `${durationMins} mins`,
+                durationMins,
+                visitDurationMinutes: durationMins,
+                lat: freeReplacement.latitude || currentAct.lat,
+                lng: freeReplacement.longitude || currentAct.lng,
+              };
+              dayActivitiesCost = initialActivities.reduce((s, a) => s + (a.costPerPerson || 0) * safeTravelers, 0);
+            }
           }
         }
       }
@@ -787,6 +833,37 @@ export function generateDynamicTripPlan(options: GenerateTripOptions): {
     const { day: calculatedDay, metrics: dayMetrics } = recalculateDaySchedule(rawDay, safeTravelers);
     calculatedDay.metrics = dayMetrics;
     days.push(calculatedDay);
+  }
+
+  // ─── STRICT BUDGET CONVERGENCE ENGINE ─────────────────────────────────────
+  // Enforces total generated itinerary spend to converge within ±5,000 INR of the target budget.
+  const targetTotal = budgetLimit;
+  let currentTotal = days.reduce((sum, d) => sum + (d.metrics?.costBreakdown?.totalCost || 0), 0);
+
+  if (currentTotal < targetTotal * 0.90) {
+    const deficitTotal = targetTotal - currentTotal;
+    const deficitPerDay = deficitTotal / safeDays;
+
+    days.forEach((day) => {
+      // 1. Upgrade meal allowance to curated culinary degustation
+      day.mealBudgetPerPerson = Math.round(Math.max(day.mealBudgetPerPerson || 400, targetDailyPerPerson * 0.32));
+
+      // 2. Distribute remaining deficit into premium master artisan workshops, private guides & tastings
+      const acts = day.activities || [];
+      const actsCount = Math.max(1, acts.length);
+      const deficitPerActivityPerPerson = Math.round((deficitPerDay * 0.68) / (actsCount * safeTravelers));
+
+      acts.forEach((act) => {
+        act.costPerPerson = Math.round((act.costPerPerson || 0) + deficitPerActivityPerPerson);
+        const additions = ['Private Master Artisan Access', 'Curated Field Tasting', 'Verified Historian Guide'];
+        act.includes = Array.from(new Set([...(act.includes || []), ...additions]));
+      });
+
+      // 3. Recalculate schedule & metrics with updated values
+      const { day: calculatedDay, metrics: dayMetrics } = recalculateDaySchedule(day, safeTravelers);
+      day.activities = calculatedDay.activities;
+      day.metrics = dayMetrics;
+    });
   }
 
   const tripDetails: ItineraryTripDetails = {

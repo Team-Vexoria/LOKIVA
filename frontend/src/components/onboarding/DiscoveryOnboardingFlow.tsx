@@ -317,28 +317,306 @@ export function DiscoveryOnboardingFlow({
     return 'balanced';
   };
 
-  const HUB_WEATHER_AFFINITY: Record<string, Record<'winter' | 'monsoon' | 'summer_hills' | 'temperate', number>> = {
-    Varanasi: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -4 },
-    Rishikesh: { winter: 7, summer_hills: 7, temperate: 6, monsoon: 2 },
-    Jaipur: { winter: 9, temperate: 5, monsoon: 2, summer_hills: -5 },
-    Udaipur: { winter: 8, monsoon: 7, temperate: 6, summer_hills: -3 },
-    Jaisalmer: { winter: 10, temperate: 4, monsoon: 0, summer_hills: -8 },
-    Leh: { summer_hills: 10, temperate: 4, monsoon: 2, winter: -8 },
-    Kochi: { monsoon: 8, winter: 8, temperate: 7, summer_hills: 2 },
-    Amritsar: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -2 },
-    Delhi: { winter: 8, temperate: 6, monsoon: 2, summer_hills: -4 },
-    Mumbai: { temperate: 8, winter: 8, monsoon: 6, summer_hills: 3 },
-    Kolkata: { winter: 8, temperate: 7, monsoon: 4, summer_hills: -2 },
-    Shillong: { monsoon: 9, summer_hills: 8, temperate: 7, winter: 4 },
-    Bhubaneswar: { winter: 8, temperate: 7, monsoon: 3, summer_hills: -2 },
-    Ahmedabad: { winter: 8, temperate: 5, monsoon: 3, summer_hills: -4 },
-    Goa: { winter: 8, monsoon: 8, temperate: 7, summer_hills: 2 },
-    Hyderabad: { winter: 8, temperate: 8, monsoon: 4, summer_hills: -1 },
-    Chennai: { winter: 8, temperate: 6, monsoon: 3, summer_hills: -3 },
-    Srinagar: { summer_hills: 10, winter: 7, temperate: 6, monsoon: 3 },
-    Bhopal: { winter: 8, temperate: 6, monsoon: 5, summer_hills: -2 },
-    Shimla: { summer_hills: 10, winter: 8, temperate: 6, monsoon: 2 },
-  };
+  interface SmartHubCandidate {
+    city: string;
+    state: string;
+    scores: Record<string, number>;
+    budgetProfile: 'budget_friendly' | 'moderate' | 'luxury' | 'all';
+    weatherAffinities: { winter: number; monsoon: number; summer_hills: number; temperate: number };
+    groupAffinities: { solo: number; couple: number; family: number; friends: number };
+    paceAffinities: { relaxed: number; balanced: number; packed: number };
+    vibeTagline: string;
+  }
+
+  const SMART_DESTINATION_HUBS: SmartHubCandidate[] = [
+    // ── Mountain & Valleys ──────────────────────────────────────────────────
+    {
+      city: 'Leh',
+      state: 'Ladakh',
+      scores: { nature: 10, offbeat: 10, rituals: 8, monuments: 7, heritage: 6, wellness: 6, crafts: 6, food: 5, markets: 4, arts: 5 },
+      budgetProfile: 'luxury',
+      weatherAffinities: { summer_hills: 10, temperate: 7, winter: 4, monsoon: 6 },
+      groupAffinities: { solo: 10, friends: 9, couple: 8, family: 5 },
+      paceAffinities: { relaxed: 9, balanced: 8, packed: 4 },
+      vibeTagline: 'high-altitude monastic silence, rugged valleys and sacred stupas',
+    },
+    {
+      city: 'Srinagar',
+      state: 'Jammu and Kashmir',
+      scores: { nature: 10, crafts: 9, heritage: 8, food: 8, offbeat: 7, wellness: 7, markets: 7, monuments: 6, arts: 6, rituals: 4 },
+      budgetProfile: 'luxury',
+      weatherAffinities: { summer_hills: 9, winter: 8, temperate: 7, monsoon: 5 },
+      groupAffinities: { couple: 10, family: 8, solo: 6, friends: 6 },
+      paceAffinities: { relaxed: 10, balanced: 7, packed: 4 },
+      vibeTagline: 'wooden shikara sunsets, pashmina guilds and Mughal terrace gardens',
+    },
+    {
+      city: 'Dharamshala',
+      state: 'Himachal Pradesh',
+      scores: { wellness: 10, arts: 9, crafts: 9, nature: 9, offbeat: 8, rituals: 8, food: 7, heritage: 6, markets: 6, monuments: 4 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { summer_hills: 10, temperate: 8, winter: 6, monsoon: 5 },
+      groupAffinities: { solo: 10, couple: 8, friends: 8, family: 6 },
+      paceAffinities: { relaxed: 10, balanced: 7, packed: 4 },
+      vibeTagline: 'Tibetan thangka ateliers, cedar pine walks and Himalayan meditation',
+    },
+    {
+      city: 'Manali',
+      state: 'Himachal Pradesh',
+      scores: { nature: 10, offbeat: 9, wellness: 7, crafts: 6, food: 6, heritage: 6, markets: 6, rituals: 5, monuments: 4, arts: 4 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { summer_hills: 10, winter: 8, temperate: 7, monsoon: 3 },
+      groupAffinities: { friends: 10, couple: 9, solo: 7, family: 6 },
+      paceAffinities: { balanced: 9, relaxed: 7, packed: 6 },
+      vibeTagline: 'alpine cedar passes, apple orchards and woodcraft sanctuaries',
+    },
+    {
+      city: 'Shimla',
+      state: 'Himachal Pradesh',
+      scores: { heritage: 9, nature: 8, monuments: 8, offbeat: 6, wellness: 6, markets: 6, food: 5, arts: 5, crafts: 5, rituals: 3 },
+      budgetProfile: 'all',
+      weatherAffinities: { summer_hills: 9, winter: 8, temperate: 7, monsoon: 3 },
+      groupAffinities: { family: 10, couple: 8, friends: 7, solo: 6 },
+      paceAffinities: { relaxed: 9, balanced: 8, packed: 5 },
+      vibeTagline: 'colonial mountain ridges, cedar paths and toy train heritage',
+    },
+    {
+      city: 'Gangtok',
+      state: 'Sikkim',
+      scores: { nature: 10, rituals: 9, crafts: 8, offbeat: 8, wellness: 8, food: 7, heritage: 7, arts: 7, markets: 6, monuments: 5 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { summer_hills: 9, temperate: 8, winter: 7, monsoon: 5 },
+      groupAffinities: { couple: 9, family: 8, solo: 8, friends: 7 },
+      paceAffinities: { relaxed: 9, balanced: 8, packed: 5 },
+      vibeTagline: 'misty monastery chants, orchid trails and woodblock craft workshops',
+    },
+    {
+      city: 'Shillong',
+      state: 'Meghalaya',
+      scores: { nature: 10, offbeat: 9, arts: 9, wellness: 7, food: 7, crafts: 6, markets: 6, heritage: 5, rituals: 3, monuments: 3 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { monsoon: 10, summer_hills: 9, temperate: 8, winter: 6 },
+      groupAffinities: { friends: 9, solo: 9, couple: 8, family: 6 },
+      paceAffinities: { relaxed: 8, balanced: 9, packed: 5 },
+      vibeTagline: 'cloud waterfalls, living root bridges and vernacular indie music',
+    },
+    {
+      city: 'Munnar',
+      state: 'Kerala',
+      scores: { nature: 10, wellness: 9, offbeat: 8, food: 7, crafts: 5, heritage: 5, markets: 5, arts: 4, rituals: 3, monuments: 2 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { summer_hills: 9, monsoon: 9, temperate: 9, winter: 8 },
+      groupAffinities: { couple: 10, family: 8, solo: 7, friends: 7 },
+      paceAffinities: { relaxed: 10, balanced: 7, packed: 4 },
+      vibeTagline: 'emerald tea terraces, spice gardens and cool Western Ghats mist',
+    },
+    {
+      city: 'Ooty',
+      state: 'Tamil Nadu',
+      scores: { nature: 9, heritage: 8, wellness: 7, offbeat: 6, food: 6, markets: 6, crafts: 5, monuments: 4, arts: 4, rituals: 3 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { summer_hills: 9, temperate: 8, winter: 8, monsoon: 4 },
+      groupAffinities: { family: 9, couple: 9, friends: 7, solo: 6 },
+      paceAffinities: { relaxed: 9, balanced: 8, packed: 5 },
+      vibeTagline: 'Nilgiri mountain railway, botanical estates and artisanal chocolate walks',
+    },
+    {
+      city: 'Coorg',
+      state: 'Karnataka',
+      scores: { nature: 10, wellness: 9, food: 8, offbeat: 8, heritage: 6, crafts: 5, markets: 5, rituals: 4, arts: 4, monuments: 3 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { monsoon: 9, temperate: 9, summer_hills: 8, winter: 8 },
+      groupAffinities: { couple: 9, friends: 9, family: 7, solo: 7 },
+      paceAffinities: { relaxed: 10, balanced: 7, packed: 4 },
+      vibeTagline: 'coffee plantation retreats, Kodava culinary feasts and misty hills',
+    },
+
+    // ── Cultural & Royal ────────────────────────────────────────────────────
+    {
+      city: 'Jaipur',
+      state: 'Rajasthan',
+      scores: { crafts: 10, heritage: 10, markets: 10, monuments: 9, food: 8, arts: 8, rituals: 6, offbeat: 6, wellness: 5, nature: 4 },
+      budgetProfile: 'all',
+      weatherAffinities: { winter: 10, temperate: 6, monsoon: 5, summer_hills: 2 },
+      groupAffinities: { family: 10, couple: 9, friends: 8, solo: 7 },
+      paceAffinities: { balanced: 9, packed: 8, relaxed: 7 },
+      vibeTagline: 'master handloom guilds, terracotta city gates and royal palace courts',
+    },
+    {
+      city: 'Udaipur',
+      state: 'Rajasthan',
+      scores: { heritage: 10, nature: 9, arts: 9, crafts: 8, wellness: 8, monuments: 8, food: 7, offbeat: 7, markets: 7, rituals: 5 },
+      budgetProfile: 'luxury',
+      weatherAffinities: { winter: 10, monsoon: 8, temperate: 7, summer_hills: 3 },
+      groupAffinities: { couple: 10, family: 8, solo: 6, friends: 7 },
+      paceAffinities: { relaxed: 10, balanced: 8, packed: 5 },
+      vibeTagline: 'lakefront haveli courtyards, miniature fresco painting and sunset boat cruises',
+    },
+    {
+      city: 'Jodhpur',
+      state: 'Rajasthan',
+      scores: { heritage: 10, crafts: 9, monuments: 9, offbeat: 8, food: 7, markets: 8, arts: 7, rituals: 5, nature: 5, wellness: 4 },
+      budgetProfile: 'all',
+      weatherAffinities: { winter: 10, temperate: 6, monsoon: 4, summer_hills: 2 },
+      groupAffinities: { couple: 9, friends: 8, solo: 8, family: 7 },
+      paceAffinities: { balanced: 9, relaxed: 8, packed: 6 },
+      vibeTagline: 'blue city rooftop panoramas, indigo guilds and Mehrangarh ramparts',
+    },
+    {
+      city: 'Jaisalmer',
+      state: 'Rajasthan',
+      scores: { offbeat: 10, heritage: 10, monuments: 9, crafts: 8, arts: 8, markets: 7, nature: 7, food: 6, rituals: 4, wellness: 4 },
+      budgetProfile: 'all',
+      weatherAffinities: { winter: 10, temperate: 5, monsoon: 3, summer_hills: 1 },
+      groupAffinities: { couple: 9, friends: 9, solo: 9, family: 6 },
+      paceAffinities: { relaxed: 9, balanced: 8, packed: 5 },
+      vibeTagline: 'golden sandstone citadels, desert starlight and vernacular stepwells',
+    },
+    {
+      city: 'Mysore',
+      state: 'Karnataka',
+      scores: { heritage: 10, crafts: 9, rituals: 8, arts: 8, food: 8, markets: 8, monuments: 7, wellness: 7, nature: 5, offbeat: 5 },
+      budgetProfile: 'all',
+      weatherAffinities: { temperate: 10, winter: 8, monsoon: 7, summer_hills: 5 },
+      groupAffinities: { family: 10, couple: 8, solo: 7, friends: 6 },
+      paceAffinities: { relaxed: 8, balanced: 9, packed: 6 },
+      vibeTagline: 'sandalwood silk weavers, illuminated royal halls and fragrant market bazaars',
+    },
+    {
+      city: 'Gwalior',
+      state: 'Madhya Pradesh',
+      scores: { monuments: 10, heritage: 9, arts: 9, offbeat: 8, crafts: 6, rituals: 5, food: 6, markets: 5, wellness: 4, nature: 3 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 9, temperate: 6, monsoon: 5, summer_hills: 2 },
+      groupAffinities: { solo: 8, family: 7, friends: 6, couple: 6 },
+      paceAffinities: { balanced: 9, packed: 8, relaxed: 6 },
+      vibeTagline: 'impregnable hilltop forts, classical music shrines and ancient stone carvings',
+    },
+
+    // ── Heritage & Spiritual ────────────────────────────────────────────────
+    {
+      city: 'Varanasi',
+      state: 'Uttar Pradesh',
+      scores: { rituals: 10, offbeat: 9, crafts: 8, food: 8, heritage: 8, arts: 7, wellness: 7, markets: 6, monuments: 5, nature: 4 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 10, temperate: 6, monsoon: 5, summer_hills: 2 },
+      groupAffinities: { solo: 10, couple: 8, family: 8, friends: 6 },
+      paceAffinities: { balanced: 9, packed: 8, relaxed: 7 },
+      vibeTagline: 'Ganga evening Aarti, Banarasi silk looms and dawn wooden boat serenades',
+    },
+    {
+      city: 'Rishikesh',
+      state: 'Uttarakhand',
+      scores: { wellness: 10, rituals: 10, nature: 9, offbeat: 8, food: 6, arts: 5, heritage: 5, markets: 5, crafts: 4, monuments: 3 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { temperate: 9, winter: 8, summer_hills: 7, monsoon: 5 },
+      groupAffinities: { solo: 10, friends: 9, couple: 8, family: 6 },
+      paceAffinities: { relaxed: 10, balanced: 8, packed: 4 },
+      vibeTagline: 'emerald riverbanks, Vedic yoga ashrams and sacred foothills chants',
+    },
+    {
+      city: 'Amritsar',
+      state: 'Punjab',
+      scores: { rituals: 10, food: 10, heritage: 8, monuments: 7, crafts: 7, markets: 8, offbeat: 6, wellness: 5, arts: 5, nature: 3 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 10, temperate: 6, monsoon: 4, summer_hills: 2 },
+      groupAffinities: { family: 10, friends: 8, solo: 8, couple: 7 },
+      paceAffinities: { balanced: 9, packed: 9, relaxed: 6 },
+      vibeTagline: 'Golden Temple sanctum, generational street kulchas and community hospitality',
+    },
+    {
+      city: 'Hampi',
+      state: 'Karnataka',
+      scores: { monuments: 10, heritage: 10, offbeat: 10, nature: 8, rituals: 7, arts: 6, wellness: 5, food: 5, markets: 4, crafts: 4 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 10, temperate: 7, monsoon: 6, summer_hills: 2 },
+      groupAffinities: { solo: 10, friends: 9, couple: 8, family: 6 },
+      paceAffinities: { relaxed: 8, balanced: 9, packed: 7 },
+      vibeTagline: 'Vijayanagara stone boulder ruins, coracle river rides and ancient temple steps',
+    },
+    {
+      city: 'Madurai',
+      state: 'Tamil Nadu',
+      scores: { rituals: 10, heritage: 9, monuments: 9, food: 9, markets: 8, crafts: 8, arts: 7, offbeat: 6, wellness: 4, nature: 3 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 9, temperate: 7, monsoon: 5, summer_hills: 2 },
+      groupAffinities: { family: 10, solo: 8, couple: 7, friends: 6 },
+      paceAffinities: { balanced: 9, packed: 9, relaxed: 5 },
+      vibeTagline: 'Meenakshi towering gopurams, fragrant jasmine alleys and heritage night feasts',
+    },
+    {
+      city: 'Bhubaneswar',
+      state: 'Odisha',
+      scores: { monuments: 10, crafts: 9, rituals: 9, heritage: 9, arts: 8, offbeat: 7, food: 7, nature: 5, markets: 6, wellness: 4 },
+      budgetProfile: 'budget_friendly',
+      weatherAffinities: { winter: 9, temperate: 7, monsoon: 4, summer_hills: 2 },
+      groupAffinities: { family: 9, solo: 8, couple: 7, friends: 6 },
+      paceAffinities: { balanced: 9, relaxed: 8, packed: 6 },
+      vibeTagline: 'Kalinga sandstone temple architecture, silver filigree guilds and sacred tanks',
+    },
+
+    // ── Maritime & Colonial ─────────────────────────────────────────────────
+    {
+      city: 'Kochi',
+      state: 'Kerala',
+      scores: { arts: 10, heritage: 9, wellness: 9, nature: 9, food: 8, offbeat: 8, markets: 7, crafts: 6, rituals: 5, monuments: 5 },
+      budgetProfile: 'all',
+      weatherAffinities: { temperate: 9, winter: 9, monsoon: 9, summer_hills: 4 },
+      groupAffinities: { couple: 10, solo: 9, family: 8, friends: 7 },
+      paceAffinities: { relaxed: 10, balanced: 8, packed: 5 },
+      vibeTagline: 'Chinese fishing nets, spice warehouse galleries and backwater canoe journeys',
+    },
+    {
+      city: 'Goa',
+      state: 'Goa',
+      scores: { nature: 9, wellness: 9, offbeat: 9, food: 9, markets: 8, heritage: 8, arts: 7, rituals: 4, monuments: 4, crafts: 4 },
+      budgetProfile: 'luxury',
+      weatherAffinities: { winter: 10, temperate: 8, monsoon: 8, summer_hills: 3 },
+      groupAffinities: { friends: 10, couple: 10, solo: 8, family: 7 },
+      paceAffinities: { relaxed: 10, balanced: 7, packed: 4 },
+      vibeTagline: 'Indo-Portuguese baroque villas, palm riverways and artisanal coastal culinary trails',
+    },
+    {
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      scores: { food: 10, arts: 10, markets: 9, heritage: 8, offbeat: 8, monuments: 6, wellness: 5, nature: 4, rituals: 4, crafts: 5 },
+      budgetProfile: 'luxury',
+      weatherAffinities: { winter: 9, temperate: 8, monsoon: 6, summer_hills: 3 },
+      groupAffinities: { friends: 9, couple: 8, solo: 9, family: 7 },
+      paceAffinities: { packed: 10, balanced: 8, relaxed: 5 },
+      vibeTagline: 'Victorian Gothic art districts, coastal promenades and Irani culinary heritage',
+    },
+    {
+      city: 'Pondicherry',
+      state: 'Puducherry',
+      scores: { wellness: 9, heritage: 9, food: 8, offbeat: 8, arts: 8, nature: 7, markets: 6, crafts: 5, rituals: 4, monuments: 4 },
+      budgetProfile: 'moderate',
+      weatherAffinities: { winter: 9, temperate: 9, monsoon: 7, summer_hills: 3 },
+      groupAffinities: { couple: 10, solo: 9, friends: 7, family: 6 },
+      paceAffinities: { relaxed: 10, balanced: 8, packed: 4 },
+      vibeTagline: 'French Quarter pastel promenades, Auroville pottery and seaside cycling trails',
+    },
+    {
+      city: 'Kolkata',
+      state: 'West Bengal',
+      scores: { food: 10, arts: 10, heritage: 9, crafts: 9, offbeat: 9, markets: 8, rituals: 7, monuments: 6, nature: 4, wellness: 4 },
+      budgetProfile: 'all',
+      weatherAffinities: { winter: 10, temperate: 7, monsoon: 5, summer_hills: 2 },
+      groupAffinities: { solo: 10, couple: 8, family: 8, friends: 7 },
+      paceAffinities: { packed: 9, balanced: 8, relaxed: 6 },
+      vibeTagline: 'Kumartuli clay sculptors, colonial coffee houses and river tram heritage',
+    },
+    {
+      city: 'Delhi',
+      state: 'Delhi',
+      scores: { food: 10, monuments: 10, heritage: 10, markets: 10, offbeat: 7, arts: 7, crafts: 6, rituals: 5, nature: 4, wellness: 3 },
+      budgetProfile: 'all',
+      weatherAffinities: { winter: 10, temperate: 6, monsoon: 4, summer_hills: 1 },
+      groupAffinities: { family: 9, friends: 8, solo: 8, couple: 7 },
+      paceAffinities: { packed: 10, balanced: 8, relaxed: 5 },
+      vibeTagline: 'Mughal sandstone citadels, historic spice bazaars and multi-dynasty culinary heritage',
+    },
+  ];
 
   const resolveSmartCity = (
     dest: string,
@@ -364,189 +642,55 @@ export function DiscoveryOnboardingFlow({
 
     const validInterests = userInterests && userInterests.length > 0 ? userInterests : ['heritage', 'crafts', 'food'];
 
-    const hubs = [
-      {
-        city: 'Varanasi',
-        scores: { rituals: 10, offbeat: 8, crafts: 6, food: 7, heritage: 7, monuments: 4, wellness: 6, nature: 3, markets: 5, arts: 6 },
-        budgetTier: 'budget',
-        groupTypes: ['solo', 'couple', 'family'],
-        paces: ['balanced', 'packed'],
-      },
-      {
-        city: 'Rishikesh',
-        scores: { wellness: 10, rituals: 9, nature: 8, offbeat: 7, food: 5, arts: 4, heritage: 4, monuments: 3, markets: 4, crafts: 3 },
-        budgetTier: 'budget',
-        groupTypes: ['solo', 'friends', 'couple'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Jaipur',
-        scores: { crafts: 10, heritage: 10, markets: 9, monuments: 8, food: 7, arts: 7, offbeat: 5, rituals: 5, nature: 3, wellness: 4 },
-        budgetTier: 'all',
-        groupTypes: ['family', 'couple', 'friends'],
-        paces: ['balanced', 'packed'],
-      },
-      {
-        city: 'Udaipur',
-        scores: { heritage: 9, nature: 9, arts: 8, crafts: 7, wellness: 6, monuments: 7, food: 6, offbeat: 6, markets: 6, rituals: 4 },
-        budgetTier: 'luxury',
-        groupTypes: ['couple', 'family'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Jaisalmer',
-        scores: { offbeat: 9, heritage: 9, monuments: 8, crafts: 7, arts: 7, markets: 6, nature: 6, food: 5, rituals: 3, wellness: 3 },
-        budgetTier: 'all',
-        groupTypes: ['couple', 'friends', 'solo'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Leh',
-        scores: { nature: 10, offbeat: 10, rituals: 8, monuments: 7, heritage: 6, wellness: 5, crafts: 5, food: 4, markets: 4, arts: 4 },
-        budgetTier: 'luxury',
-        groupTypes: ['solo', 'friends', 'couple'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Kochi',
-        scores: { wellness: 9, nature: 8, arts: 8, heritage: 7, food: 7, markets: 6, offbeat: 6, crafts: 5, rituals: 5, monuments: 4 },
-        budgetTier: 'all',
-        groupTypes: ['couple', 'solo', 'family'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Amritsar',
-        scores: { rituals: 10, food: 10, heritage: 7, monuments: 6, crafts: 6, markets: 7, offbeat: 5, wellness: 4, arts: 4, nature: 2 },
-        budgetTier: 'budget',
-        groupTypes: ['family', 'solo', 'friends'],
-        paces: ['balanced', 'packed'],
-      },
-      {
-        city: 'Delhi',
-        scores: { food: 10, monuments: 10, heritage: 9, markets: 10, offbeat: 7, arts: 6, crafts: 5, rituals: 5, nature: 3, wellness: 2 },
-        budgetTier: 'all',
-        groupTypes: ['family', 'friends', 'solo'],
-        paces: ['packed', 'balanced'],
-      },
-      {
-        city: 'Mumbai',
-        scores: { arts: 9, markets: 8, food: 9, heritage: 7, offbeat: 8, nature: 4, monuments: 5, rituals: 4, crafts: 4, wellness: 3 },
-        budgetTier: 'luxury',
-        groupTypes: ['friends', 'couple', 'solo'],
-        paces: ['packed', 'balanced'],
-      },
-      {
-        city: 'Kolkata',
-        scores: { food: 10, arts: 10, heritage: 8, crafts: 8, offbeat: 8, markets: 7, rituals: 6, monuments: 5, nature: 3, wellness: 3 },
-        budgetTier: 'all',
-        groupTypes: ['solo', 'couple', 'family'],
-        paces: ['packed', 'balanced'],
-      },
-      {
-        city: 'Shillong',
-        scores: { nature: 10, offbeat: 9, arts: 8, wellness: 6, food: 6, crafts: 5, markets: 5, heritage: 4, monuments: 2, rituals: 2 },
-        budgetTier: 'all',
-        groupTypes: ['friends', 'couple', 'solo'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Bhubaneswar',
-        scores: { monuments: 10, crafts: 9, rituals: 8, heritage: 8, arts: 8, offbeat: 6, food: 6, nature: 5, markets: 5, wellness: 3 },
-        budgetTier: 'budget',
-        groupTypes: ['family', 'solo', 'couple'],
-        paces: ['balanced', 'relaxed'],
-      },
-      {
-        city: 'Ahmedabad',
-        scores: { crafts: 9, heritage: 9, food: 8, offbeat: 8, markets: 8, monuments: 7, rituals: 5, arts: 5, wellness: 3, nature: 2 },
-        budgetTier: 'all',
-        groupTypes: ['family', 'couple', 'solo'],
-        paces: ['balanced', 'packed'],
-      },
-      {
-        city: 'Goa',
-        scores: { nature: 9, wellness: 8, offbeat: 8, food: 8, markets: 7, heritage: 7, arts: 6, rituals: 4, monuments: 4, crafts: 4 },
-        budgetTier: 'luxury',
-        groupTypes: ['friends', 'couple'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Hyderabad',
-        scores: { food: 10, heritage: 8, monuments: 8, markets: 8, crafts: 7, offbeat: 6, arts: 5, rituals: 4, wellness: 3, nature: 3 },
-        budgetTier: 'all',
-        groupTypes: ['family', 'friends', 'couple'],
-        paces: ['packed', 'balanced'],
-      },
-      {
-        city: 'Chennai',
-        scores: { arts: 10, rituals: 9, food: 8, heritage: 7, crafts: 7, monuments: 6, markets: 6, wellness: 5, offbeat: 5, nature: 4 },
-        budgetTier: 'all',
-        groupTypes: ['family', 'solo', 'couple'],
-        paces: ['balanced', 'packed'],
-      },
-      {
-        city: 'Srinagar',
-        scores: { nature: 10, crafts: 9, heritage: 7, food: 7, offbeat: 7, wellness: 6, markets: 6, monuments: 5, arts: 5, rituals: 4 },
-        budgetTier: 'luxury',
-        groupTypes: ['couple', 'family'],
-        paces: ['relaxed', 'balanced'],
-      },
-      {
-        city: 'Bhopal',
-        scores: { monuments: 9, arts: 8, heritage: 8, crafts: 8, nature: 7, offbeat: 7, food: 6, markets: 5, rituals: 4, wellness: 4 },
-        budgetTier: 'budget',
-        groupTypes: ['family', 'solo'],
-        paces: ['balanced', 'relaxed'],
-      },
-      {
-        city: 'Shimla',
-        scores: { nature: 9, heritage: 7, offbeat: 7, wellness: 6, monuments: 6, food: 5, arts: 4, markets: 5, crafts: 4, rituals: 3 },
-        budgetTier: 'all',
-        groupTypes: ['couple', 'family', 'friends'],
-        paces: ['relaxed', 'balanced'],
-      },
-    ];
+    // ── NORMALIZED MULTI-ATTRIBUTE UTILITY FUNCTION ─────────────────────────
+    // Total Score = (w1 * Score_Interests) + (w2 * Score_Budget) + (w3 * Score_Weather) + (w4 * Score_Group) + (w5 * Score_Pace)
+    // Weights: Interests = 0.35, Budget = 0.25, Weather = 0.20, Group = 0.10, Pace = 0.10
+    const scoredHubs = SMART_DESTINATION_HUBS.map((hub) => {
+      // 1. Interests Score (0 - 100)
+      const interestMatches = validInterests.map((interest) => (hub.scores[interest] || 5) * 10);
+      const scoreInterests = interestMatches.reduce((a, b) => a + b, 0) / Math.max(1, interestMatches.length);
 
-    const scoredHubs = hubs.map((hub) => {
-      let score = 0;
-
-      // 1. Direct interest score match
-      for (const interest of validInterests) {
-        score += (hub.scores as Record<string, number>)[interest] || 0;
+      // 2. Budget Compatibility Score (0 - 100)
+      let scoreBudget = 80;
+      if (dailyBudget >= 8000) {
+        scoreBudget = hub.budgetProfile === 'luxury' ? 100 : hub.budgetProfile === 'all' ? 95 : hub.budgetProfile === 'moderate' ? 80 : 65;
+      } else if (dailyBudget >= 4000) {
+        scoreBudget = hub.budgetProfile === 'all' ? 100 : hub.budgetProfile === 'moderate' ? 95 : hub.budgetProfile === 'luxury' ? 85 : 85;
+      } else {
+        scoreBudget = hub.budgetProfile === 'budget_friendly' ? 100 : hub.budgetProfile === 'all' ? 95 : hub.budgetProfile === 'moderate' ? 75 : 50;
       }
 
-      // 2. Weather affinity calibration
-      const weatherAffinity = HUB_WEATHER_AFFINITY[hub.city]?.[chosenWeather] || 0;
-      score += weatherAffinity;
+      // 3. Weather & Climate Score (0 - 100)
+      const scoreWeather = (hub.weatherAffinities[chosenWeather] || 6) * 10;
 
-      // 3. Budget affinity calibration
-      if (dailyBudget <= 3000 && (hub.budgetTier === 'budget' || hub.budgetTier === 'all')) {
-        score += 3;
-      } else if (dailyBudget >= 8000 && (hub.budgetTier === 'luxury' || hub.budgetTier === 'all')) {
-        score += 3;
-      } else if (dailyBudget > 3000 && dailyBudget < 8000) {
-        score += 2;
-      }
+      // 4. Group Affinity Score (0 - 100)
+      const scoreGroup = (hub.groupAffinities[chosenGroup] || 7) * 10;
 
-      // 4. Group type affinity
-      if (hub.groupTypes.includes(chosenGroup)) {
-        score += 3;
-      }
+      // 5. Pace Compatibility Score (0 - 100)
+      const scorePace = (hub.paceAffinities[chosenPace] || 7) * 10;
 
-      // 5. Pace category affinity
-      if (hub.paces.includes(chosenPace)) {
-        score += 2;
-      }
+      // Aggregated Weighted Score
+      const totalScore =
+        0.35 * scoreInterests +
+        0.25 * scoreBudget +
+        0.20 * scoreWeather +
+        0.10 * scoreGroup +
+        0.10 * scorePace;
 
-      return { city: hub.city, score };
+      return {
+        city: hub.city,
+        state: hub.state,
+        score: totalScore,
+        vibeTagline: hub.vibeTagline,
+      };
     });
 
     scoredHubs.sort((a, b) => b.score - a.score);
 
-    // If top contenders are tied, use deterministic hash to select consistently
+    // Deterministic selection among top contenders within 1.5 points of the best score
     const topScore = scoredHubs[0].score;
-    const candidates = scoredHubs.filter((h) => h.score >= topScore - 1);
-    if (candidates.length === 1) return candidates[0].city;
+    const topContenders = scoredHubs.filter((h) => h.score >= topScore - 1.5);
+    if (topContenders.length === 1) return topContenders[0].city;
 
     const seedString = `${validInterests.join('-')}_${dailyBudget}_${chosenGroup}_${chosenPace}_${chosenWeather}`;
     let hash = 0;
@@ -554,8 +698,8 @@ export function DiscoveryOnboardingFlow({
       hash = (hash << 5) - hash + seedString.charCodeAt(i);
       hash |= 0;
     }
-    const index = Math.abs(hash) % candidates.length;
-    return candidates[index].city;
+    const index = Math.abs(hash) % topContenders.length;
+    return topContenders[index].city;
   };
 
   const handleStartSynthesis = async () => {

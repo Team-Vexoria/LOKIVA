@@ -181,17 +181,28 @@ export function ItineraryPage() {
     setIsAddActivityModalOpen(true);
   };
 
-  // Compute Grand Total for Header directly from day metrics or calibrated components
-  const grandTotal = days.reduce((sum, d) => {
-    if (d.metrics?.costBreakdown?.totalCost) {
-      return sum + d.metrics.costBreakdown.totalCost;
-    }
-    const dayActs = d.activities || [];
-    const tCost = dayActs.reduce((s, a) => s + (a.costPerPerson || 0) * (tripDetails.travelers || 2), 0);
-    const trCost = dayActs.reduce((s, a) => s + (a.transitCost || 0), 0);
-    const mCost = (d.mealBudgetPerPerson || 350) * (tripDetails.travelers || 2);
-    return sum + tCost + trCost + mCost;
-  }, 0);
+  // Compute Grand Total and Category Breakdown for Header directly from day metrics or calibrated components
+  const categoryBreakdown = days.reduce(
+    (acc, d) => {
+      if (d.metrics?.costBreakdown) {
+        acc.tickets += d.metrics.costBreakdown.ticketCost || 0;
+        acc.transit += d.metrics.costBreakdown.transitCost || 0;
+        acc.food += d.metrics.costBreakdown.foodCost || 0;
+      } else {
+        const dayActs = d.activities || [];
+        const tCost = dayActs.reduce((s, a) => s + (a.costPerPerson || 0) * (tripDetails.travelers || 2), 0);
+        const trCost = dayActs.reduce((s, a) => s + (a.transitCost || 0), 0);
+        const mCost = (d.mealBudgetPerPerson || 350) * (tripDetails.travelers || 2);
+        acc.tickets += tCost;
+        acc.transit += trCost;
+        acc.food += mCost;
+      }
+      return acc;
+    },
+    { tickets: 0, transit: 0, food: 0 }
+  );
+
+  const grandTotal = categoryBreakdown.tickets + categoryBreakdown.transit + categoryBreakdown.food;
 
   return (
     <div className="min-h-screen bg-paper text-ink pb-20 pt-4 sm:pt-6">
@@ -320,6 +331,7 @@ export function ItineraryPage() {
         <TripHeaderOverview
           tripDetails={tripDetails}
           totalCost={grandTotal}
+          categoryBreakdown={categoryBreakdown}
           onEditTrip={() => setIsEditTripModalOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
           onPrint={handlePrint}

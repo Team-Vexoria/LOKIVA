@@ -59,7 +59,7 @@ export interface ItineraryActivity {
   durationMins: number;
   visitDurationMinutes: number;
   transitToNextMinutes: number;
-  transitMode: 'walking' | 'auto_rickshaw' | 'taxi';
+  transitMode: 'walking' | 'auto_rickshaw' | 'taxi' | 'heritage_cab' | 'private_cab';
   transitDistanceKm: number;
   indoorOutdoor: 'indoor' | 'outdoor' | 'semi-covered';
   is_indoor: boolean;
