@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth-context';
 import { initializeTTS } from './lib/tts';
 import { Navbar } from './components/layout/Navbar';
@@ -24,10 +24,8 @@ import { ProviderLoginPage } from './pages/ProviderLoginPage';
 import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
 import { ProviderAuthPage } from './pages/ProviderAuthPage';
-import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
 import { GroupTripHubPage } from './pages/GroupTripHubPage';
 import { RequireAuth } from './components/auth/RequireAuth';
-import { RequireProviderAuth } from './components/auth/RequireProviderAuth';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function AppShell() {
@@ -91,31 +89,10 @@ function AppShell() {
           <Route path="/provider/login" element={<ProviderLoginPage />} />
           <Route path="/provider/register" element={<ProviderRegisterPage />} />
 
-          {/* Portal routes */}
-          <Route
-            path="/provider"
-            element={
-              <RequireProviderAuth>
-                <ProviderDashboardPage />
-              </RequireProviderAuth>
-            }
-          />
-          <Route
-            path="/provider/dashboard"
-            element={
-              <RequireProviderAuth>
-                <ProviderDashboardPage />
-              </RequireProviderAuth>
-            }
-          />
-          <Route
-            path="/provider/*"
-            element={
-              <RequireProviderAuth>
-                <ProviderDashboardPage />
-              </RequireProviderAuth>
-            }
-          />
+          {/* Provider routes redirect to explore */}
+          <Route path="/provider" element={<Navigate to="/explore" replace />} />
+          <Route path="/provider/dashboard" element={<Navigate to="/explore" replace />} />
+          <Route path="/provider/*" element={<Navigate to="/explore" replace />} />
 
           {/* 404 Catch-all */}
           <Route path="*" element={<NotFoundPage />} />
