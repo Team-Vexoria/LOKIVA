@@ -41,6 +41,7 @@ import {
   getStartPointConfig,
 } from '../../data/quickEscapeData';
 import { getUserLiveLocation } from '../../lib/gpsLocation';
+import { resolveImageUrl } from '../../lib/api';
 import { SquiggleUnderline, StampBadge } from '../ui/HandDrawnAnnotations';
 
 const AVAILABLE_TIMES: AvailableHours[] = [1, 2, 3, 5];
@@ -822,7 +823,7 @@ export function QuickEscapeSection() {
                                 <div className="space-y-0.5 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="px-1.5 py-0.5 rounded bg-white border border-[#B6DDD4] text-[10px] font-mono font-extrabold text-[#1F7A6C]">
-                                      {stop.startTime} — {stop.endTime}
+                                      {stop.startTime} - {stop.endTime}
                                     </span>
                                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1F7A6C] text-white px-2 py-0.5 rounded">
                                       Return Complete
@@ -889,7 +890,7 @@ export function QuickEscapeSection() {
                                 {stop.imageUrl && (
                                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-[#DDD7CC] shadow-2xs">
                                     <img
-                                      src={stop.imageUrl}
+                                      src={resolveImageUrl(stop.imageUrl)}
                                       alt={stop.title}
                                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                       loading="lazy"

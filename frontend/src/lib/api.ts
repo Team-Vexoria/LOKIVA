@@ -20,6 +20,7 @@ import {
   Review,
   DayPlanResponse,
 } from '../types';
+import { generateLocalConciergeResponse } from './localConcierge';
 
 export const API_BASE =
   typeof window !== 'undefined'
@@ -30,17 +31,28 @@ export const API_BASE =
  * Resolves an image URL to an absolute URL pointing to the live Render backend
  * if it is an /api/ proxy path or a raw Wikimedia URL.
  */
-export function resolveImageUrl(url?: string | null): string {
-  if (!url) return '';
+export function resolveImageUrl(url?: string | null, fallbackList?: (string | undefined | null)[]): string {
+  let targetUrl = url;
 
-  if (url === 'PASTE_IMAGE_LINK_HERE' || url.includes('PASTE_IMAGE')) {
+  if (!targetUrl || targetUrl === 'PASTE_IMAGE_LINK_HERE' || targetUrl.includes('PASTE_IMAGE') || targetUrl.trim() === '') {
+    if (fallbackList && fallbackList.length > 0) {
+      const valid = fallbackList.find(
+        (u) => u && u !== 'PASTE_IMAGE_LINK_HERE' && !u.includes('PASTE_IMAGE') && u.trim() !== ''
+      );
+      if (valid) {
+        targetUrl = valid;
+      }
+    }
+  }
+
+  if (!targetUrl || targetUrl === 'PASTE_IMAGE_LINK_HERE' || targetUrl.includes('PASTE_IMAGE') || targetUrl.trim() === '') {
     return 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1200&q=80';
   }
 
   // If it's a Google image redirect URL, extract the underlying imgurl parameter
-  if (url.includes('google.com/imgres') && url.includes('imgurl=')) {
+  if (targetUrl.includes('google.com/imgres') && targetUrl.includes('imgurl=')) {
     try {
-      const parsed = new URL(url);
+      const parsed = new URL(targetUrl);
       const imgurl = parsed.searchParams.get('imgurl');
       if (imgurl) return imgurl;
     } catch {
@@ -49,8 +61,8 @@ export function resolveImageUrl(url?: string | null): string {
   }
 
   // Direct Pexels / Unsplash / external CDN images work as-is
-  if (url.startsWith('http') && !url.includes('upload.wikimedia.org')) {
-    return url;
+  if (targetUrl.startsWith('http') && !targetUrl.includes('upload.wikimedia.org')) {
+    return targetUrl;
   }
 
   const isProduction =
@@ -67,21 +79,21 @@ export function resolveImageUrl(url?: string | null): string {
     : 'http://localhost:8000';
 
   // If it's already a proxy path
-  if (url.startsWith('/api/v1/experiences/proxy-image')) {
-    return backendOrigin ? `${backendOrigin}${url}` : url;
+  if (targetUrl.startsWith('/api/v1/experiences/proxy-image')) {
+    return backendOrigin ? `${backendOrigin}${targetUrl}` : targetUrl;
   }
 
   // If it's a raw Wikimedia image, wrap it through our proxy
-  if (url.includes('upload.wikimedia.org')) {
-    const proxyPath = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(url)}`;
+  if (targetUrl.includes('upload.wikimedia.org')) {
+    const proxyPath = `/api/v1/experiences/proxy-image?url=${encodeURIComponent(targetUrl)}`;
     return backendOrigin ? `${backendOrigin}${proxyPath}` : proxyPath;
   }
 
-  if (url.startsWith('/api/')) {
-    return backendOrigin ? `${backendOrigin}${url}` : url;
+  if (targetUrl.startsWith('/api/')) {
+    return backendOrigin ? `${backendOrigin}${targetUrl}` : targetUrl;
   }
 
-  return url;
+  return targetUrl;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -231,7 +243,7 @@ export const api = {
     });
   },
 
-  // AI Cultural Concierge - Powered by Gemini AI on the backend
+  // AI Cultural Concierge - Powered by Gemini AI on the backend with resilient instant fallback
   async chatWithConcierge(data: {
     message: string;
     chat_history?: any[];
@@ -252,24 +264,28 @@ export const api = {
     context_destination: string;
     state: string;
   }> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('lokiva_token') : null;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('lokiva_token') : null;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch('/api/v1/ai/concierge', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
+      const res = await fetch('/api/v1/ai/concierge', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(errData.detail || errData.error || `Concierge request failed (${res.status})`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('[LOKIVA AI] Backend concierge offline/failed, activating local solver:', err);
     }
 
-    return res.json();
+    // Instant high-fidelity local concierge fallback
+    return generateLocalConciergeResponse(data.message, data.city);
   },
 
   async checkAIHealth(): Promise<{

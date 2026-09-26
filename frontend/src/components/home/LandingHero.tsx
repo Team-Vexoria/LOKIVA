@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Compass, ArrowRight } from 'lucide-react';
+import { Compass, ArrowRight, Sparkles } from 'lucide-react';
 import { TripOnboardingTakeover, TripContextAnswers } from '../onboarding/TripOnboardingTakeover';
 import { DayPlanResponse } from '../../types';
 
@@ -387,13 +387,20 @@ export function LandingHero({
             </motion.button>
           </div>
 
-          {/* Non-Tabular Editorial Signature */}
-          <div className="flex items-center gap-2.5 text-[#7A5C49] font-meta text-xs sm:text-[13px] italic">
-            <span className="inline-block px-2 py-0.5 rounded-md bg-[#F2E5D5] text-[#9E4726] not-italic font-bold text-[11px] tracking-wider uppercase">
-              Instant AI Solver
+          {/* Non-Tabular Editorial Signature & AI Concierge Redirect */}
+          <button
+            type="button"
+            onClick={() => navigate('/ai-guide')}
+            className="flex items-center gap-2.5 text-[#7A5C49] hover:text-[#3B2316] font-meta text-xs sm:text-[13px] italic transition-all cursor-pointer group"
+          >
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F2E5D5] group-hover:bg-[#B84A27] text-[#9E4726] group-hover:text-[#FFFDF9] not-italic font-bold text-[11px] tracking-wider uppercase transition-all shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#D99B43] group-hover:text-[#FFFDF9] transition-colors" />
+              <span>Instant AI Solver</span>
             </span>
-            <span>Solves verified micro-circuits in ~60 seconds with zero tourist markups</span>
-          </div>
+            <span className="group-hover:underline underline-offset-4 transition-all">
+              Solves verified micro-circuits in ~60 seconds with zero tourist markups →
+            </span>
+          </button>
         </div>
       </div>
 
@@ -401,10 +408,13 @@ export function LandingHero({
       <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 mt-auto pointer-events-none z-10">
         <div className="w-full h-20 sm:h-28 lg:h-36 rounded-t-[32px] sm:rounded-t-[44px] overflow-hidden border-t-4 border-x-4 border-[#FFFDF9] shadow-2xl bg-[#3B2316] relative">
           <video
-            src="/assets/videos/hero-reel.mp4"
+            src="/landing_video.mp4"
+            poster="/lokiva_background.avif"
+            autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             className="w-full h-full object-cover object-center opacity-90"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-[#3B2316]/30" />

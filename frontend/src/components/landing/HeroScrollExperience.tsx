@@ -211,41 +211,26 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
   const mediaCardRef = useRef<HTMLDivElement>(null);
   const leftFlankRef = useRef<HTMLDivElement>(null);
   const rightFlankRef = useRef<HTMLDivElement>(null);
-  const leftVideoRef = useRef<HTMLVideoElement>(null);
-  const rightVideoRef = useRef<HTMLVideoElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayTextRef = useRef<HTMLDivElement>(null);
 
-  // Auto-play flank videos reliably with multiple trigger listeners
-  useEffect(() => {
-    const playFlanks = () => {
-      if (leftVideoRef.current) {
-        leftVideoRef.current.muted = true;
-        leftVideoRef.current.play().catch(() => {});
-      }
-      if (rightVideoRef.current) {
-        rightVideoRef.current.muted = true;
-        rightVideoRef.current.play().catch(() => {});
-      }
-    };
-    playFlanks();
-    const timer = setTimeout(playFlanks, 150);
-    const events = ['click', 'touchstart', 'scroll', 'mousemove', 'mouseenter'];
-    events.forEach((ev) => window.addEventListener(ev, playFlanks, { once: true, passive: true }));
-    return () => {
-      clearTimeout(timer);
-      events.forEach((ev) => window.removeEventListener(ev, playFlanks));
-    };
-  }, []);
-
-  // Native scroll tracking for video playback
+  // Auto-play landing video reliably and monitor scroll position
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.muted = true;
-      video.defaultMuted = true;
-      video.pause();
-    }
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+
+    const playVideo = () => {
+      if (video && video.paused) {
+        video.muted = true;
+        video.play().catch(() => {});
+      }
+    };
+
+    playVideo();
+    const timer = setTimeout(playVideo, 150);
 
     const checkPlayback = () => {
       const vid = videoRef.current;
@@ -253,13 +238,11 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       const vh = window.innerHeight;
 
-      if (scrollY >= 50 && scrollY < vh * 2.2) {
+      // Play while within the hero pinned area
+      if (scrollY < vh * 2.2) {
         if (vid.paused) {
           vid.muted = true;
-          const playPromise = vid.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(() => {});
-          }
+          vid.play().catch(() => {});
         }
       } else {
         if (!vid.paused) {
@@ -270,11 +253,14 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
 
     window.addEventListener('scroll', checkPlayback, { passive: true });
     window.addEventListener('resize', checkPlayback, { passive: true });
-    checkPlayback();
+    const events = ['click', 'touchstart', 'scroll', 'mousemove', 'mouseenter'];
+    events.forEach((ev) => window.addEventListener(ev, playVideo, { once: true, passive: true }));
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('scroll', checkPlayback);
       window.removeEventListener('resize', checkPlayback);
+      events.forEach((ev) => window.removeEventListener(ev, playVideo));
     };
   }, []);
 
@@ -506,13 +492,20 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
             </motion.button>
           </div>
 
-          {/* Non-Tabular Editorial Signature */}
-          <div className="flex items-center gap-2.5 text-[#7A5C49] font-meta text-xs sm:text-[13px] italic">
-            <span className="inline-block px-2 py-0.5 rounded-md bg-[#F2E5D5] text-[#9E4726] not-italic font-bold text-[11px] tracking-wider uppercase">
-              Instant AI Solver
+          {/* Non-Tabular Editorial Signature & AI Concierge Redirect */}
+          <button
+            type="button"
+            onClick={() => navigate('/ai-guide')}
+            className="flex items-center gap-2.5 text-[#7A5C49] hover:text-[#3B2316] font-meta text-xs sm:text-[13px] italic transition-all cursor-pointer group"
+          >
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F2E5D5] group-hover:bg-[#B84A27] text-[#9E4726] group-hover:text-[#FFFDF9] not-italic font-bold text-[11px] tracking-wider uppercase transition-all shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#D99B43] group-hover:text-[#FFFDF9] transition-colors" />
+              <span>Instant AI Solver</span>
             </span>
-            <span>Solves verified micro-circuits in ~60 seconds with zero tourist markups</span>
-          </div>
+            <span className="group-hover:underline underline-offset-4 transition-all">
+              Solves verified micro-circuits in ~60 seconds with zero tourist markups →
+            </span>
+          </button>
         </div>
       </div>
 
@@ -531,12 +524,13 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
       >
         <video
           ref={videoRef}
-          src="/assets/videos/hero-reel.mp4"
-          autoPlay={false}
+          src="/landing_video.mp4"
+          poster="/lokiva_background.avif"
+          autoPlay
           playsInline
           muted
           loop
-          preload="metadata"
+          preload="auto"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
 

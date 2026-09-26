@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth-context';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
@@ -20,7 +20,6 @@ import { ProviderLoginPage } from './pages/ProviderLoginPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
-import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -51,8 +50,8 @@ export function App() {
               <Route path="/register/provider" element={<ProviderRegisterPage />} />
 
               {/* Portal routes */}
-              <Route path="/provider" element={<ProviderDashboardPage />} />
-              <Route path="/provider/*" element={<ProviderDashboardPage />} />
+              <Route path="/provider" element={<Navigate to="/explore" replace />} />
+              <Route path="/provider/*" element={<Navigate to="/explore" replace />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/*" element={<AdminDashboardPage />} />
 
