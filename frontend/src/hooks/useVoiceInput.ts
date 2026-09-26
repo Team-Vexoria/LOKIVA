@@ -133,7 +133,7 @@ async function callAiAudioTranslationApi(blob: Blob): Promise<string> {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            audio: base64Data,
+            audioBase64: base64Data,
             mimeType: blob.type || 'audio/webm',
           }),
           signal: controller.signal,
@@ -148,6 +148,7 @@ async function callAiAudioTranslationApi(blob: Blob): Promise<string> {
         }
       } catch (endpointErr) {
         // Try next endpoint candidate
+        console.log("Endpoint uncaught error")
       }
     }
 
@@ -222,6 +223,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
           const mime = recorder?.mimeType || 'audio/webm';
           resolve(new Blob(audioChunksRef.current, { type: mime }));
         } else {
+          console.log("[VOICE] Audio Chunks Don't Exist.")
           resolve(null);
         }
         return;
@@ -233,6 +235,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
           const finalBlob = new Blob(audioChunksRef.current, { type: mime });
           console.log('[VOICE] MediaRecorder closed. Chunks count:', audioChunksRef.current.length, 'Total bytes:', finalBlob.size);
           resolve(finalBlob);
+          console.log(finalBlob)
         } catch {
           resolve(null);
         }
@@ -271,6 +274,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
     // Properly stop recorder and retrieve the complete, valid audio blob
     const recordedBlob = await stopRecordingAndGetBlob();
+    console.log(recordedBlob)
 
     // Release microphone tracks immediately
     stopMediaStream();

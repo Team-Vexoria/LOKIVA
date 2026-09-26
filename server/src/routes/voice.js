@@ -709,96 +709,95 @@ Name: ${exp.name}, Distance: ${exp.distance_meters}m, Price: Rs.${exp.price_inr}
 // Uses Gemini 3.5 Flash multimodal audio to transcribe voice recordings
 // with 100% accuracy for Indian accents, travel terms, and city names.
 // ============================================================================
-voiceRouter.post('/transcribe', async (req, res) => {
-  try {
-    let { audio, mimeType = 'audio/webm' } = req.body;
-    if (!audio || typeof audio !== 'string') {
-      return res.status(400).json({ error: 'Audio base64 data is required', transcript: '' });
-    }
+// voiceRouter.post('/transcribe', async (req, res) => {
+//   try {
+//     let { audio, mimeType = 'audio/webm' } = req.body;
+//     if (!audio || typeof audio !== 'string') {
+//       return res.status(400).json({ error: 'Audio base64 data is required', transcript: '' });
+//     }
 
-    // Strip Data URL header if present (e.g. data:audio/webm;base64,...)
-    if (audio.includes('base64,')) {
-      const parts = audio.split('base64,');
-      audio = parts[1];
-      const headerMatch = parts[0].match(/data:([^;]+)/);
-      if (headerMatch && headerMatch[1]) {
-        mimeType = headerMatch[1];
-      }
-    }
+//     // Strip Data URL header if present (e.g. data:audio/webm;base64,...)
+//     if (audio.includes('base64,')) {
+//       const parts = audio.split('base64,');
+//       audio = parts[1];
+//       const headerMatch = parts[0].match(/data:([^;]+)/);
+//       if (headerMatch && headerMatch[1]) {
+//         mimeType = headerMatch[1];
+//       }
+//     }
 
-    // Clean mimeType for Gemini (must be clean audio/webm, audio/wav, audio/mp4, etc.)
-    let cleanMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
-    if (!cleanMime.startsWith('audio/')) {
-      cleanMime = 'audio/webm';
-    }
+//     // Clean mimeType for Gemini (must be clean audio/webm, audio/wav, audio/mp4, etc.)
+//     let cleanMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
+//     if (!cleanMime.startsWith('audio/')) {
+//       cleanMime = 'audio/webm';
+//     }
 
-    // Candidate models for resilience (gemini-3.6-flash is primary active model)
-    const modelCandidates = [
-      process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-flash-latest',
-      'gemini-flash-lite-latest',
-    ].filter(Boolean);
+//     // Candidate models for resilience (gemini-3.6-flash is primary active model)
+//     const modelCandidates = [
+//       process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+//       'gemini-3.6-flash',
+//       'gemini-3.5-flash',
+//       'gemini-flash-latest',
+//       'gemini-flash-lite-latest',
+//     ].filter(Boolean);
 
-    let transcript = '';
-    let lastError = null;
+//     let transcript = '';
+//     let lastError = null;
 
-    for (const modelName of [...new Set(modelCandidates)]) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              mimeType: cleanMime,
-              data: audio,
-            },
-          },
-          {
-            text: `You are an expert voice recording, translation, and transcription engine for LOKIVA, an Indian travel and local discovery platform.
-Listen to the entire spoken audio recording and translate or transcribe it into clean, natural English text with 100% precision.
-Rules:
-1. TRANSLATION: If the speaker speaks in Hindi, Hinglish, or any Indian vernacular language, translate their words into natural English while preserving their exact travel query, intent, destinations, and details.
-2. TRANSCRIPTION: If the speaker speaks in English or Indian English, transcribe their speech word-for-word accurately.
-3. INDIAN LOCALES: Accurately recognize Indian cities, landmarks, and districts (e.g. Mumbai, Jaipur, Varanasi, Bandra, Colaba, Gateway of India, Old Delhi, Goa, Udaipur, etc.) and travel terms (e.g. itinerary, budget, expenses, hotel, auto-rickshaw, metro, guide, thali).
-4. COMPLETE UTTERANCE: Transcribe the full thought from beginning to end without cutting off or omitting any clause.
-5. NOISE HANDLING: If the recording is complete silence or background noise with no speech, output: [NO_SPEECH]
-6. RAW TEXT ONLY: Return ONLY the final translated or transcribed sentence. Do not add quotes, markdown formatting, explanations, or prefixes.`,
-          },
-        ]);
+//     for (const modelName of [...new Set(modelCandidates)]) {
+//       try {
+//         const model = genAI.getGenerativeModel({ model: modelName });
+//         const result = await model.generateContent([
+//           {
+//             inlineData: {
+//               mimeType: cleanMime,
+//               data: audio,
+//             },
+//           },
+//           {
+//             text: `You are an expert voice recording, translation, and transcription engine for LOKIVA, an Indian travel and local discovery platform.
+// Listen to the entire spoken audio recording and translate or transcribe it into clean, natural English text with 100% precision.
+// Rules:
+// 1. TRANSLATION: If the speaker speaks in Hindi, Hinglish, or any Indian vernacular language, translate their words into natural English while preserving their exact travel query, intent, destinations, and details.
+// 2. TRANSCRIPTION: If the speaker speaks in English or Indian English, transcribe their speech word-for-word accurately.
+// 3. INDIAN LOCALES: Accurately recognize Indian cities, landmarks, and districts (e.g. Mumbai, Jaipur, Varanasi, Bandra, Colaba, Gateway of India, Old Delhi, Goa, Udaipur, etc.) and travel terms (e.g. itinerary, budget, expenses, hotel, auto-rickshaw, metro, guide, thali).
+// 4. COMPLETE UTTERANCE: Transcribe the full thought from beginning to end without cutting off or omitting any clause.
+// 5. NOISE HANDLING: If the recording is complete silence or background noise with no speech, output: [NO_SPEECH]
+// 6. RAW TEXT ONLY: Return ONLY the final translated or transcribed sentence. Do not add quotes, markdown formatting, explanations, or prefixes.`,
+//           },
+//         ]);
 
-        const rawText = result?.response?.text() || '';
-        const cleaned = rawText
-          .replace(/^["'`]+|["'`]+$/g, '')
-          .replace(/[\u2014\u2015]/g, ', ')
-          .replace(/[\u2013]/g, '-')
-          .replace(/--+/g, '-')
-          .trim();
+//         const rawText = result?.response?.text() || '';
+//         const cleaned = rawText
+//           .replace(/^["'`]+|["'`]+$/g, '')
+//           .replace(/[\u2014\u2015]/g, ', ')
+//           .replace(/[\u2013]/g, '-')
+//           .replace(/--+/g, '-')
+//           .trim();
 
-        if (cleaned === '[NO_SPEECH]' || cleaned === '[SILENCE]' || cleaned.toLowerCase() === 'no speech') {
-          transcript = '';
-        } else {
-          transcript = cleaned;
-        }
+//         if (cleaned === '[NO_SPEECH]' || cleaned === '[SILENCE]' || cleaned.toLowerCase() === 'no speech') {
+//           transcript = '';
+//         } else {
+//           transcript = cleaned;
+//         }
 
-        lastError = null;
-        break; // Successfully transcribed
-      } catch (genErr) {
-        console.warn(`[VOICE/TRANSCRIBE] Model ${modelName} failed:`, genErr?.message || genErr);
-        lastError = genErr;
-      }
-    }
+//         lastError = null;
+//         break; // Successfully transcribed
+//       } catch (genErr) {
+//         console.warn(`[VOICE/TRANSCRIBE] Model ${modelName} failed:`, genErr?.message || genErr);
+//         lastError = genErr;
+//       }
+//     }
 
-    if (lastError && !transcript) {
-      console.error('[VOICE/TRANSCRIBE] All model attempts failed:', lastError?.message || lastError);
-      return res.status(500).json({ error: lastError?.message || 'Transcription failed', transcript: '' });
-    }
+//     if (lastError && !transcript) {
+//       console.error('[VOICE/TRANSCRIBE] All model attempts failed:', lastError?.message || lastError);
+//       return res.status(500).json({ error: lastError?.message || 'Transcription failed', transcript: '' });
+//     }
 
-    console.log('[BACKEND /voice/transcribe] Gemini Audio Output:', transcript ? `"${transcript}"` : '(silence)');
-    return res.json({ transcript, success: true });
-  } catch (err) {
-    console.error('[VOICE/TRANSCRIBE] Handler error:', err);
-    return res.status(500).json({ error: err?.message || 'Internal server error', transcript: '' });
-  }
-});
-
+//     console.log('[BACKEND /voice/transcribe] Gemini Audio Output:', transcript ? `"${transcript}"` : '(silence)');
+//     return res.json({ transcript, success: true });
+//   } catch (err) {
+//     console.error('[VOICE/TRANSCRIBE] Handler error:', err);
+//     return res.status(500).json({ error: err?.message || 'Internal server error', transcript: '' });
+//   }
+// });
