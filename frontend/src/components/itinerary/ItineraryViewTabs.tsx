@@ -26,13 +26,13 @@ export function ItineraryViewTabs({ currentView, onViewChange }: ItineraryViewTa
             key={tab.id}
             type="button"
             onClick={() => onViewChange(tab.id)}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all duration-150 flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-heading font-bold transition-all duration-150 flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               isActive
-                ? 'bg-ink text-paper shadow-sm'
-                : 'bg-white hover:bg-paper-100 text-dusk-700 border border-paper-300'
+                ? 'bg-gradient-to-r from-[#B84A27] to-[#D47A39] text-[#FFFDF9] shadow-md shadow-[#B84A27]/20 border border-transparent'
+                : 'bg-[#FFFDF9] hover:bg-[#F8F3EC] text-[#5C3D2E] border border-[#E6DAC6]'
             }`}
           >
-            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-marigold' : 'text-dusk'}`} />
+            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#FFFDF9]' : 'text-[#7A5C49]'}`} />
             <span>{tab.label}</span>
           </button>
         );

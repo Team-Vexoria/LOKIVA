@@ -175,7 +175,7 @@ export function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className="px-3.5 py-1 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] rounded-full text-xs font-heading font-bold transition shadow-sm whitespace-nowrap"
+                  className="px-3.5 py-1 bg-[#B84A27] hover:bg-[#9E3C1D] text-[#FFFDF9] rounded-full text-xs font-heading font-bold transition shadow-sm shadow-[#B84A27]/20 whitespace-nowrap"
                 >
                   Sign In
                 </Link>
@@ -283,7 +283,7 @@ export function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2 bg-[#12213B] text-[#FAF7F2] rounded-xl text-center text-xs font-heading font-bold block"
+                    className="w-full py-2 bg-[#B84A27] hover:bg-[#9E3C1D] text-[#FFFDF9] rounded-xl text-center text-xs font-heading font-bold block shadow-sm shadow-[#B84A27]/20"
                   >
                     Sign In
                   </Link>

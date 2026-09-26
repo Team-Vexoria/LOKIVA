@@ -363,14 +363,14 @@ export function RouteDispatchSidebar({
               Spatial Cadence & Energy
             </span>
           </div>
-          <span className="text-[11px] font-meta text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+          <span className="text-[11px] font-meta text-[#9E5414] bg-[#FAF0DF] border border-[#F2D5A7] px-2 py-0.5 rounded-full font-bold">
             Feasible ({feasibilityScore}% Fit)
           </span>
         </div>
 
         {/* Time Distribution Ratio Bar */}
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] font-meta text-neutral-500">
+          <div className="flex justify-between text-[11px] font-meta text-[#7A5C49]">
             <span>
               Sightseeing ({Math.round(totalExploreMins / 60)}h {totalExploreMins % 60}m)
             </span>
@@ -378,14 +378,14 @@ export function RouteDispatchSidebar({
           </div>
           <div className="w-full h-2 rounded-full bg-[#EFE8DC] overflow-hidden flex">
             <div
-              className="h-full bg-[#C85A32] rounded-l-full transition-all duration-500"
+              className="h-full bg-[#B84A27] rounded-l-full transition-all duration-500"
               style={{
                 width: `${(totalExploreMins / (totalExploreMins + totalTransitMins || 1)) * 100}%`,
               }}
               title="Sightseeing time"
             />
             <div
-              className="h-full bg-[#D99B43] rounded-r-full transition-all duration-500"
+              className="h-full bg-[#D47A39] rounded-r-full transition-all duration-500"
               style={{
                 width: `${(totalTransitMins / (totalExploreMins + totalTransitMins || 1)) * 100}%`,
               }}
@@ -396,29 +396,29 @@ export function RouteDispatchSidebar({
 
         {/* Quick Physical Metrics */}
         <div className="grid grid-cols-2 gap-3 pt-1">
-          <div className="p-3 rounded-2xl bg-[#FAF7F2] border border-[#E8DEC8]/80 flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-100/70 text-[#C85A32]">
+          <div className="p-3 rounded-2xl bg-[#FAF6F0] border border-[#E6DAC6]/80 flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-[#FAF0DF] text-[#B84A27]">
               <Navigation className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-neutral-500 block">
+              <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-[#7A5C49] block">
                 Distance
               </span>
-              <span className="font-meta text-sm font-bold text-neutral-800">
+              <span className="font-meta text-sm font-bold text-[#3B2316]">
                 {totalKm.toFixed(1)} km Total
               </span>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[#FAF7F2] border border-[#E8DEC8]/80 flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-100/70 text-emerald-700">
+          <div className="p-3 rounded-2xl bg-[#FAF6F0] border border-[#E6DAC6]/80 flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-[#FAF0DF] text-[#9E5414] border border-[#F2D5A7]">
               <Footprints className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-neutral-500 block">
+              <span className="font-meta text-[11px] font-bold uppercase tracking-wider text-[#7A5C49] block">
                 Footsteps
               </span>
-              <span className="font-meta text-sm font-bold text-neutral-800">
+              <span className="font-meta text-sm font-bold text-[#3B2316]">
                 ~{estSteps.toLocaleString()}
               </span>
             </div>

@@ -64,32 +64,32 @@ export function ItineraryActivityCard({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
-      className={`relative bg-white/90 backdrop-blur-xl border rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer ${
+      className={`relative bg-[#FFFDF9]/90 backdrop-blur-xl border rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer ${
         isActive
-          ? 'border-[#C85A32] ring-2 ring-[#FFC067]/80 shadow-lg bg-[#FAF8F5]'
+          ? 'border-[#B84A27] ring-2 ring-[#D47A39]/80 shadow-lg bg-[#FAF8F5]'
           : isHovered
-          ? 'border-[#1A1D20]/50 shadow-md bg-white'
-          : 'border-[#E2D5BE] hover:border-[#C85A32]/60'
+          ? 'border-[#3B2316]/40 shadow-md bg-[#FFFDF9]'
+          : 'border-[#E6DAC6] hover:border-[#B84A27]/60'
       }`}
     >
       {/* Watermarked Numerals in Top-Right Corner */}
-      <div className="absolute top-2 right-4 font-display font-black text-6xl sm:text-7xl text-[#1A1D20]/[0.04] select-none pointer-events-none tracking-tighter">
+      <div className="absolute top-2 right-4 font-display font-black text-6xl sm:text-7xl text-[#3B2316]/[0.04] select-none pointer-events-none tracking-tighter">
         {formattedIndex}
       </div>
 
       <div className="relative z-10 space-y-4">
         {/* Top Control Bar: Category, Time Range, and Reorder Action Buttons */}
-        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E8DEC8]">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E6DAC6]">
           <div className="flex items-center gap-2 flex-wrap font-meta text-xs">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4ED] text-[#C85A32] font-heading font-extrabold uppercase tracking-wide border border-[#E8DEC8]">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF0DF] text-[#B84A27] font-heading font-extrabold uppercase tracking-wide border border-[#F2D5A7]">
               {activity.category}
             </span>
-            <div className="flex items-center gap-1 text-neutral-600 font-medium">
-              <Clock className="w-3.5 h-3.5 text-[#C85A32]" />
+            <div className="flex items-center gap-1 text-[#7A5C49] font-medium">
+              <Clock className="w-3.5 h-3.5 text-[#B84A27]" />
               <span>{activity.timeRange || activity.startTime || 'Flexible'}</span>
             </div>
-            <span className="text-neutral-300">·</span>
-            <span className="text-neutral-500">{activity.duration || `${activity.visitDurationMinutes || 60} mins`}</span>
+            <span className="text-[#E6DAC6]">·</span>
+            <span className="text-[#7A5C49]">{activity.duration || `${activity.visitDurationMinutes || 60} mins`}</span>
           </div>
 
           {/* Quick Action Reorder & Delete Buttons */}
@@ -98,7 +98,7 @@ export function ItineraryActivityCard({
               type="button"
               onClick={onMoveUp}
               disabled={isFirst}
-              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-[#FAF7F2] text-[#1A1D20] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
+              className="p-1.5 rounded-xl border border-[#E6DAC6] hover:bg-[#FAF6F0] text-[#3B2316] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
               title="Move earlier in schedule"
             >
               <ArrowUp className="w-3.5 h-3.5" />
@@ -108,7 +108,7 @@ export function ItineraryActivityCard({
               type="button"
               onClick={onMoveDown}
               disabled={isLast}
-              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-[#FAF7F2] text-[#1A1D20] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
+              className="p-1.5 rounded-xl border border-[#E6DAC6] hover:bg-[#FAF6F0] text-[#3B2316] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
               title="Move later in schedule"
             >
               <ArrowDown className="w-3.5 h-3.5" />
@@ -117,7 +117,7 @@ export function ItineraryActivityCard({
             <button
               type="button"
               onClick={onRemove}
-              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-rose-50 text-neutral-500 hover:text-rose-600 cursor-pointer transition"
+              className="p-1.5 rounded-xl border border-[#E6DAC6] hover:bg-rose-50 text-[#7A5C49] hover:text-rose-600 cursor-pointer transition"
               title="Remove stop from itinerary"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -129,14 +129,14 @@ export function ItineraryActivityCard({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5 items-start">
           {/* Photo with rounded-2xl and hover perspective */}
           {photo && (
-            <div className="sm:col-span-5 h-36 sm:h-44 rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[#E8DEC8] relative shrink-0 shadow-inner">
+            <div className="sm:col-span-5 h-36 sm:h-44 rounded-2xl overflow-hidden bg-[#FAF6F0] border border-[#E6DAC6] relative shrink-0 shadow-inner">
               <img
                 src={photo}
                 alt={activity.title}
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               />
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[10px] font-meta font-bold">
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#3B2316]/65 backdrop-blur-md text-[#FFFDF9] border border-[#FFFDF9]/20 text-[10px] font-meta font-bold">
                 {activity.category}
               </div>
             </div>
@@ -145,16 +145,16 @@ export function ItineraryActivityCard({
           {/* Details Column */}
           <div className={`${photo ? 'sm:col-span-7' : 'sm:col-span-12'} space-y-2`}>
             <div>
-              <h4 className="text-lg sm:text-xl font-heading font-bold text-neutral-900 leading-snug tracking-tight">
+              <h4 className="text-lg sm:text-xl font-heading font-bold text-[#3B2316] leading-snug tracking-tight">
                 {activity.title}
               </h4>
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 font-meta mt-1">
-                <MapPin className="w-3.5 h-3.5 text-[#C85A32] shrink-0" />
+              <div className="flex items-center gap-1.5 text-xs text-[#7A5C49] font-meta mt-1">
+                <MapPin className="w-3.5 h-3.5 text-[#B84A27] shrink-0" />
                 <span className="truncate">{activity.location}</span>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed font-meta line-clamp-3">
+            <p className="text-xs sm:text-sm text-[#5C3D2E] leading-relaxed font-meta line-clamp-3">
               {activity.description}
             </p>
 
@@ -164,7 +164,7 @@ export function ItineraryActivityCard({
                 {activity.includes.slice(0, 3).map((inc, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 rounded-lg bg-[#FAF7F2] border border-[#E8DEC8] text-[10px] font-meta text-neutral-700"
+                    className="px-2 py-0.5 rounded-lg bg-[#FAF6F0] border border-[#E6DAC6] text-[10px] font-meta text-[#5C3D2E]"
                   >
                     ✓ {inc}
                   </span>
@@ -175,10 +175,10 @@ export function ItineraryActivityCard({
         </div>
 
         {/* Bottom Hairline Divider: Single 1px Border with Price Tag & Duration Adjust */}
-        <div className="pt-3 border-t border-[#E8DEC8] flex flex-wrap items-center justify-between gap-3 text-xs font-meta">
+        <div className="pt-3 border-t border-[#E6DAC6] flex flex-wrap items-center justify-between gap-3 text-xs font-meta">
           <div className="flex items-center gap-2">
-            <span className="text-neutral-500 text-[11px]">Est. Access:</span>
-            <span className="font-mono font-bold text-neutral-900">
+            <span className="text-[#7A5C49] text-[11px]">Est. Access:</span>
+            <span className="font-mono font-bold text-[#3B2316]">
               {activity.costPerPerson === 0 ? 'Free Open Heritage' : `₹${activity.costPerPerson.toLocaleString('en-IN')} / person`}
             </span>
           </div>
@@ -194,13 +194,13 @@ export function ItineraryActivityCard({
                   step="15"
                   value={durationValue}
                   onChange={(e) => setDurationValue(parseInt(e.target.value, 10) || 60)}
-                  className="w-16 px-2 py-0.5 border border-[#E8DEC8] rounded-lg text-xs font-mono text-center bg-white"
+                  className="w-16 px-2 py-0.5 border border-[#E6DAC6] rounded-lg text-xs font-mono text-center bg-[#FFFDF9] text-[#3B2316]"
                 />
-                <span className="text-[10px] text-neutral-500">mins</span>
+                <span className="text-[10px] text-[#7A5C49]">mins</span>
                 <button
                   type="button"
                   onClick={handleSaveDuration}
-                  className="px-2 py-0.5 bg-[#C85A32] text-white rounded-lg text-[10px] font-bold cursor-pointer"
+                  className="px-2 py-0.5 bg-[#B84A27] text-[#FFFDF9] rounded-lg text-[10px] font-bold cursor-pointer"
                 >
                   Save
                 </button>
@@ -209,7 +209,7 @@ export function ItineraryActivityCard({
               <button
                 type="button"
                 onClick={() => setIsEditingDuration(true)}
-                className="text-[11px] text-[#C85A32] hover:text-[#a8362e] flex items-center gap-1 cursor-pointer font-bold transition"
+                className="text-[11px] text-[#B84A27] hover:text-[#9E3C1D] flex items-center gap-1 cursor-pointer font-bold transition"
               >
                 <Pencil className="w-3 h-3" />
                 <span>Adjust ({activity.visitDurationMinutes || 60}m)</span>

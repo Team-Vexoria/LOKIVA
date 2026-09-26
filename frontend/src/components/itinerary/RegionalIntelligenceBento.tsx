@@ -137,26 +137,26 @@ export function RegionalIntelligenceBento({
         <motion.div
           variants={cardItemVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="group relative rounded-3xl p-6 sm:p-7 bg-white/90 backdrop-blur-xl border border-[#E2D5BE] hover:border-indigo-400 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
+          className="group relative rounded-3xl p-6 sm:p-7 bg-[#FFFDF9]/90 backdrop-blur-xl border border-[#E6DAC6] hover:border-[#B84A27] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
         >
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-indigo-500/10 via-sky-400/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[#D47A39]/10 via-[#B84A27]/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
 
           <div className="relative z-10 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 text-white flex items-center justify-center shadow-md group-hover:-rotate-6 transition-transform">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#5C3D2E] to-[#3B2316] text-[#FFFDF9] flex items-center justify-center shadow-md group-hover:-rotate-6 transition-transform">
                   <Compass className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div>
-                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-indigo-700">
+                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-[#B84A27]">
                     On-Ground Intuition
                   </span>
-                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-neutral-900 tracking-tight">
+                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-[#3B2316] tracking-tight">
                     Travel Tips &amp; Advisories
                   </h4>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 font-meta text-xs font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#FAF0DF] text-[#9E5414] border border-[#F2D5A7] font-meta text-xs font-bold uppercase tracking-wider">
                 Insider Rules
               </span>
             </div>
@@ -165,12 +165,12 @@ export function RegionalIntelligenceBento({
               {(data.travelTips || []).map((tip, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DEC8] flex items-start gap-3.5 transition-all hover:border-indigo-300"
+                  className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E6DAC6] flex items-start gap-3.5 transition-all hover:border-[#B84A27]/40"
                 >
-                  <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center font-display font-black text-xs shrink-0 mt-0.5 shadow-2xs">
+                  <div className="w-7 h-7 rounded-full bg-[#FAF0DF] text-[#B84A27] flex items-center justify-center font-display font-black text-xs shrink-0 mt-0.5 shadow-2xs border border-[#F2D5A7]">
                     0{idx + 1}
                   </div>
-                  <p className="font-meta text-xs sm:text-sm text-neutral-800 leading-relaxed font-medium">
+                  <p className="font-meta text-xs sm:text-sm text-[#3B2316] leading-relaxed font-medium">
                     {tip}
                   </p>
                 </div>
@@ -183,56 +183,56 @@ export function RegionalIntelligenceBento({
         <motion.div
           variants={cardItemVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="group relative rounded-3xl p-6 sm:p-7 bg-white/90 backdrop-blur-xl border border-[#E2D5BE] hover:border-amber-400 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
+          className="group relative rounded-3xl p-6 sm:p-7 bg-[#FFFDF9]/90 backdrop-blur-xl border border-[#E6DAC6] hover:border-[#D47A39] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
         >
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-amber-500/10 via-orange-400/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[#D47A39]/10 via-[#B84A27]/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
 
           <div className="relative z-10 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-white flex items-center justify-center shadow-md group-hover:rotate-6 transition-transform">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#D47A39] to-[#B84A27] text-[#FFFDF9] flex items-center justify-center shadow-md group-hover:rotate-6 transition-transform">
                   <CalendarCheck className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div>
-                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-amber-700">
+                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-[#B84A27]">
                     Solar &amp; Seasonal Clock
                   </span>
-                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-neutral-900 tracking-tight">
+                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-[#3B2316] tracking-tight">
                     Best Time to Visit
                   </h4>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-meta text-xs font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#FAF0DF] text-[#9E5414] border border-[#F2D5A7] font-meta text-xs font-bold uppercase tracking-wider">
                 Peak Window
               </span>
             </div>
 
             <div className="space-y-3.5 pt-1">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/80 border border-amber-200/90 shadow-2xs space-y-1">
-                <span className="font-heading text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FAF0DF] to-[#FAF6F0] border border-[#F2D5A7] shadow-2xs space-y-1">
+                <span className="font-heading text-xs font-bold uppercase tracking-wider text-[#9E5414] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#B84A27]" />
                   <span>Prime Season Window</span>
                 </span>
-                <p className="font-display text-2xl font-black text-[#C85A32] tracking-tight">
+                <p className="font-display text-2xl font-black text-[#B84A27] tracking-tight">
                   {data.bestTimeToVisit?.idealMonths || 'October to March'}
                 </p>
-                <p className="font-meta text-xs sm:text-sm text-neutral-700 leading-relaxed pt-0.5">
+                <p className="font-meta text-xs sm:text-sm text-[#7A5C49] leading-relaxed pt-0.5">
                   {data.bestTimeToVisit?.seasonContext || 'Pleasant weather and clear skies across the region.'}
                 </p>
               </div>
 
               {data.bestTimeToVisit?.crowdPacing && (
-                <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DEC8] flex items-start gap-3">
-                  <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="font-meta text-xs sm:text-sm text-neutral-700 leading-relaxed font-medium">
+                <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E6DAC6] flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-[#D47A39] shrink-0 mt-0.5" />
+                  <p className="font-meta text-xs sm:text-sm text-[#7A5C49] leading-relaxed font-medium">
                     {data.bestTimeToVisit.crowdPacing}
                   </p>
                 </div>
               )}
 
               {(data.bestTimeToVisit?.advisoryNote || data.bestTimeToVisit?.advisory) && (
-                <div className="p-3.5 rounded-2xl bg-orange-50/90 border border-orange-200 flex items-start gap-2.5 text-orange-950 font-meta text-xs">
-                  <ShieldAlert className="w-4 h-4 text-[#C85A32] shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-2xl bg-[#FAF0DF] border border-[#F2D5A7] flex items-start gap-2.5 text-[#3B2316] font-meta text-xs">
+                  <ShieldAlert className="w-4 h-4 text-[#B84A27] shrink-0 mt-0.5" />
                   <span>{data.bestTimeToVisit.advisoryNote || data.bestTimeToVisit.advisory}</span>
                 </div>
               )}
@@ -244,26 +244,26 @@ export function RegionalIntelligenceBento({
         <motion.div
           variants={cardItemVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="group relative rounded-3xl p-6 sm:p-7 bg-white/90 backdrop-blur-xl border border-[#E2D5BE] hover:border-emerald-500 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
+          className="group relative rounded-3xl p-6 sm:p-7 bg-[#FFFDF9]/90 backdrop-blur-xl border border-[#E6DAC6] hover:border-[#B84A27] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
         >
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-emerald-500/10 via-teal-400/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[#B84A27]/10 via-[#D47A39]/5 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
 
           <div className="relative z-10 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md group-hover:-rotate-6 transition-transform">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#B84A27] to-[#D47A39] text-[#FFFDF9] flex items-center justify-center shadow-md group-hover:-rotate-6 transition-transform">
                   <MapPin className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div>
-                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-emerald-800">
+                  <span className="font-heading text-[11px] uppercase font-extrabold tracking-widest text-[#B84A27]">
                     Perimeter Horizons
                   </span>
-                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-neutral-900 tracking-tight">
+                  <h4 className="font-heading font-bold text-xl sm:text-2xl text-[#3B2316] tracking-tight">
                     Nearby Places &amp; Detours
                   </h4>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-meta text-xs font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#FAF0DF] text-[#9E5414] border border-[#F2D5A7] font-meta text-xs font-bold uppercase tracking-wider">
                 Curated Radii
               </span>
             </div>
@@ -275,21 +275,21 @@ export function RegionalIntelligenceBento({
                 return (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DEC8] flex items-center justify-between group/row hover:border-emerald-500 transition-all cursor-pointer"
+                    className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E6DAC6] flex items-center justify-between group/row hover:border-[#B84A27]/50 transition-all cursor-pointer"
                   >
                     <div>
-                      <h5 className="font-heading font-bold text-sm sm:text-base text-neutral-900 group-hover/row:text-emerald-700 transition-colors">
+                      <h5 className="font-heading font-bold text-sm sm:text-base text-[#3B2316] group-hover/row:text-[#B84A27] transition-colors">
                         {place.name}
                       </h5>
-                      <span className="font-meta text-xs text-neutral-500 font-medium">
+                      <span className="font-meta text-xs text-[#7A5C49] font-medium">
                         {areaText} {distanceText && `· ${distanceText}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-meta text-xs font-bold uppercase tracking-wider bg-white border border-[#E8DEC8] text-neutral-700 px-2.5 py-0.5 rounded-xl shadow-2xs">
+                      <span className="font-meta text-xs font-bold uppercase tracking-wider bg-[#FFFDF9] border border-[#E6DAC6] text-[#5C3D2E] px-2.5 py-0.5 rounded-xl shadow-2xs">
                         {place.tag}
                       </span>
-                      <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover/row:text-emerald-600 group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5 transition-all" />
+                      <ArrowUpRight className="w-4 h-4 text-[#A67B5B] group-hover/row:text-[#B84A27] group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5 transition-all" />
                     </div>
                   </div>
                 );

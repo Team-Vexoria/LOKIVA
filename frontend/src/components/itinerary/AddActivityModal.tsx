@@ -143,28 +143,28 @@ export function AddActivityModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] max-w-2xl w-full p-5 sm:p-7 space-y-5 shadow-2xl relative max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#26160E]/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#FAF6F0] rounded-2xl border border-[#E6DAC6] max-w-2xl w-full p-5 sm:p-7 space-y-5 shadow-2xl relative max-h-[90vh] flex flex-col text-[#3B2316]">
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-dusk hover:text-ink rounded-full hover:bg-white border border-transparent hover:border-[#E5DFD5] transition cursor-pointer"
+          className="absolute top-5 right-5 p-2 text-[#7A5C49] hover:text-[#3B2316] rounded-full hover:bg-[#FFFDF9] border border-transparent hover:border-[#E6DAC6] transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="space-y-1 shrink-0">
-          <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B] flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
+          <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#B84A27] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#B84A27]" />
             <span>Smart Proximity Discovery · Day {dayNumber}</span>
           </span>
-          <h3 className="text-xl sm:text-2xl font-display font-bold text-ink">
+          <h3 className="text-xl sm:text-2xl font-display font-bold text-[#3B2316]">
             Add Cultural Stop
           </h3>
           {precedingStop && (
-            <p className="text-xs font-mono text-dusk">
+            <p className="text-xs font-mono text-[#7A5C49]">
               📍 Sorted by shortest distance from: <strong>{precedingStop.title}</strong>
             </p>
           )}
@@ -173,13 +173,13 @@ export function AddActivityModal({
         {/* Search Input & Category Filters */}
         <div className="space-y-3 shrink-0">
           <div className="relative">
-            <Search className="w-4 h-4 text-dusk absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#7A5C49] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search temple, weaving guild, street food, palace..."
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-[#E5DFD5] focus:border-ink rounded-xl text-xs sm:text-sm text-ink placeholder-dusk-400 focus:outline-none transition shadow-2xs font-sans"
+              className="w-full pl-9 pr-4 py-2.5 bg-[#FFFDF9] border border-[#E6DAC6] focus:border-[#B84A27] rounded-xl text-xs sm:text-sm text-[#3B2316] placeholder-[#A67B5B]/60 focus:outline-none transition shadow-2xs font-sans"
             />
           </div>
 
@@ -191,8 +191,8 @@ export function AddActivityModal({
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-ink text-white font-semibold'
-                    : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
+                    ? 'bg-gradient-to-r from-[#B84A27] to-[#D47A39] text-[#FFFDF9] font-semibold shadow-2xs'
+                    : 'bg-[#FFFDF9] text-[#5C3D2E] border border-[#E6DAC6] hover:bg-[#FAF6F0]'
                 }`}
               >
                 {cat || 'All Categories'}
@@ -204,19 +204,19 @@ export function AddActivityModal({
         {/* Scrollable Places List sorted by distance */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {sortedAndFiltered.length === 0 ? (
-            <div className="py-12 text-center text-xs font-mono text-dusk space-y-1">
+            <div className="py-12 text-center text-xs font-mono text-[#7A5C49] space-y-1">
               <p>No matching places found.</p>
-              <p className="text-[11px] text-dusk-400">Try a different search keyword or category.</p>
+              <p className="text-[11px] text-[#A67B5B]">Try a different search keyword or category.</p>
             </div>
           ) : (
             sortedAndFiltered.map((place) => (
               <div
                 key={place.id}
                 onClick={() => handleSelectExperience(place)}
-                className="p-3 sm:p-4 bg-white hover:bg-[#FAF8F5] border border-[#E5DFD5] hover:border-[#C1443B] rounded-xl flex items-center justify-between gap-4 transition group cursor-pointer shadow-2xs"
+                className="p-3 sm:p-4 bg-[#FFFDF9] hover:bg-[#FAF8F5] border border-[#E6DAC6] hover:border-[#B84A27] rounded-xl flex items-center justify-between gap-4 transition group cursor-pointer shadow-2xs"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-[#FAF7F2] shrink-0 border border-[#E5DFD5]">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-[#FAF6F0] shrink-0 border border-[#E6DAC6]">
                     <img
                       src={resolveImageUrl(place.image_url)}
                       alt={place.title}
@@ -226,11 +226,11 @@ export function AddActivityModal({
 
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#C1443B]">
+                      <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#B84A27]">
                         {place.category || 'Culture'}
                       </span>
                       {place.distanceFromPreceding !== undefined && (
-                        <span className="px-2 py-0.5 rounded bg-[#FAF7F2] text-[10px] font-mono text-emerald-800 border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded bg-[#FAF0DF] text-[10px] font-mono text-[#9E5414] border border-[#F2D5A7]">
                           {place.distanceFromPreceding <= 1.2
                             ? `${Math.round(place.distanceFromPreceding * 1000)}m walk`
                             : `${place.distanceFromPreceding} km auto`}
@@ -238,23 +238,23 @@ export function AddActivityModal({
                       )}
                     </div>
 
-                    <h4 className="text-sm font-heading font-bold text-ink truncate group-hover:text-[#C1443B] transition-colors">
+                    <h4 className="text-sm font-heading font-bold text-[#3B2316] truncate group-hover:text-[#B84A27] transition-colors">
                       {place.title}
                     </h4>
 
-                    <p className="text-[11px] font-sans text-dusk truncate">
+                    <p className="text-[11px] font-sans text-[#7A5C49] truncate">
                       {place.area_name || place.city}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0 space-y-1">
-                  <span className="text-xs font-mono font-bold text-ink block">
+                  <span className="text-xs font-mono font-bold text-[#3B2316] block">
                     {place.price === 0 ? 'Free' : `₹${place.price}`}
                   </span>
                   <button
                     type="button"
-                    className="px-3 py-1 bg-[#C1443B] text-white rounded-lg text-xs font-heading font-bold tracking-wide uppercase transition shadow-2xs group-hover:bg-[#a8362e]"
+                    className="px-3 py-1 bg-[#B84A27] hover:bg-[#9E3C1D] text-[#FFFDF9] rounded-lg text-xs font-heading font-bold tracking-wide uppercase transition shadow-2xs"
                   >
                     + Add Stop
                   </button>

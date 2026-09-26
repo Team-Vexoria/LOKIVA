@@ -14,6 +14,20 @@
 
 ---
 
+## 🚨 STRICT UI, COLOR & TYPOGRAPHY CONSTITUTION (MANDATORY FOR ALL FUTURE CHANGES)
+
+1. **STRICTLY FORBIDDEN COLORS:** Never use pure black (`#000000`, `#1A1D20`, `bg-black`, `bg-neutral-900`, `bg-slate-900`, `bg-zinc-900`), dark navy, or ANY shade of **Green** (`emerald`, `green`, `teal`, `lime`), **Blue** (`blue`, `sky`, `cyan`, `indigo`), or **Purple** (`purple`, `violet`, `fuchsia`) anywhere in the UI, badges, buttons, or charts.
+2. **APPROVED WARM EARTHEN LUXURY PALETTE (AESOP / AMAN / KINFOLK INSPIRED):**
+   - Primary Canvas: Warm Alabaster Linen (`#FAF6F0`) and Travertine Stone (`#F3ECE1`)
+   - Elevated Card Surfaces: Soft Ivory (`#FFFDF9`) with Warm Sandstone borders (`#E6DAC6`)
+   - Primary Text and Deep Contrast (Replacing Black): Roasted Espresso-Umber (`#3B2316`) and Warm Cocoa (`#5C3D2E`)
+   - Active Pills and Primary CTAs (Replacing Black Buttons): Terracotta-to-Saffron Gradient (`bg-gradient-to-r from-[#B84A27] to-[#D47A39] text-[#FFFDF9]`) or Deep Terracotta Clay (`#A63E1E`)
+   - Status and Feasibility Accents (Replacing Green/Blue): Warm Saffron Gold (`bg-[#FDF2E0] text-[#B5651D] border-[#F2D5A7]`) and Terracotta Rose (`bg-[#FBEBE4] text-[#A84222] border-[#EFC7B8]`)
+3. **NO REPETITIVE TABULAR PILL ROWS OR GENERIC AI SPARKLE ICONS:** Avoid generic rows of boxed pills, multi-column spreadsheet-style tables, and default AI sparkle icons. Use flowing editorial prose, inline typographic highlights, and visual proportion ribbons.
+4. **STRICT TYPOGRAPHY:** **Object Sans** (`font-display` / `font-heading`) for titles and display figures; **Josefin Sans** (`font-meta` / `font-sans`) for narrative copy and telemetry. Do not overuse rigid tabular monospace layouts.
+
+---
+
 ## 📑 Table of Contents
 
 1. [Project Manifesto & The Market Gap](#-1-project-manifesto--the-market-gap)

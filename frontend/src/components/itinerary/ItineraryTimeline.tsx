@@ -148,18 +148,18 @@ export function ItineraryTimeline({
                   {/* External Transit Pill */}
                   <motion.div
                     whileHover={{ scale: 1.01 }}
-                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#FAF7F2] border border-[#E2D5BE] shadow-2xs text-xs font-meta text-neutral-700 hover:border-[#C85A32] transition-colors"
+                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#FAF6F0] border border-[#E6DAC6] shadow-2xs text-xs font-meta text-[#5C3D2E] hover:border-[#B84A27] transition-colors"
                   >
                     {activity.transitMode === 'walking' ? (
-                      <Footprints className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Footprints className="w-3.5 h-3.5 text-[#B84A27] shrink-0" />
                     ) : (
-                      <Car className="w-3.5 h-3.5 text-[#C85A32] shrink-0" />
+                      <Car className="w-3.5 h-3.5 text-[#B84A27] shrink-0" />
                     )}
                     <span className="font-medium">
                       {activity.gettingThere || `Private transfer · ~${activity.transitToNextMinutes || 15} mins`}
                     </span>
                     {activity.transitCost > 0 && (
-                      <span className="font-mono font-bold text-neutral-900 bg-white/80 px-2 py-0.5 rounded-full border border-[#E8DEC8]">
+                      <span className="font-mono font-bold text-[#3B2316] bg-[#FFFDF9]/80 px-2 py-0.5 rounded-full border border-[#E6DAC6]">
                         ~₹{activity.transitCost.toLocaleString('en-IN')}
                       </span>
                     )}
