@@ -23,6 +23,7 @@ import {
   computeCrewSynergyMetrics,
 } from '../../lib/groupRecommendationEngine';
 import { useGroupTripStore } from '../../store/useGroupTripStore';
+import { resolveImageUrl } from '../../lib/api';
 
 interface GroupRecommendationBoardProps {
   session: GroupTripSession;
@@ -221,7 +222,7 @@ export const GroupRecommendationBoard: React.FC<GroupRecommendationBoardProps> =
                 {/* ── LEFT 5 COLUMNS: FULL-HEIGHT VISUAL BLEED ── */}
                 <div className="md:col-span-5 relative h-64 md:h-auto overflow-hidden bg-[#FAF6F0]">
                   <img
-                    src={card.heroImage}
+                    src={resolveImageUrl(card.heroImage)}
                     alt={card.city}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"

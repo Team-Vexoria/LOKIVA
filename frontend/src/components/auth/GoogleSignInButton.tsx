@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth-context';
+import { AlertCircle } from 'lucide-react';
 
 interface GoogleSignInButtonProps {
   role?: 'traveler' | 'provider' | 'admin';
   text?: string;
   redirectTo?: string;
   className?: string;
+  onError?: (error: string) => void;
 }
 
 export function GoogleSignInButton({
@@ -14,15 +16,17 @@ export function GoogleSignInButton({
   text = 'Continue with Google',
   redirectTo,
   className = '',
+  onError,
 }: GoogleSignInButtonProps) {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     setIsLoading(true);
-    setError(null);
+    setErrorMessage(null);
+
     try {
       await loginWithGoogle(role);
       const target =
@@ -32,30 +36,43 @@ export function GoogleSignInButton({
           : '/explore');
       navigate(target);
     } catch (err: any) {
-      if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
-        // In case of any unhandled network error, loginWithGoogle still sets session, so navigate
-        const target =
-          redirectTo ||
-          (role === 'provider'
-            ? '/provider'
-            : '/explore');
-        navigate(target);
+      console.error('Google Sign-In caught in button:', err);
+
+      let msg = 'Google Sign-In failed. Please try again.';
+      if (
+        err?.code === 'auth/api-key-not-valid' ||
+        err?.message?.includes('api-key-not-valid') ||
+        err?.message?.includes('API_KEY_INVALID')
+      ) {
+        msg =
+          'Firebase Web API Key is invalid or restricted. In Firebase Console, go to Project Settings (gear icon) > General > Your Apps (Web App) and copy the exact "apiKey" from the firebaseConfig snippet (do not use a Gemini AI key).';
+      } else if (err?.code === 'auth/popup-closed-by-user') {
+        msg = 'Google popup was closed before completing sign-in.';
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        msg = 'This domain is not authorized in Firebase console. Please add localhost to Authorized Domains.';
+      } else if (err?.code === 'auth/popup-blocked') {
+        msg = 'Sign-in popup was blocked by your browser. Please allow popups for localhost.';
+      } else if (err?.message) {
+        msg = err.message;
       }
+
+      setErrorMessage(msg);
+      onError?.(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-2">
       <button
         type="button"
         onClick={handleSignIn}
         disabled={isLoading}
-        className={`w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-100 text-gray-800 font-medium rounded-xl border border-gray-200 shadow-sm transition duration-150 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+        className={`w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-[#FFFDF9] hover:bg-[#FAF6F0] text-[#3B2316] font-heading font-bold text-sm rounded-2xl border border-[#DFCBB2] hover:border-[#B84A27] shadow-xs hover:shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       >
         {isLoading ? (
-          <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-[#B84A27] border-t-transparent rounded-full animate-spin" />
         ) : (
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
             <path
@@ -76,13 +93,14 @@ export function GoogleSignInButton({
             />
           </svg>
         )}
-        <span>{text}</span>
+        <span>{isLoading ? 'Connecting with Google...' : text}</span>
       </button>
 
-      {error && (
-        <p className="mt-2 text-xs text-rose-500 text-center bg-rose-50 p-2 rounded-lg border border-rose-200">
-          {error}
-        </p>
+      {errorMessage && (
+        <div className="p-3 rounded-xl bg-[#FAF4ED] border border-[#E8DEC8] text-[#B84A27] text-xs font-sans flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="leading-snug">{errorMessage}</span>
+        </div>
       )}
     </div>
   );

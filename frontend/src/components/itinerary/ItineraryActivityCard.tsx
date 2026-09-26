@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ItineraryActivity, BookingStatus } from '../../types/itinerary';
+import { resolveImageUrl } from '../../lib/api';
 
 interface ItineraryActivityCardProps {
   activity: ItineraryActivity;
@@ -55,7 +56,8 @@ export function ItineraryActivityCard({
     setIsEditingDuration(false);
   };
 
-  const photo = activity.photos && activity.photos.length > 0 ? activity.photos[0] : null;
+  const rawPhoto = activity.photos && activity.photos.length > 0 ? activity.photos[0] : null;
+  const photo = resolveImageUrl(rawPhoto, activity.photos);
   const formattedIndex = String(index + 1).padStart(2, '0');
 
   return (
