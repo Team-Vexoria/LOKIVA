@@ -264,7 +264,7 @@ export function DestinationsPage() {
               {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-1">
                 <Link
-                  to={`/explore?state=${encodeURIComponent(displayDestination.name)}`}
+                  to={`/destinations/${displayDestination.id}`}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#C1443B] hover:bg-[#A8362E] text-white font-heading font-bold text-xs tracking-wider uppercase transition shadow-md hover:shadow-lg cursor-pointer"
                 >
                   <span>Explore State</span>

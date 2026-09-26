@@ -9,6 +9,7 @@ import { Footer } from './components/layout/Footer';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
 import { DestinationsPage } from './pages/DestinationsPage';
+import { StateOverviewPage } from './pages/StateOverviewPage';
 import { DestinationDetailPage } from './pages/DestinationDetailPage';
 import { ExperienceDetailPage } from './pages/ExperienceDetailPage';
 import { AiGuidePage } from './pages/AiGuidePage';
@@ -32,7 +33,10 @@ import { NotFoundPage } from './pages/NotFoundPage';
 function AppShell() {
   const location = useLocation();
   const { showModal, closeModal } = useOnboardingGate();
-  const isFullBleedPage = location.pathname === '/' || location.pathname === '/destinations';
+  const isFullBleedPage =
+    location.pathname === '/' ||
+    location.pathname === '/destinations' ||
+    location.pathname.startsWith('/destinations/');
 
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -49,6 +53,7 @@ function AppShell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/destinations" element={<DestinationsPage />} />
+          <Route path="/destinations/:stateSlug" element={<StateOverviewPage />} />
           <Route path="/destination/:state" element={<DestinationDetailPage />} />
           <Route path="/destination/:state/:city" element={<DestinationDetailPage />} />
           <Route path="/experience/:id" element={<ExperienceDetailPage />} />
