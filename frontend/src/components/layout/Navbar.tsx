@@ -118,38 +118,14 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Right: Actions (Artisan Portal Link, Authenticated State, or Sign In) */}
+          {/* Right: Actions (Authenticated State or Sign In) */}
           <div className="flex items-center justify-end gap-2 flex-shrink-0">
             <div className="hidden md:flex items-center gap-2">
-              {/* Authenticated Provider Console pill */}
-              {user && user.role === 'provider' && (
-                <Link
-                  to="/provider/dashboard"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FAF4ED] hover:bg-[#F3EAD8] text-[#C85A32] border border-[#E8DEC8] rounded-full text-xs font-heading font-bold transition shadow-2xs whitespace-nowrap"
-                  title="Open Artisan Command Console"
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#C85A32] animate-pulse" />
-                  <span>Artisan Console</span>
-                </Link>
-              )}
-
-              {/* Logged-out Artisan Portal link */}
-              {!user && (
-                <Link
-                  to="/provider/auth"
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-[#FAF4ED] hover:bg-[#F3EAD8] text-[#C85A32] border border-[#E8DEC8] rounded-full text-xs font-heading font-bold transition shadow-2xs whitespace-nowrap"
-                  title="Artisan Guild & Workshop Portal"
-                >
-                  <span>Artisan / Host Portal</span>
-                  <span className="text-[11px] font-mono">↗</span>
-                </Link>
-              )}
-
               {/* User profile or login */}
               {user ? (
                 <div className="flex items-center gap-1.5 text-xs">
                   <Link
-                    to={user.role === 'provider' ? '/provider/dashboard' : '/profile'}
+                    to="/profile"
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-[#FFC067]/50 text-ink font-semibold text-xs transition group"
                     title="View Profile & Settings"
                   >
@@ -219,47 +195,12 @@ export function Navbar() {
                 </Link>
               ))}
 
-              {/* Artisan Portal & Quick Action */}
-              <div className="pt-2.5 pb-1 border-t border-paper-300 space-y-1.5">
-                {!user ? (
-                  <Link
-                    to="/provider/auth"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2 px-3 bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] rounded-xl text-xs font-heading font-bold text-[#C85A32] flex items-center justify-between"
-                  >
-                    <span>Artisan / Host Portal</span>
-                    <span className="text-[11px] font-mono">↗</span>
-                  </Link>
-                ) : user.role === 'provider' ? (
-                  <Link
-                    to="/provider/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2 px-3 bg-[#FAF4ED] hover:bg-[#F3EAD8] border border-[#E8DEC8] rounded-xl text-xs font-heading font-bold text-[#C85A32] flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#C85A32] animate-pulse" />
-                      <span>Artisan Command Console</span>
-                    </div>
-                    <span className="text-[11px] font-mono">Open →</span>
-                  </Link>
-                ) : (
-                  <Link
-                    to="/provider/auth?upgrade=true"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2 px-3 bg-paper-100 hover:bg-paper-200 border border-paper-300 rounded-xl text-xs font-heading font-bold text-ink flex items-center justify-between"
-                  >
-                    <span>Register as Artisan Guild Host</span>
-                    <span className="text-[11px] font-mono">↗</span>
-                  </Link>
-                )}
-              </div>
-
               {/* User Account / Sign In */}
               <div className="pt-2 border-t border-paper-300 flex items-center justify-between px-1">
                 {user ? (
                   <>
                     <Link
-                      to={user.role === 'provider' ? '/provider/dashboard' : '/profile'}
+                      to="/profile"
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-xs font-semibold text-ink flex items-center gap-1.5 hover:text-[#C85A32] transition-colors"
                     >

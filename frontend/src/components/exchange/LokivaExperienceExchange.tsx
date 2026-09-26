@@ -32,13 +32,6 @@ export function LokivaExperienceExchange() {
             <span>Explore</span>
             <ArrowRight className="w-3 h-3 text-marigold" />
           </Link>
-          <Link
-            to="/provider?tab=copilot"
-            className="px-3.5 py-1.5 bg-teal hover:bg-teal-700 text-white rounded-xl font-bold transition flex items-center gap-1 text-[11px] shadow-sm"
-          >
-            <Sparkles className="w-3 h-3 text-marigold" />
-            <span>Host</span>
-          </Link>
         </div>
       </div>
 

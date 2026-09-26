@@ -401,10 +401,13 @@ export function LandingHero({
       <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 mt-auto pointer-events-none z-10">
         <div className="w-full h-20 sm:h-28 lg:h-36 rounded-t-[32px] sm:rounded-t-[44px] overflow-hidden border-t-4 border-x-4 border-[#FFFDF9] shadow-2xl bg-[#3B2316] relative">
           <video
-            src="/assets/videos/hero-reel.mp4"
+            src="/landing_video.mp4"
+            poster="/lokiva_background.avif"
+            autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             className="w-full h-full object-cover object-center opacity-90"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-[#3B2316]/30" />

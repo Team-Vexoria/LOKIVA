@@ -159,7 +159,7 @@ export function ProviderDashboardPage() {
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C85A32] bg-[#FAF4ED] border border-[#E8DEC8] px-3 py-0.5 rounded-full">
-                Artisan Command Console
+                Host Dashboard
               </span>
               <span className="text-[11px] font-mono text-[#556275] bg-[#FAF8F5] border border-[#E5DFD5] px-2.5 py-0.5 rounded-md">
                 {profile.generationalHeritage}

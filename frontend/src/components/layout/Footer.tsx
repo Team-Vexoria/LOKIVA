@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShieldCheck, MapPin, Sparkles, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 
 export function Footer() {
   const location = useLocation();
@@ -19,7 +19,7 @@ export function Footer() {
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12">
           {/* Brand and Mission */}
-          <div className="md:col-span-5 space-y-5">
+          <div className="md:col-span-6 space-y-5">
             <Link to="/" className="inline-flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-2xl bg-white border border-[#E5DFD5] flex items-center justify-center shadow-xs p-1.5 group-hover:border-[#FFC067] transition-colors">
                 <img
@@ -55,7 +55,7 @@ export function Footer() {
           </div>
 
           {/* Quick Links Column */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="md:col-span-3 space-y-4">
             <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#C1443B]">
               Discover
             </p>
@@ -89,7 +89,7 @@ export function Footer() {
           </div>
 
           {/* Intelligence Column */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="md:col-span-3 space-y-4">
             <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#B45309]">
               Intelligence
             </p>
@@ -113,31 +113,6 @@ export function Footer() {
               <li>
                 <Link to="/profile" className="hover:text-[#12213B] transition-colors">
                   Traveler Profile
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Artisans and Hosts Column */}
-          <div className="md:col-span-3 space-y-4">
-            <p className="text-xs font-heading font-extrabold uppercase tracking-widest text-[#0F766E]">
-              Artisans &amp; Hosts
-            </p>
-            <ul className="space-y-3 text-sm font-sans font-medium text-[#5B6B8C]">
-              <li>
-                <Link to="/provider" className="hover:text-[#12213B] transition-colors">
-                  Host Console &amp; Analytics
-                </Link>
-              </li>
-              <li>
-                <Link to="/register/provider" className="hover:text-[#12213B] transition-colors inline-flex items-center gap-1">
-                  <span>List Your Workshop</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-              </li>
-              <li>
-                <Link to="/login/provider" className="hover:text-[#12213B] transition-colors">
-                  Provider Sign In
                 </Link>
               </li>
             </ul>
