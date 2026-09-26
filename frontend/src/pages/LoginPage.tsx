@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
-import { Compass, User, Briefcase, Shield, ArrowRight } from 'lucide-react';
+import { Compass, User, Shield, ArrowRight, AlertCircle } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/explore';
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -110,28 +110,18 @@ export function LoginPage() {
         {/* 1-Click Instant Demo Section */}
         <div className="pt-4 border-t border-paper-300 space-y-2">
           <span className="text-[10px] font-mono font-bold text-dusk uppercase tracking-wider block text-center">
-            Instant 1-Click Demo Personas
+            Instant 1-Click Demo Persona
           </span>
-          <div className="grid grid-cols-2 gap-2 font-mono">
+          <div className="font-mono">
             <button
               onClick={() => {
                 demoLogin('traveler', 'Piyush Kumar', 'piyush@lokiva.com');
                 navigate(redirectTo);
               }}
-              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition cursor-pointer"
+              className="w-full p-2.5 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <User className="w-3.5 h-3.5 text-teal" />
-              <span>Piyush Kumar</span>
-            </button>
-            <button
-              onClick={() => {
-                demoLogin('provider');
-                navigate('/provider');
-              }}
-              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition cursor-pointer"
-            >
-              <Briefcase className="w-3.5 h-3.5 text-marigold-600" />
-              <span>Artisan Host</span>
+              <span>Explore as Piyush Kumar (Demo Traveler)</span>
             </button>
           </div>
         </div>
