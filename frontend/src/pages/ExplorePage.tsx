@@ -685,15 +685,6 @@ export function ExplorePage() {
               </p>
             </div>
 
-            {/* Custom Image Slots Tip */}
-            <div className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl p-3 text-xs font-sans text-ink flex items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#C1443B] shrink-0" />
-                <span className="text-xs text-dusk">
-                  <strong className="text-ink font-heading">Direct Image Customization:</strong> Every place in <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5DFD5] text-[11px] font-mono">frontend/src/data/places/</code> has a <code className="bg-white px-1.5 py-0.5 rounded border border-[#E5DFD5] text-[11px] font-mono">image_url: 'PASTE_IMAGE_LINK_HERE'</code> slot where you can paste your custom image links directly.
-                </span>
-              </div>
-            </div>
 
             {/* Active Constraints Summary */}
             {activeFiltersCount > 0 && (
