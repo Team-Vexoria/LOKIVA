@@ -15,6 +15,8 @@ import { router as ingestionRouter } from './routes/ingestion.js';
 import { mediaRouter } from './routes/media.js';
 import { voiceRouter } from './routes/voice.js';
 import { ttsRouter } from './routes/tts.js';
+import http from 'http';
+import { setupVoiceWebSocketServer } from './services/voiceStreamService.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -86,7 +88,10 @@ async function startServer() {
   await seedArtisansAndGuides();
   await applyUserSelection();
 
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  setupVoiceWebSocketServer(server);
+
+  server.listen(PORT, () => {
     console.log(`LOKIVA Backend API listening at http://localhost:${PORT}`);
   });
 }
