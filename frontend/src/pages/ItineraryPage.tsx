@@ -3,6 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useItineraryStore } from '../store/useItineraryStore';
 import { useGroupTripStore } from '../store/useGroupTripStore';
 import { TripHeaderOverview } from '../components/itinerary/TripHeaderOverview';
+import { ItineraryFilterBar } from '../components/itinerary/ItineraryFilterBar';
+import { ItineraryDayConsole } from '../components/itinerary/ItineraryDayConsole';
 import { ItineraryViewTabs } from '../components/itinerary/ItineraryViewTabs';
 import { DayCardTimeline } from '../components/itinerary/DayCardTimeline';
 import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
@@ -15,23 +17,11 @@ import { ShareItineraryModal } from '../components/itinerary/ShareItineraryModal
 import { EditTripModal } from '../components/itinerary/EditTripModal';
 import { AddActivityModal } from '../components/itinerary/AddActivityModal';
 import { RegionalIntelligenceBento } from '../components/itinerary/RegionalIntelligenceBento';
-import { INDIAN_STATES_AND_CITIES, POPULAR_CITIES_LIST } from '../data/places';
+import { INDIAN_STATES_AND_CITIES } from '../data/places';
 import {
-  Plus,
-  Sparkles,
-  Compass,
-  MapPin,
-  SlidersHorizontal,
-  ChevronDown,
-  ChevronUp,
-  RotateCcw,
-  Check,
-  Calendar,
-  Layers,
   CheckCircle2,
   X,
   Users,
-  Wallet,
   ArrowLeft,
 } from 'lucide-react';
 
@@ -296,109 +286,18 @@ export function ItineraryPage() {
           </div>
         )}
 
-        {/* 1. Dynamic Trip Generator Bar */}
-        <section className="bg-[#FAF7F2] rounded-2xl border border-[#E5DFD5] p-4 sm:p-5 shadow-xs space-y-3">
-          <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            {/* Destination City */}
-            <div className="sm:col-span-4 space-y-1">
-              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
-                Destination City
-              </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-[#C1443B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={inputCity}
-                  onChange={(e) => setInputCity(e.target.value)}
-                  placeholder="Jaipur, Varanasi, Kochi, Mumbai..."
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-[#E5DFD5] rounded-xl text-xs sm:text-sm text-ink font-sans focus:outline-none focus:border-ink shadow-2xs"
-                />
-              </div>
-            </div>
-
-            {/* Days Count (1 to 7 Days) */}
-            <div className="sm:col-span-3 space-y-1">
-              <label className="text-[11px] font-meta uppercase font-bold text-dusk block">
-                Duration: {inputDays} {inputDays === 1 ? 'Day' : 'Days'}
-              </label>
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5, 7].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setInputDays(num)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-meta font-bold transition cursor-pointer ${
-                      inputDays === num
-                        ? 'bg-ink text-white shadow-2xs'
-                        : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
-                    }`}
-                  >
-                    {num}D
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Pace Selector */}
-            <div className="sm:col-span-3 space-y-1">
-              <label className="text-[11px] font-mono uppercase font-bold text-dusk block">
-                Travel Pace
-              </label>
-              <div className="flex items-center gap-1">
-                {(['relaxed', 'balanced', 'packed'] as const).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setInputPace(p)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-heading font-bold capitalize transition cursor-pointer ${
-                      inputPace === p
-                        ? 'bg-ink text-white shadow-2xs'
-                        : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Generate Action Button */}
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full py-2.5 bg-[#C1443B] hover:bg-[#a8362e] text-white font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:scale-102 active:scale-98 disabled:opacity-50"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isGenerating ? 'Solving...' : 'Re-Generate'}</span>
-              </button>
-            </div>
-          </form>
-
-          {/* Quick 24 Iconic Cities Bar */}
-          <div className="pt-2 border-t border-[#E5DFD5] flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-[10px] font-mono uppercase font-bold text-[#C1443B] shrink-0">
-              Quick Hubs:
-            </span>
-            {POPULAR_CITIES_LIST.map((c) => {
-              const isSelected = inputCity.toLowerCase() === c.toLowerCase();
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => handleQuickCitySelect(c)}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-sans whitespace-nowrap transition cursor-pointer ${
-                    isSelected
-                      ? 'bg-ink text-white font-bold'
-                      : 'bg-white text-ink border border-[#E5DFD5] hover:bg-[#FAF8F5]'
-                  }`}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* 1. Floating Glassmorphic Command Deck & Quick Hubs */}
+        <ItineraryFilterBar
+          city={inputCity}
+          daysCount={inputDays}
+          pace={inputPace}
+          isGenerating={isGenerating}
+          onCityChange={(city) => setInputCity(city)}
+          onDaysChange={(days) => setInputDays(days)}
+          onPaceChange={(pace) => setInputPace(pace)}
+          onGenerate={handleGenerateSubmit}
+          onQuickCitySelect={handleQuickCitySelect}
+        />
 
         {/* 2. Replan Alert Toast Banner */}
         {lastReplanMessage && (
@@ -416,7 +315,7 @@ export function ItineraryPage() {
           </div>
         )}
 
-        {/* 3. Trip Header Overview Card */}
+        {/* 3. Stippl-Style Passbook Hero & Architectural Financial Ledger */}
         <TripHeaderOverview
           tripDetails={tripDetails}
           totalCost={grandTotal}
@@ -426,46 +325,16 @@ export function ItineraryPage() {
           onPrint={handlePrint}
         />
 
-        {/* 4. Day Tabs & View Mode Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Day Selector Pills */}
-          <nav className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Days">
-            {days.map((day) => {
-              const isSelected = selectedDay === day.dayNumber;
-              const metric = feasibilityMetrics?.[day.dayNumber];
-              const score = metric ? metric.paceScore : 90;
-
-              return (
-                <button
-                  key={day.dayNumber}
-                  type="button"
-                  onClick={() => setSelectedDay(day.dayNumber)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-meta font-bold transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-                    isSelected
-                      ? 'bg-ink text-white shadow-sm'
-                      : 'bg-[#FAF7F2] text-ink hover:bg-white border border-[#E5DFD5]'
-                  }`}
-                >
-                  <span>Day {day.dayNumber}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded text-[10px] ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : score >= 80
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {score}%
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* View Modes Tabs */}
-          <ItineraryViewTabs currentView={viewMode} onViewChange={setViewMode} />
-        </div>
+        {/* 4. Fluid Day Navigation, View Modes & Environmental Adaptive Telemetry Console */}
+        <ItineraryDayConsole
+          days={days}
+          selectedDay={selectedDay}
+          feasibilityMetrics={feasibilityMetrics}
+          activeFilter={activeDay?.activeFilter || 'none'}
+          viewTabs={<ItineraryViewTabs currentView={viewMode} onViewChange={setViewMode} />}
+          onSelectDay={(dayNum) => setSelectedDay(dayNum)}
+          onReplanDay={(condition) => replanDay(activeDay?.dayNumber || selectedDay, condition)}
+        />
 
         {/* 5. Main Content Area */}
         {viewMode === 'map' ? (
@@ -487,10 +356,10 @@ export function ItineraryPage() {
         ) : (
           /* Default Timeline View (Two-Column Desktop Layout) */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-            {/* Left Column (8 cols): Feasibility Panel & Day Timeline */}
+            {/* Left Column (8 cols): Day Timeline & Bento */}
             <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-              {/* Feasibility & Replan Barometer */}
-              {activeDay && (
+              {/* Feasibility Constraint Advisories (If active day has critical warnings) */}
+              {activeDay && activeMetrics && activeMetrics.warnings.length > 0 && (
                 <FeasibilityPanel
                   metrics={activeMetrics}
                   dayNumber={activeDay.dayNumber}
@@ -553,11 +422,13 @@ export function ItineraryPage() {
                 />
               )}
 
-              {/* Trip Financial & Local Impact Sidebar */}
+              {/* Trip Financial & Local Impact Sidebar (100% Synchronized) */}
               <TripSummarySidebar
                 tripDetails={tripDetails}
                 days={days}
                 practicalInfo={practicalInfo}
+                grandTotal={grandTotal}
+                categoryBreakdown={categoryBreakdown}
                 onShare={() => setIsShareModalOpen(true)}
                 onPrint={handlePrint}
               />

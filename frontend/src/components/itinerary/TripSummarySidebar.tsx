@@ -24,6 +24,12 @@ interface TripSummarySidebarProps {
   tripDetails: ItineraryTripDetails;
   days: ItineraryDay[];
   practicalInfo: ItineraryPracticalInfo;
+  grandTotal?: number;
+  categoryBreakdown?: {
+    tickets: number;
+    food: number;
+    transit: number;
+  };
   onShare: () => void;
   onPrint: () => void;
 }
@@ -32,25 +38,32 @@ export function TripSummarySidebar({
   tripDetails,
   days,
   practicalInfo,
+  grandTotal,
+  categoryBreakdown,
   onShare,
   onPrint,
 }: TripSummarySidebarProps) {
   const travelers = Math.max(1, tripDetails.travelers || 2);
   const allActivities = days.flatMap((d) => d.activities);
 
-  const totalTicketsCost = allActivities.reduce((sum, act) => sum + (act.costPerPerson || 0) * travelers, 0);
-  const totalTransitCost = allActivities.reduce((sum, act) => sum + (act.transitCost || 0), 0);
-  const totalMealsCost = days.length * 800 * travelers;
-  const grandTotal = totalTicketsCost + totalTransitCost + totalMealsCost;
-  const perPersonTotal = Math.round(grandTotal / travelers);
+  const fallbackTicketsCost = allActivities.reduce((sum, act) => sum + (act.costPerPerson || 0) * travelers, 0);
+  const fallbackTransitCost = allActivities.reduce((sum, act) => sum + (act.transitCost || 0), 0);
+  const fallbackMealsCost = days.length * 800 * travelers;
 
-  const ticketsPercent = Math.max(1, Math.round((totalTicketsCost / Math.max(1, grandTotal)) * 100));
-  const mealsPercent = Math.max(1, Math.round((totalMealsCost / Math.max(1, grandTotal)) * 100));
-  const transitPercent = Math.max(1, 100 - ticketsPercent - mealsPercent);
+  const totalTicketsCost = categoryBreakdown ? categoryBreakdown.tickets : fallbackTicketsCost;
+  const totalTransitCost = categoryBreakdown ? categoryBreakdown.transit : fallbackTransitCost;
+  const totalMealsCost = categoryBreakdown ? categoryBreakdown.food : fallbackMealsCost;
+
+  const finalGrandTotal = grandTotal !== undefined ? grandTotal : (totalTicketsCost + totalTransitCost + totalMealsCost);
+  const perPersonTotal = Math.round(finalGrandTotal / travelers);
+
+  const ticketsPercent = Math.max(1, Math.round((totalTicketsCost / Math.max(1, finalGrandTotal)) * 100));
+  const mealsPercent = Math.max(1, Math.round((totalMealsCost / Math.max(1, finalGrandTotal)) * 100));
+  const transitPercent = Math.max(1, Math.max(0, 100 - ticketsPercent - mealsPercent));
 
   // Local impact score: Direct community spend percentage
   const localDirectAmount = Math.round(totalTicketsCost * 0.95 + totalTransitCost * 0.9 + totalMealsCost * 0.85);
-  const localImpactPercent = Math.min(96, Math.max(75, Math.round((localDirectAmount / Math.max(1, grandTotal)) * 100)));
+  const localImpactPercent = Math.min(96, Math.max(75, Math.round((localDirectAmount / Math.max(1, finalGrandTotal)) * 100)));
 
   return (
     <aside className="space-y-6 sticky top-24">
@@ -62,7 +75,7 @@ export function TripSummarySidebar({
           </span>
           <div className="flex items-baseline justify-between">
             <span className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 tracking-tight">
-              ₹{grandTotal.toLocaleString('en-IN')}
+              ₹{finalGrandTotal.toLocaleString('en-IN')}
             </span>
             <span className="text-xs font-meta text-[#C1443B] font-bold">
               {days.length} Days · {Math.max(1, days.length - 1)} Nights
