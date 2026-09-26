@@ -196,18 +196,73 @@ function sanitizeHistory(chatHistory) {
  * @param {Array} availableExperiences - Relevant experiences from database for grounding
  * @returns {Promise<Object>} AI response with recommendations
  */
+// Readable labels for the canonical interest keys used by the traveler brief.
+const INTEREST_LABELS = {
+  culture: 'royal heritage',
+  food: 'street food',
+  workshop: 'artisan workshops',
+  hidden_gem: 'offbeat spots',
+  spiritual: 'sacred ghats and temples',
+  nature: 'nature and wildlife',
+  shopping: 'local markets',
+  adventure: 'adventure',
+  nightlife: 'music and nightlife',
+  events: 'festivals and events',
+};
+
 /**
  * High-fidelity intelligent Cultural Concierge Engine when Gemini API is offline or unconfigured.
  * Formulates realistic, culturally authentic recommendations for budget, duration, regional, and city queries.
  */
+/** One line that explains how the routes were shaped by the brief. */
+function buildBriefReasonLine(brief) {
+  const bits = [];
+  if (Array.isArray(brief.interests) && brief.interests.length) {
+    bits.push(`your interest in ${brief.interests.map((i) => INTEREST_LABELS[i] || i).join(', ')}`);
+  }
+  if (brief.time_budget) bits.push(`your ${brief.time_budget.toLowerCase()} window`);
+  if (brief.pace) bits.push(`a ${brief.pace.toLowerCase()} pace`);
+  if (brief.companions) bits.push(`travelling as ${brief.companions}`);
+  if (brief.budget_tier) bits.push(`a ${brief.budget_tier} rupee budget`);
+  if (!bits.length) return 'Based on your brief.';
+  const head = bits.slice(0, -1).join(', ');
+  const tail = bits[bits.length - 1];
+  return `They are shaped by ${head}${bits.length > 1 ? ' and ' : ''}${tail}.`;
+}
+
 export function generateIntelligentCulturalFallback({
   userMessage = '',
   chatHistory = [],
   city = null,
   availableExperiences = [],
+  tripProfile = null,
+  routeOptions = [],
 }) {
   const text = (userMessage || '').trim();
   const lower = text.toLowerCase();
+
+  // A confirmed brief from the concierge interview outranks anything parsed
+  // out of the raw message, because it came from explicit traveler answers.
+  const brief = tripProfile && typeof tripProfile === 'object' ? tripProfile : {};
+  const briefInterests = Array.isArray(brief.interests) ? brief.interests.filter(Boolean) : [];
+  const briefWindow = brief.time_budget || null;
+  const briefBudget = Number(brief.budget_inr) > 0 ? Number(brief.budget_inr) : null;
+  const briefPace = brief.pace || null;
+  const briefCompanions = brief.companions || null;
+  const briefStart = brief.start_period || null;
+  const briefCrowd = brief.crowd_preference || null;
+  const briefAccess = brief.accessibility || null;
+  const briefDiet = brief.dietary || null;
+  const hasBrief = Boolean(
+    briefInterests.length ||
+      briefWindow ||
+      briefBudget ||
+      briefPace ||
+      briefCompanions ||
+      briefCrowd ||
+      briefAccess ||
+      briefDiet
+  );
 
   // 1. Detect budget (handles 20k, 20000, 20 thousand, 1.5 lakh, etc.)
   const kMatch = lower.match(/(?:budget\s*(?:of)?|under|around|approx|for|within)?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(k|thousand|lac|lakh)\b/i);
@@ -253,6 +308,78 @@ export function generateIntelligentCulturalFallback({
    - **Realistic Budget Fit:** Coastal boutique homestays (~₹1,500 to ₹1,800/night), banana leaf sadhyas and coastal seafood (~₹700/day), and public ferry transit.
 
 Which of these three atmospheres speaks to you most: **Royal Forts & Crafts**, **Mountain Monasteries**, or **Tropical Spice Coast**? Tell me, and I will tailor your step-by-step day plan!`;
+  }
+
+  // 0. Routes first. This is the primary answer shape.
+  const usableRoutes = Array.isArray(routeOptions) ? routeOptions.filter((r) => r && r.stops?.length) : [];
+  if (usableRoutes.length) {
+    const blocks = usableRoutes.map((route) => {
+      const legs = route.stops.map((stop, idx) => {
+        const leg = stop.leg_from_previous;
+        const head =
+          idx === 0
+            ? `**${stop.arrival_time}** Start at ${stop.area || stop.title}.`
+            : `**${stop.arrival_time}** ${leg.synopsis}`;
+        const price = stop.price_inr > 0 ? `Rs.${stop.price_inr}` : 'free entry';
+        return `${head} Stay for about ${stop.stay_mins} min at **${stop.title}** (${stop.category}, ${price}).`;
+      });
+
+      return `### ${route.title}
+${route.tagline}
+
+${legs.join('\n\n')}
+
+*Total: ${route.stop_count} stops, ${Math.round((route.total_duration_mins || 0) / 60 * 10) / 10} hours including travel, ${route.total_distance_km} km on the move, ${route.budget_label}.*
+*Why this one: ${route.why_it_works} Trade off: ${route.trade_off}*`;
+    });
+
+    const intent = hasBrief
+      ? buildBriefReasonLine(brief)
+      : 'Based on what you asked for, here are three different ways to spend the day.';
+
+    return `I have built **${usableRoutes.length} distinct routes** through ${city || 'the city'} for you. ${intent}
+
+Pick the one that fits your mood, or tell me what to change and I will rework it.
+
+${blocks.join('\n\n')}`;
+  }
+
+  // 1b. Confirmed brief with verified places: narrate the shortlist directly
+  if (hasBrief && city && Array.isArray(availableExperiences) && availableExperiences.length > 0) {
+    const cityName = city.trim();
+    const interestLine = briefInterests.length
+      ? `chosen for your interest in ${briefInterests.map((i) => INTEREST_LABELS[i] || i).join(', ')}`
+      : 'chosen to match what you asked for';
+    const constraintLine = [
+      briefWindow ? `fits your ${briefWindow.toLowerCase()} window` : null,
+      briefBudget ? `inside your ${briefBudget.toLocaleString('en-IN')} rupee budget` : null,
+      briefPace ? `at a ${briefPace.toLowerCase()} pace` : null,
+      briefCompanions ? `suited to ${briefCompanions} travellers` : null,
+      briefStart ? `timed for the ${briefStart.toLowerCase()}` : null,
+      briefCrowd ? `with a ${briefCrowd.toLowerCase()} crowd mood` : null,
+      briefAccess ? `and ${briefAccess.toLowerCase()} routing` : null,
+      briefDiet ? `plus ${briefDiet.toLowerCase()} food stops` : null,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    const lines = availableExperiences.slice(0, 3).map((exp, idx) => {
+      const duration = exp.approx_duration_mins ? `~${exp.approx_duration_mins} mins` : 'a relaxed stop';
+      const price = Number(exp.price) > 0 ? `Rs.${exp.price}` : 'free entry';
+      return `${idx + 1}. **${exp.title}** (${exp.category})
+   - ${duration}, ${price}
+   - ${exp.tagline || exp.description || 'A verified local experience.'}`;
+    });
+
+    const reasonLine = [interestLine, constraintLine].filter(Boolean).join(', ');
+
+    return `Here is your shortlist for **${cityName}**.
+
+${reasonLine.charAt(0).toUpperCase() + reasonLine.slice(1)}. Every stop below is a verified listing, so the fee and duration are accurate as of today.
+
+${lines.join('\n\n')}
+
+Tell me if you want me to swap one out, tighten the route further, or add an evening option.`;
   }
 
   // 2. Specific City / Destination context
@@ -488,6 +615,8 @@ export async function chatWithCulturalConcierge({
   chatHistory = [],
   city = null,
   availableExperiences = [],
+  tripProfile = null,
+  routeOptions = [],
 }) {
   const experiencesContext = availableExperiences.length > 0
     ? availableExperiences.slice(0, 5)
@@ -495,9 +624,38 @@ export async function chatWithCulturalConcierge({
         .join('\n')
     : '';
 
+  // Structured brief collected by the concierge interview. Treated as ground
+  // truth so the model curates against it instead of re-asking for it.
+  const confirmedSummary =
+    tripProfile && typeof tripProfile.summary === 'string' ? tripProfile.summary.trim() : '';
+  const hasConfirmedBrief = confirmedSummary.length > 0;
+  const briefBlock = hasConfirmedBrief
+    ? `CONFIRMED TRAVELER BRIEF (hard constraints, never contradict these, never ask about them again):
+${confirmedSummary}
+
+`
+    : '';
+  // Routes are the primary answer shape. Give the model the exact stops and
+  // the computed travel legs so its prose never contradicts the itinerary.
+  const usableRoutes = Array.isArray(routeOptions) ? routeOptions.filter((r) => r && r.stops?.length) : [];
+  const routeBlock = usableRoutes.length
+    ? `THREE ROUTES WERE COMPUTED FOR ${city || 'this destination'} (already ordered, already timed). Present them as three distinct ways to spend the day, never as one merged list:
+${usableRoutes
+        .map(
+          (route) => `- **${route.title}** (${route.pace}, ${route.stop_count} stops, ${Math.round((route.total_duration_mins || 0) / 60 * 10) / 10}h total, ${route.budget_label})
+   ${route.stops.map((s) => s.title).join(' -> ')}`
+        )
+        .join('\n')}
+`
+    : '';
+
+  const clarificationRule = hasConfirmedBrief
+    ? "7. The traveler already confirmed the brief above. Curate straight away and do not ask any further setup questions. If something is genuinely missing, ask at most ONE short question of 15 words or fewer, never a numbered list."
+    : "7. If a detail that would materially change the shortlist is missing (time window, who they are travelling with, or what they want most), ask exactly ONE focused question of 15 words or fewer at the end of your reply. Never send a numbered questionnaire, never ask three questions at once, and never re-ask something the traveler already told you.";
+
   const systemPrompt = `You are LOKIVA's AI Cultural Concierge, an expert and welcoming cultural travel guide across all of India${city ? `, currently assisting with a focus on ${city}` : ''}.
 
-${experiencesContext ? `Curated verified experiences in ${city}:\n${experiencesContext}\n` : ''}
+${briefBlock}${routeBlock}${experiencesContext ? `Curated verified experiences in ${city}:\n${experiencesContext}\n` : ''}
 Your Core Rules:
 1. DIRECTLY and HELPFULLY answer whatever the traveler asks.
    - If they ask about South India or choosing between states (e.g., after already visiting Kerala), recommend incredible alternatives like Karnataka (Hampi, Mysore, Coorg) or Tamil Nadu (Madurai, Thanjavur, Chettinad) with specific cultural highlights, vibe differences, and practical tips.
@@ -506,7 +664,13 @@ Your Core Rules:
 3. If the user asks an off-topic or greeting question, reply warmly and naturally without forcing travel recommendations.
 4. If the traveler is specifically asking about things to do in ${city || 'their destination'} and experiences are provided above, weave in 1 or 2 relevant experiences naturally.
 5. Keep your tone culturally authentic, warm, and concise (2 to 4 readable paragraphs max). Avoid filler or repetitive generic scripts.
-6. Always complete all sentences, sections, and paragraphs fully. Never stop mid-thought or mid-sentence.`;
+6. Always complete all sentences, sections, and paragraphs fully. Never stop mid-thought or mid-sentence.
+${clarificationRule}
+8. Ground every price, timing and access claim in the provided experiences. If a detail is not available, say so plainly instead of inventing it.
+9. Never use em dashes or double dashes in your writing. Use commas, colons or parentheses instead.${usableRoutes.length ? `
+10. Three routes are attached. Keep them clearly separated, name each one, and give the honest trade off of each in a few words. Never blend stops from different routes into a single itinerary.
+11. Quote the travel legs only as they were computed, for example the mode, the minutes and the distance. Never invent a mode or a duration.
+12. The traveller can pick one route or ask to change it, so end by inviting them to choose or to edit rather than declaring the day settled.` : ''}`;
 
   try {
     const history = sanitizeHistory(chatHistory);
@@ -534,6 +698,8 @@ Your Core Rules:
       chatHistory,
       city,
       availableExperiences,
+      tripProfile,
+      routeOptions: usableRoutes,
     });
     return {
       reply: fallbackText,
