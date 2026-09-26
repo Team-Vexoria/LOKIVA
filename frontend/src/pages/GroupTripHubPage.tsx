@@ -433,8 +433,8 @@ export function GroupTripHubPage({ mode }: GroupTripHubPageProps) {
                     placeholder="Enter your name or nickname"
                     className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#DDD7CC] rounded-2xl text-sm font-sans font-bold text-ink focus:outline-none focus:border-[#C85A32] transition"
                   />
-                  <div className="flex items-center gap-1.5 text-[11px] text-dusk-500 font-meta">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <div className="flex items-center gap-1.5 text-xs text-[#7A5C49] font-meta">
+                    <ShieldCheck className="w-4 h-4 text-[#B84A27]" />
                     <span>Logged in as {user?.email}</span>
                   </div>
                 </div>
@@ -445,27 +445,27 @@ export function GroupTripHubPage({ mode }: GroupTripHubPageProps) {
             {quizStep === 2 && (
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#C85A32]">
+                  <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-[#B84A27]">
                     Step 2 of 5
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-display font-black text-ink">
+                  <h3 className="text-xl sm:text-2xl font-display font-black text-[#3B2316]">
                     Your Personal Comfort Budget (₹ INR)
                   </h3>
-                  <p className="text-xs text-dusk-600 font-sans leading-relaxed">
+                  <p className="text-sm text-[#7A5C49] font-sans leading-relaxed">
                     Used to compute a fair group sweet-spot so nobody feels stretched or overspent.
                   </p>
                 </div>
 
                 {/* Big Budget Value Display */}
                 <div className="text-center p-5 rounded-2xl bg-[#FAF4ED] border border-[#E8DEC8] space-y-1">
-                  <span className="text-[10px] font-mono font-bold uppercase text-dusk-500">
+                  <span className="text-xs font-mono font-bold uppercase text-[#7A5C49]">
                     YOUR TARGET CEILING PER PERSON
                   </span>
-                  <div className="text-3xl sm:text-4xl font-display font-black text-ink">
+                  <div className="text-3xl sm:text-4xl font-display font-black text-[#3B2316]">
                     ₹{budgetPerPerson.toLocaleString('en-IN')}{' '}
-                    <span className="text-xs font-mono text-dusk-600 font-bold">INR</span>
+                    <span className="text-sm font-mono text-[#7A5C49] font-bold">INR</span>
                   </div>
-                  <span className="text-[11px] font-meta text-emerald-700 font-semibold block">
+                  <span className="text-xs font-meta text-[#B84A27] font-semibold block">
                     Kept strictly private from friends
                   </span>
                 </div>
@@ -780,8 +780,8 @@ export function GroupTripHubPage({ mode }: GroupTripHubPageProps) {
             />
 
             {/* Quick Share to WhatsApp Bar */}
-            <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] flex items-center justify-between gap-2 text-xs">
-              <span className="font-heading font-bold text-ink truncate">
+            <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#E2D5BE] flex items-center justify-between gap-2 text-sm">
+              <span className="font-heading font-bold text-[#3B2316] truncate">
                 Invite friends to calibrate
               </span>
               <a
@@ -790,7 +790,7 @@ export function GroupTripHubPage({ mode }: GroupTripHubPageProps) {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold shrink-0 transition flex items-center gap-1.5 shadow-2xs"
+                className="px-4 py-2 rounded-xl bg-[#B84A27] hover:bg-[#9E3C1D] text-[#FFFDF9] font-heading font-bold shrink-0 transition flex items-center gap-1.5 shadow-2xs"
               >
                 <span>WhatsApp Invite</span>
               </a>
