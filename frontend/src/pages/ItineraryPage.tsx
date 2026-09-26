@@ -6,10 +6,8 @@ import { TripHeaderOverview } from '../components/itinerary/TripHeaderOverview';
 import { ItineraryFilterBar } from '../components/itinerary/ItineraryFilterBar';
 import { ItineraryDayConsole } from '../components/itinerary/ItineraryDayConsole';
 import { ItineraryViewTabs } from '../components/itinerary/ItineraryViewTabs';
-import { DayCardTimeline } from '../components/itinerary/DayCardTimeline';
-import { FeasibilityPanel } from '../components/itinerary/FeasibilityPanel';
-import { TripSummarySidebar } from '../components/itinerary/TripSummarySidebar';
-import { RouteDispatchSidebar } from '../components/itinerary/RouteDispatchSidebar';
+import { ItineraryTimeline } from '../components/itinerary/ItineraryTimeline';
+import { ItinerarySidebar } from '../components/itinerary/ItinerarySidebar';
 import { ItineraryMapView } from '../components/itinerary/ItineraryMapView';
 import { ItineraryListView } from '../components/itinerary/ItineraryListView';
 import { ItineraryBudgetView } from '../components/itinerary/ItineraryBudgetView';
@@ -354,85 +352,70 @@ export function ItineraryPage() {
             practicalInfo={practicalInfo}
           />
         ) : (
-          /* Default Timeline View (Two-Column Desktop Layout) */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-            {/* Left Column (8 cols): Day Timeline & Bento */}
-            <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-              {/* Feasibility Constraint Advisories (If active day has critical warnings) */}
-              {activeDay && activeMetrics && activeMetrics.warnings.length > 0 && (
-                <FeasibilityPanel
-                  metrics={activeMetrics}
-                  dayNumber={activeDay.dayNumber}
-                  activeFilter={activeDay.activeFilter || 'none'}
-                  onReplan={(condition) => replanDay(activeDay.dayNumber, condition)}
-                />
-              )}
+          /* Default Timeline View (Two-Column Desktop Layout + Bottom Regional Bento) */
+          <div className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+              {/* Left Column (7-8 cols): Continuous Chrono-Spine & Asymmetric Stop Cards */}
+              <div className="lg:col-span-8 space-y-6">
+                {activeDay && (
+                  <ItineraryTimeline
+                    day={activeDay}
+                    totalDays={days.length}
+                    activeStopId={activeStopId}
+                    hoveredStopId={hoveredStopId}
+                    onUpdateActivityStatus={(dayNum, actId, status) =>
+                      updateActivity(dayNum, actId, { bookingStatus: status })
+                    }
+                    onUpdateActivityNotes={(dayNum, actId, notes) =>
+                      updateActivity(dayNum, actId, { notes })
+                    }
+                    onUpdateActivityDuration={(dayNum, actId, durationMins) =>
+                      updateActivity(dayNum, actId, {
+                        visitDurationMinutes: durationMins,
+                        durationMins,
+                        duration: `${durationMins} mins`,
+                      })
+                    }
+                    onMoveActivity={(dayNum, fromIdx, toIdx) =>
+                      reorderActivity(dayNum, fromIdx, toIdx)
+                    }
+                    onRemoveActivity={(dayNum, actId) => deleteActivity(dayNum, actId)}
+                    onAddActivityClick={(dayNum, afterIdx) => handleOpenAddModal(dayNum, afterIdx)}
+                    onSetStartTime={(dayNum, startTime) => setDayStartTime(dayNum, startTime)}
+                    onStopHover={(id) => setHoveredStopId(id)}
+                    onStopSelect={(id) => setActiveStopId(id)}
+                  />
+                )}
+              </div>
 
-              {/* Active Day Sequential Timeline */}
-              {activeDay && (
-                <DayCardTimeline
-                  day={activeDay}
-                  totalDays={days.length}
-                  activeStopId={activeStopId}
-                  hoveredStopId={hoveredStopId}
-                  onUpdateActivityStatus={(dayNum, actId, status) =>
-                    updateActivity(dayNum, actId, { bookingStatus: status })
-                  }
-                  onUpdateActivityNotes={(dayNum, actId, notes) =>
-                    updateActivity(dayNum, actId, { notes })
-                  }
-                  onUpdateActivityDuration={(dayNum, actId, durationMins) =>
-                    updateActivity(dayNum, actId, {
-                      visitDurationMinutes: durationMins,
-                      durationMins,
-                      duration: `${durationMins} mins`,
-                    })
-                  }
-                  onMoveActivity={(dayNum, fromIdx, toIdx) =>
-                    reorderActivity(dayNum, fromIdx, toIdx)
-                  }
-                  onRemoveActivity={(dayNum, actId) => deleteActivity(dayNum, actId)}
-                  onAddActivityClick={(dayNum, afterIdx) => handleOpenAddModal(dayNum, afterIdx)}
-                  onSetStartTime={(dayNum, startTime) => setDayStartTime(dayNum, startTime)}
-                  onStopHover={(id) => setHoveredStopId(id)}
-                  onStopSelect={(id) => setActiveStopId(id)}
-                />
-              )}
-
-              {/* 4-Pillar Dynamic Regional Intelligence Bento Dossier */}
-              {practicalInfo && (
-                <RegionalIntelligenceBento
-                  data={practicalInfo}
-                  cityName={tripDetails.destination}
-                  stateName={tripDetails.state}
-                />
-              )}
+              {/* Right Column (4 cols): Sticky Spatiotemporal Transit & Financial Dock */}
+              <div className="lg:col-span-4">
+                {activeDay && (
+                  <ItinerarySidebar
+                    day={activeDay}
+                    tripDetails={tripDetails}
+                    days={days}
+                    activeStopId={activeStopId}
+                    hoveredStopId={hoveredStopId}
+                    grandTotal={grandTotal}
+                    categoryBreakdown={categoryBreakdown}
+                    onSelectStop={(id) => setActiveStopId(id)}
+                    onExpandFullScreenMap={() => setViewMode('map')}
+                    onShare={() => setIsShareModalOpen(true)}
+                    onPrint={handlePrint}
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Right Column (4 cols): Sticky Map & Cost/Impact Sidebar */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Spatiotemporal Route Dispatch Sidebar */}
-              {activeDay && (
-                <RouteDispatchSidebar
-                  day={activeDay}
-                  activeStopId={activeStopId}
-                  hoveredStopId={hoveredStopId}
-                  onSelectStop={(id) => setActiveStopId(id)}
-                  onExpandFullScreenMap={() => setViewMode('map')}
-                />
-              )}
-
-              {/* Trip Financial & Local Impact Sidebar (100% Synchronized) */}
-              <TripSummarySidebar
-                tripDetails={tripDetails}
-                days={days}
-                practicalInfo={practicalInfo}
-                grandTotal={grandTotal}
-                categoryBreakdown={categoryBreakdown}
-                onShare={() => setIsShareModalOpen(true)}
-                onPrint={handlePrint}
+            {/* Magazine-Grade 4-Pillar Regional Intelligence Bento */}
+            {practicalInfo && (
+              <RegionalIntelligenceBento
+                data={practicalInfo}
+                cityName={tripDetails.destination}
+                stateName={tripDetails.state}
               />
-            </div>
+            )}
           </div>
         )}
       </div>

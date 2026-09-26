@@ -1,22 +1,13 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Clock,
   MapPin,
-  Car,
-  Footprints,
-  CheckCircle2,
-  AlertCircle,
-  Bookmark,
-  ChevronDown,
   Trash2,
   ArrowUp,
   ArrowDown,
   Pencil,
-  Check,
-  Luggage,
   Sparkles,
-  ShieldCheck,
-  ExternalLink,
 } from 'lucide-react';
 import { ItineraryActivity, BookingStatus } from '../../types/itinerary';
 
@@ -55,55 +46,17 @@ export function ItineraryActivityCard({
   onMouseLeave,
   onClick,
 }: ItineraryActivityCardProps) {
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [noteText, setNoteText] = useState(activity.notes || '');
   const [isEditingDuration, setIsEditingDuration] = useState(false);
   const [durationValue, setDurationValue] = useState(activity.visitDurationMinutes || 60);
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
-  const handleSaveNotes = () => {
-    onUpdateNotes(noteText);
-    setIsEditingNotes(false);
-  };
-
-  const handleSaveDuration = () => {
+  const handleSaveDuration = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onUpdateDuration?.(durationValue);
     setIsEditingDuration(false);
   };
 
-  const getStatusBadge = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return {
-          bg: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-          icon: CheckCircle2,
-          label: 'Confirmed Slot',
-        };
-      case 'available':
-        return {
-          bg: 'bg-blue-50 text-blue-800 border-blue-300',
-          icon: Bookmark,
-          label: 'Available to Book',
-        };
-      case 'pending':
-        return {
-          bg: 'bg-amber-50 text-amber-900 border-amber-300',
-          icon: Clock,
-          label: 'Pending Reservation',
-        };
-      case 'unavailable':
-      default:
-        return {
-          bg: 'bg-rose-50 text-rose-800 border-rose-300',
-          icon: AlertCircle,
-          label: 'Walk-in Only',
-        };
-    }
-  };
-
-  const badgeInfo = getStatusBadge(activity.bookingStatus);
-  const StatusIcon = badgeInfo.icon;
   const photo = activity.photos && activity.photos.length > 0 ? activity.photos[0] : null;
+  const formattedIndex = String(index + 1).padStart(2, '0');
 
   return (
     <article
@@ -111,178 +64,162 @@ export function ItineraryActivityCard({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
-      className={`relative bg-white rounded-2xl border transition-all duration-300 p-4 sm:p-5 space-y-4 cursor-pointer ${
+      className={`relative bg-white/90 backdrop-blur-xl border rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer ${
         isActive
-          ? 'border-[#C1443B] ring-2 ring-[#FFC067] shadow-lg bg-[#FAF8F5]'
+          ? 'border-[#C85A32] ring-2 ring-[#FFC067]/80 shadow-lg bg-[#FAF8F5]'
           : isHovered
-          ? 'border-ink/50 shadow-md bg-white'
-          : 'border-[#E5DFD5] shadow-2xs hover:border-[#12213B]/30'
+          ? 'border-[#1A1D20]/50 shadow-md bg-white'
+          : 'border-[#E2D5BE] hover:border-[#C85A32]/60'
       }`}
     >
-      {/* Top Row: Stop Number, Time Range, Category & Status */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E5DFD5]">
-        <div className="flex flex-wrap items-center gap-2 font-meta text-xs font-semibold tracking-normal text-neutral-700">
-          {/* Stop Number Badge */}
-          <span className="w-6 h-6 rounded-full bg-[#C85A32] text-white text-[11px] font-heading font-extrabold flex items-center justify-center shrink-0 shadow-2xs">
-            {index + 1}
-          </span>
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF7F2] rounded-lg text-neutral-800 border border-[#E5DFD5]">
-            <Clock className="w-3.5 h-3.5 text-[#C1443B]" />
-            <span>{activity.timeRange}</span>
-          </div>
-
-          <span className="text-neutral-400 font-normal">·</span>
-          <span className="text-neutral-600 font-medium">{activity.duration}</span>
-          <span className="text-neutral-400 font-normal">·</span>
-          <span className="text-[#C1443B] font-semibold">{activity.category}</span>
-        </div>
-
-        {/* Up / Down / Delete Quick Action Buttons */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveUp();
-            }}
-            disabled={isFirst}
-            className="p-1 rounded-lg border border-[#E5DFD5] hover:bg-[#FAF7F2] text-ink disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition"
-            title="Move Earlier in Schedule"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveDown();
-            }}
-            disabled={isLast}
-            className="p-1 rounded-lg border border-[#E5DFD5] hover:bg-[#FAF7F2] text-ink disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition"
-            title="Move Later in Schedule"
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className="p-1 rounded-lg border border-[#E5DFD5] hover:bg-rose-50 text-dusk hover:text-rose-600 cursor-pointer transition"
-            title="Remove from Itinerary"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      {/* Watermarked Numerals in Top-Right Corner */}
+      <div className="absolute top-2 right-4 font-display font-black text-6xl sm:text-7xl text-[#1A1D20]/[0.04] select-none pointer-events-none tracking-tighter">
+        {formattedIndex}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-        {/* Photo Thumbnail */}
-        {photo && (
-          <div className="sm:col-span-4 h-32 sm:h-36 rounded-xl overflow-hidden bg-[#FAF7F2] border border-[#E5DFD5] shrink-0">
-            <img
-              src={photo}
-              alt={activity.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-        )}
-
-        {/* Details Column */}
-        <div className={`${photo ? 'sm:col-span-8' : 'sm:col-span-12'} space-y-2.5`}>
-          <div>
-            <h4 className="text-lg sm:text-xl font-display font-bold text-neutral-900 leading-snug tracking-tight">
-              {activity.title}
-            </h4>
-            <div className="flex items-center gap-1.5 text-xs text-dusk font-sans mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-[#C1443B] shrink-0" />
-              <span className="truncate">{activity.location}</span>
+      <div className="relative z-10 space-y-4">
+        {/* Top Control Bar: Category, Time Range, and Reorder Action Buttons */}
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E8DEC8]">
+          <div className="flex items-center gap-2 flex-wrap font-meta text-xs">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4ED] text-[#C85A32] font-heading font-extrabold uppercase tracking-wide border border-[#E8DEC8]">
+              {activity.category}
+            </span>
+            <div className="flex items-center gap-1 text-neutral-600 font-medium">
+              <Clock className="w-3.5 h-3.5 text-[#C85A32]" />
+              <span>{activity.timeRange || activity.startTime || 'Flexible'}</span>
             </div>
+            <span className="text-neutral-300">·</span>
+            <span className="text-neutral-500">{activity.duration || `${activity.visitDurationMinutes || 60} mins`}</span>
           </div>
 
-          <p className="text-xs text-dusk leading-relaxed font-sans line-clamp-2">
-            {activity.description}
-          </p>
+          {/* Quick Action Reorder & Delete Buttons */}
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={onMoveUp}
+              disabled={isFirst}
+              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-[#FAF7F2] text-[#1A1D20] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
+              title="Move earlier in schedule"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
 
-          {/* Key Inclusions Chips */}
-          {activity.includes && activity.includes.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {activity.includes.slice(0, 3).map((inc, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-0.5 rounded-md bg-[#FAF7F2] border border-[#E5DFD5] text-[10px] font-meta text-ink"
-                >
-                  ✓ {inc}
-                </span>
-              ))}
+            <button
+              type="button"
+              onClick={onMoveDown}
+              disabled={isLast}
+              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-[#FAF7F2] text-[#1A1D20] disabled:opacity-25 cursor-pointer disabled:cursor-not-allowed transition"
+              title="Move later in schedule"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onRemove}
+              className="p-1.5 rounded-xl border border-[#E8DEC8] hover:bg-rose-50 text-neutral-500 hover:text-rose-600 cursor-pointer transition"
+              title="Remove stop from itinerary"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Asymmetric Media & Content Layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5 items-start">
+          {/* Photo with rounded-2xl and hover perspective */}
+          {photo && (
+            <div className="sm:col-span-5 h-36 sm:h-44 rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[#E8DEC8] relative shrink-0 shadow-inner">
+              <img
+                src={photo}
+                alt={activity.title}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              />
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[10px] font-meta font-bold">
+                {activity.category}
+              </div>
             </div>
           )}
 
-          {/* Pricing & Duration Adjust */}
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs font-meta border-t border-[#E5DFD5]">
-            <div className="flex items-center gap-2">
-              <span className="text-dusk text-[11px]">Est. Access:</span>
-              <span className="font-bold text-ink">
-                {activity.costPerPerson === 0 ? 'Free Open Heritage' : `₹${activity.costPerPerson} / person`}
-              </span>
+          {/* Details Column */}
+          <div className={`${photo ? 'sm:col-span-7' : 'sm:col-span-12'} space-y-2`}>
+            <div>
+              <h4 className="text-lg sm:text-xl font-heading font-bold text-neutral-900 leading-snug tracking-tight">
+                {activity.title}
+              </h4>
+              <div className="flex items-center gap-1.5 text-xs text-neutral-500 font-meta mt-1">
+                <MapPin className="w-3.5 h-3.5 text-[#C85A32] shrink-0" />
+                <span className="truncate">{activity.location}</span>
+              </div>
             </div>
 
-            {/* Quick Duration Adjust */}
-            <div className="flex items-center gap-1">
-              {isEditingDuration ? (
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="number"
-                    min="30"
-                    max="240"
-                    step="15"
-                    value={durationValue}
-                    onChange={(e) => setDurationValue(parseInt(e.target.value, 10) || 60)}
-                    className="w-16 px-1.5 py-0.5 border border-ink rounded text-xs font-meta text-center"
-                  />
-                  <span className="text-[10px] text-dusk">mins</span>
-                  <button
-                    onClick={handleSaveDuration}
-                    className="px-2 py-0.5 bg-[#C85A32] text-white rounded text-[10px] font-bold"
+            <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed font-meta line-clamp-3">
+              {activity.description}
+            </p>
+
+            {/* Key Inclusions Chips */}
+            {activity.includes && activity.includes.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                {activity.includes.slice(0, 3).map((inc, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 rounded-lg bg-[#FAF7F2] border border-[#E8DEC8] text-[10px] font-meta text-neutral-700"
                   >
-                    Save
-                  </button>
-                </div>
-              ) : (
+                    ✓ {inc}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Hairline Divider: Single 1px Border with Price Tag & Duration Adjust */}
+        <div className="pt-3 border-t border-[#E8DEC8] flex flex-wrap items-center justify-between gap-3 text-xs font-meta">
+          <div className="flex items-center gap-2">
+            <span className="text-neutral-500 text-[11px]">Est. Access:</span>
+            <span className="font-mono font-bold text-neutral-900">
+              {activity.costPerPerson === 0 ? 'Free Open Heritage' : `₹${activity.costPerPerson.toLocaleString('en-IN')} / person`}
+            </span>
+          </div>
+
+          {/* Quick Duration Stepper / Adjust Button */}
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            {isEditingDuration ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="30"
+                  max="240"
+                  step="15"
+                  value={durationValue}
+                  onChange={(e) => setDurationValue(parseInt(e.target.value, 10) || 60)}
+                  className="w-16 px-2 py-0.5 border border-[#E8DEC8] rounded-lg text-xs font-mono text-center bg-white"
+                />
+                <span className="text-[10px] text-neutral-500">mins</span>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditingDuration(true);
-                  }}
-                  className="text-[11px] text-[#C1443B] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                  type="button"
+                  onClick={handleSaveDuration}
+                  className="px-2 py-0.5 bg-[#C85A32] text-white rounded-lg text-[10px] font-bold cursor-pointer"
                 >
-                  <Pencil className="w-3 h-3" />
-                  <span>Adjust ({activity.visitDurationMinutes || 60}m)</span>
+                  Save
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingDuration(true)}
+                className="text-[11px] text-[#C85A32] hover:text-[#a8362e] flex items-center gap-1 cursor-pointer font-bold transition"
+              >
+                <Pencil className="w-3 h-3" />
+                <span>Adjust ({activity.visitDurationMinutes || 60}m)</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Transit Connector to Next Activity */}
-      {!isLast && (
-        <div className="mt-3 pt-3 border-t border-dashed border-[#E5DFD5] flex items-center justify-between gap-2 font-meta text-xs font-medium tracking-wide text-neutral-600 bg-[#FAF7F2] p-2.5 rounded-xl">
-          <div className="flex items-center gap-2">
-            {activity.transitMode === 'walking' ? (
-              <Footprints className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            ) : (
-              <Car className="w-3.5 h-3.5 text-[#C1443B] shrink-0" />
-            )}
-            <span>{activity.gettingThere}</span>
-          </div>
-          {activity.transitCost > 0 && (
-            <span className="font-bold text-neutral-900 shrink-0">~₹{activity.transitCost}</span>
-          )}
-        </div>
-      )}
     </article>
   );
 }
+
+export default ItineraryActivityCard;
