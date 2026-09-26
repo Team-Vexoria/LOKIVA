@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
@@ -121,6 +122,56 @@ export function QuickEscapeSection() {
       setIsLoading(false);
     }
   };
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const qLocation = searchParams.get('quickEscapeLocation');
+    const qState = searchParams.get('quickEscapeState');
+    const qHours = searchParams.get('quickEscapeHours');
+
+    if (!qLocation && !qState && !qHours) return;
+
+    let targetLocation = location;
+    let targetHours = availableHours;
+    let shouldRegenerate = false;
+
+    if (qLocation) {
+      targetLocation = qLocation;
+      setLocation(qLocation);
+      shouldRegenerate = true;
+    } else if (qState) {
+      const stateMap: Record<string, string> = {
+        rajasthan: 'Jaipur, Rajasthan',
+        kerala: 'Kochi, Kerala',
+        maharashtra: 'Mumbai, Maharashtra',
+        ladakh: 'Leh, Ladakh',
+      };
+      const foundCity = stateMap[qState.toLowerCase()] || `${qState}, India`;
+      targetLocation = foundCity;
+      setLocation(foundCity);
+      shouldRegenerate = true;
+    }
+
+    if (qHours) {
+      const parsedHours = parseInt(qHours, 10);
+      if ([1, 2, 3, 5].includes(parsedHours)) {
+        targetHours = parsedHours as AvailableHours;
+        setAvailableHours(targetHours);
+        shouldRegenerate = true;
+      }
+    }
+
+    if (shouldRegenerate) {
+      runPlanGeneration(targetLocation, startPointType, customStartPoint, targetHours, interests);
+      setTimeout(() => {
+        const el = document.getElementById('quick-escape');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 400);
+    }
+  }, [searchParams]);
 
   const handleDetectLocation = async () => {
     setIsLocating(true);

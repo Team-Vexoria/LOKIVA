@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export interface UseVoiceInputOptions {
   onFinalTranscript?: (text: string) => void;
+  onInterimTranscript?: (text: string) => void;
   lang?: string;
 }
 
@@ -67,7 +68,7 @@ export function cleanSpeechTranscript(raw: string): string {
     '$1 itinerary'
   );
   text = text.replace(/\bidentity\s+for\s+(?:that|it|this|me)\b/gi, 'itinerary for that');
-  text = text.replace(/\b(?:iterinary|iternary|itinary|itinery)\b/gi, 'itinerary');
+  text = text.replace(/\b(?:iterinary|iternary|itinary|itinery|itenary)\b/gi, 'itinerary');
   text = text.replace(/\b(hello|hey|hi)\s+kiva\b/gi, '$1 Lokiva');
   text = text.replace(/\bkiva\b/gi, 'Lokiva');
   text = text.replace(/\b(for\s+)?(two|2|three|3|four|4|five|5)\s+version\b/gi, '$1$2 persons');
@@ -104,20 +105,17 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * External AI API Audio Translation & Transcription Pipeline:
- * Sends the audio recording to backend Gemini 3.6 Flash Multimodal Audio API
- * with automatic fallback to client-side Puter.js Whisper AI.
+ * Fallback REST Audio Transcription Pipeline
  */
 async function callAiAudioTranslationApi(blob: Blob): Promise<string> {
   if (!blob || blob.size < 500) {
     return '';
   }
 
-  // Tier 1: Backend Gemini Flash Multimodal Audio API (/voice/transcribe)
   try {
     const base64Data = await blobToBase64(blob);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const endpoints = [
       '/voice/transcribe',
@@ -147,51 +145,29 @@ async function callAiAudioTranslationApi(blob: Blob): Promise<string> {
           }
         }
       } catch (endpointErr) {
-        // Try next endpoint candidate
+        // Try next candidate
       }
     }
 
     clearTimeout(timeoutId);
 
     if (apiTranscript) {
-      console.log('[VOICE-API] Gemini Audio Translation API output:', apiTranscript);
       return cleanSpeechTranscript(apiTranscript);
     }
   } catch (backendErr) {
-    console.warn('[VOICE-API] Backend Gemini transcribe notice:', backendErr);
-  }
-
-  // Tier 2: Puter.js Whisper AI Fallback (OpenAI Whisper speech-to-text API)
-  try {
-    const puter = (window as any).puter;
-    if (puter?.ai?.speech2txt) {
-      console.log('[VOICE-API] Invoking Puter.js Whisper speech-to-text API...');
-      const whisperPromise = puter.ai.speech2txt(blob, { model: 'whisper-1' });
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Whisper timeout')), 5000)
-      );
-
-      const whisperRes: any = await Promise.race([whisperPromise, timeoutPromise]);
-      const rawWhisper = typeof whisperRes === 'string' ? whisperRes : whisperRes?.text;
-      if (rawWhisper && typeof rawWhisper === 'string' && rawWhisper.trim()) {
-        console.log('[VOICE-API] Puter Whisper API output:', rawWhisper.trim());
-        return cleanSpeechTranscript(rawWhisper.trim());
-      }
-    }
-  } catch (puterErr) {
-    console.warn('[VOICE-API] Puter speech2txt notice:', puterErr);
+    console.warn('[VOICE-API] REST fallback notice:', backendErr);
   }
 
   return '';
 }
 
 /**
- * 100% API-Driven Voice Input Hook:
- * Records microphone audio locally and sends to external AI API for translation and transcription.
- * Strictly eliminates native browser SpeechRecognition to prevent premature cutoffs and split messages.
+ * Real-Time Streaming Voice Input Hook
+ * Combines zero-latency live browser speech recognition with real-time
+ * WebSocket audio streaming to the backend Gemini AI translation engine.
  */
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
-  const { onFinalTranscript } = options;
+  const { onFinalTranscript, onInterimTranscript, lang = 'en-IN' } = options;
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -208,9 +184,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<any>(null);
   const onFinalTranscriptRef = useRef(onFinalTranscript);
+  const onInterimTranscriptRef = useRef(onInterimTranscript);
+  const latestTranscriptRef = useRef('');
+  const wsRef = useRef<WebSocket | null>(null);
+  const finalReceivedRef = useRef(false);
 
   useEffect(() => {
     onFinalTranscriptRef.current = onFinalTranscript;
+    onInterimTranscriptRef.current = onInterimTranscript;
   });
 
   // Stop MediaRecorder cleanly and collect all audio chunks into a Blob
@@ -231,7 +212,6 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         try {
           const mime = recorder.mimeType || 'audio/webm';
           const finalBlob = new Blob(audioChunksRef.current, { type: mime });
-          console.log('[VOICE] MediaRecorder closed. Chunks count:', audioChunksRef.current.length, 'Total bytes:', finalBlob.size);
           resolve(finalBlob);
         } catch {
           resolve(null);
@@ -241,14 +221,13 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       try {
         recorder.stop();
       } catch (err) {
-        console.warn('[VOICE] MediaRecorder stop notice:', err);
         const mime = recorder?.mimeType || 'audio/webm';
         resolve(audioChunksRef.current.length > 0 ? new Blob(audioChunksRef.current, { type: mime }) : null);
       }
     });
   }, []);
 
-  // Stop all microphone stream tracks cleanly
+  // Stop all microphone tracks & close socket cleanly
   const stopMediaStream = useCallback(() => {
     if (mediaStreamRef.current) {
       try {
@@ -257,6 +236,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       mediaStreamRef.current = null;
     }
     mediaRecorderRef.current = null;
+
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
@@ -268,45 +248,56 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     if (!isUserRecordingRef.current) return;
     isSubmittingRef.current = true;
     isUserRecordingRef.current = false;
+    finalReceivedRef.current = false;
 
-    // Properly stop recorder and retrieve the complete, valid audio blob
+    // Properly stop recorder and retrieve the complete audio blob
     const recordedBlob = await stopRecordingAndGetBlob();
 
-    // Release microphone tracks immediately
+    // Release microphone immediately
     stopMediaStream();
 
     setIsListening(false);
     setIsTranscribing(true);
 
-    try {
-      if (recordedBlob && recordedBlob.size > 500) {
-        console.log('[VOICE] Sending full recording to AI translation and transcription API...');
-        const translatedText = await callAiAudioTranslationApi(recordedBlob);
+    // 1. Notify WebSocket to finalize
+    const socket = wsRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'stop' }));
+    }
 
-        if (translatedText) {
-          console.log('[VOICE] API translation successful:', translatedText);
-          setTranscript(translatedText);
-          setInterimTranscript(translatedText);
-          if (onFinalTranscriptRef.current) {
-            onFinalTranscriptRef.current(translatedText);
+    // 2. Set timeout fallback: if socket doesn't return final within 2s, commit local transcript
+    const fallbackTimeout = setTimeout(async () => {
+      if (!finalReceivedRef.current) {
+        const textToCommit = cleanSpeechTranscript(latestTranscriptRef.current || '');
+        if (textToCommit && onFinalTranscriptRef.current) {
+          onFinalTranscriptRef.current(textToCommit);
+        } else if (recordedBlob && recordedBlob.size > 500) {
+          try {
+            const translatedText = await callAiAudioTranslationApi(recordedBlob);
+            if (translatedText && onFinalTranscriptRef.current) {
+              onFinalTranscriptRef.current(translatedText);
+            }
+          } catch (err) {
+            console.warn('[VOICE] Fallback error:', err);
           }
-        } else {
-          console.warn('[VOICE] API returned empty translation (silence or unintelligible noise)');
-          setError('No clear speech detected. Please speak closer to your microphone.');
         }
-      } else {
-        console.log('[VOICE] Audio recording was too short or empty');
+        setIsTranscribing(false);
       }
-    } catch (err: any) {
-      console.warn('[VOICE] Finalize error:', err);
-      setError('Voice translation failed. Please try again or type your message.');
-    } finally {
+    }, 2000);
+
+    // Clean up socket after transmission
+    setTimeout(() => {
+      clearTimeout(fallbackTimeout);
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {}
+        wsRef.current = null;
+      }
       setIsTranscribing(false);
       audioChunksRef.current = [];
-      setTimeout(() => {
-        isSubmittingRef.current = false;
-      }, 300);
-    }
+      isSubmittingRef.current = false;
+    }, 4500);
   }, [stopRecordingAndGetBlob, stopMediaStream]);
 
   const startListening = useCallback(async () => {
@@ -318,10 +309,12 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     setError(null);
     setTranscript('');
     setInterimTranscript('');
+    latestTranscriptRef.current = '';
     setRecordingDuration(0);
     audioChunksRef.current = [];
     isUserRecordingRef.current = true;
     isSubmittingRef.current = false;
+    finalReceivedRef.current = false;
     setIsTranscribing(false);
 
     try {
@@ -343,19 +336,108 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         mimeType = 'audio/mp4';
       }
 
+      // Initialize real-time WebSocket connection to /voice-stream
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const wsHost = isLocal ? 'localhost:4000' : window.location.host;
+        const wsUrl = `${protocol}//${wsHost}/voice-stream`;
+        console.log('[VOICE-WS] Connecting directly to:', wsUrl);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('[VOICE-WS] Connected successfully to voice stream');
+          ws.send(JSON.stringify({ type: 'start', mimeType }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'interim' && data.transcript) {
+              const cleaned = cleanSpeechTranscript(data.transcript);
+              latestTranscriptRef.current = cleaned;
+              setInterimTranscript(cleaned);
+              if (onInterimTranscriptRef.current) {
+                onInterimTranscriptRef.current(cleaned);
+              }
+            } else if (data.type === 'final') {
+              finalReceivedRef.current = true;
+              const serverTxt = cleanSpeechTranscript(data.transcript || '');
+              const finalTxt = serverTxt || cleanSpeechTranscript(latestTranscriptRef.current || '');
+              if (finalTxt) {
+                setTranscript(finalTxt);
+                setInterimTranscript(finalTxt);
+                if (onFinalTranscriptRef.current) {
+                  onFinalTranscriptRef.current(finalTxt);
+                }
+              }
+              setIsTranscribing(false);
+            }
+          } catch (err) {}
+        };
+
+        ws.onerror = (err) => {
+          console.warn('[VOICE-WS] WebSocket connection notice (will use REST fallback if needed):', err);
+        };
+      } catch (wsErr) {
+        console.warn('[VOICE-WS] Could not initialize WebSocket:', wsErr);
+      }
+
+      // Instant live visual feedback via SpeechRecognition while audio streams to Gemini
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = lang;
+
+          recognition.onresult = (e: any) => {
+            let liveText = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+              liveText += e.results[i][0].transcript;
+            }
+            if (liveText && liveText.trim() && isUserRecordingRef.current) {
+              const cleaned = cleanSpeechTranscript(liveText);
+              latestTranscriptRef.current = cleaned;
+              setInterimTranscript(cleaned);
+              if (onInterimTranscriptRef.current) {
+                onInterimTranscriptRef.current(cleaned);
+              }
+            }
+          };
+
+          recognition.start();
+        } catch (e) {
+          // Native recognition unavailable or permission denied
+        }
+      }
+
+      // Start MediaRecorder with 150ms slices for low-latency streaming
       const recorder = new MediaRecorder(stream, { mimeType });
       audioChunksRef.current = [];
 
-      recorder.ondataavailable = (e) => {
+      recorder.ondataavailable = async (e) => {
         if (e.data && e.data.size > 0) {
           audioChunksRef.current.push(e.data);
+
+          // Stream binary chunk immediately over WebSocket if active
+          const socket = wsRef.current;
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            try {
+              const arrayBuffer = await e.data.arrayBuffer();
+              socket.send(arrayBuffer);
+            } catch (streamErr) {
+              console.warn('[VOICE] Stream chunk error:', streamErr);
+            }
+          }
         }
       };
 
-      recorder.start(250);
+      recorder.start(150);
       mediaRecorderRef.current = recorder;
       setIsListening(true);
-      console.log('[VOICE] Pure MediaRecorder active with format:', mimeType);
 
       // Start elapsed recording duration timer
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -371,15 +453,55 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       setIsListening(false);
       stopMediaStream();
     }
-  }, [isSupported, stopMediaStream]);
+  }, [isSupported, lang, stopMediaStream]);
 
   const submitListening = useCallback(() => {
+    // If the user already has spoken text from live SpeechRecognition or WebSocket interim,
+    // commit it immediately and stop recording.
+    const currentText = cleanSpeechTranscript(latestTranscriptRef.current || interimTranscript || transcript || '');
+    if (currentText && currentText.trim()) {
+      isUserRecordingRef.current = false;
+      isSubmittingRef.current = false;
+      finalReceivedRef.current = true;
+      stopMediaStream();
+      setIsListening(false);
+      setIsTranscribing(false);
+      setTranscript(currentText);
+      setInterimTranscript(currentText);
+      if (wsRef.current) {
+        try {
+          if (wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'stop' }));
+          }
+          wsRef.current.close();
+        } catch {}
+        wsRef.current = null;
+      }
+      if (onFinalTranscriptRef.current) {
+        onFinalTranscriptRef.current(currentText);
+      }
+      return;
+    }
+
     finalizeAndSubmit();
-  }, [finalizeAndSubmit]);
+  }, [finalizeAndSubmit, interimTranscript, transcript, stopMediaStream]);
 
   const cancelListening = useCallback(() => {
     isUserRecordingRef.current = false;
     isSubmittingRef.current = false;
+    finalReceivedRef.current = false;
+    latestTranscriptRef.current = '';
+
+    if (wsRef.current) {
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'cancel' }));
+      }
+      try {
+        wsRef.current.close();
+      } catch {}
+      wsRef.current = null;
+    }
+
     stopMediaStream();
     setIsListening(false);
     setIsTranscribing(false);
@@ -391,15 +513,21 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const stopListening = useCallback(() => {
     if (isSubmittingRef.current) return;
     if (isUserRecordingRef.current) {
-      finalizeAndSubmit();
+      const currentText = cleanSpeechTranscript(latestTranscriptRef.current || interimTranscript || '');
+      if (currentText && currentText.trim()) {
+        submitListening();
+      } else {
+        finalizeAndSubmit();
+      }
     } else {
       cancelListening();
     }
-  }, [finalizeAndSubmit, cancelListening]);
+  }, [submitListening, finalizeAndSubmit, cancelListening, interimTranscript]);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
     setInterimTranscript('');
+    latestTranscriptRef.current = '';
     setRecordingDuration(0);
     audioChunksRef.current = [];
     setError(null);
@@ -408,6 +536,11 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   useEffect(() => {
     return () => {
       stopMediaStream();
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {}
+      }
     };
   }, [stopMediaStream]);
 

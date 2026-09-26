@@ -55,99 +55,6 @@ async function authenticateVoiceUser(req) {
   return null;
 }
 
-// ============================================================================
-// 0. SPEECH TO TEXT TRANSCRIBE AND TRANSLATE ENDPOINT
-// Uses Gemini Flash Multimodal or OpenAI Whisper for reliable cloud STT.
-// ============================================================================
-voiceRouter.post('/transcribe', async (req, res) => {
-  try {
-    const { audioBase64, mimeType = 'audio/webm', language = 'en-IN' } = req.body || {};
-    if (!audioBase64 || typeof audioBase64 !== 'string') {
-      return res.status(400).json({ error: 'audioBase64 string is required' });
-    }
-
-    const cleanBase64 = audioBase64.replace(/^data:audio\/\w+;base64,/, '');
-
-    // 1. Try Gemini Flash Multimodal Audio Transcription and Translation
-    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
-      try {
-        const candidateModels = [
-          process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-          'gemini-1.5-flash-latest',
-          'gemini-2.0-flash',
-          'gemini-2.5-flash',
-          'gemini-flash-latest',
-        ];
-
-        let transcriptText = '';
-        for (const m of candidateModels) {
-          try {
-            const model = genAI.getGenerativeModel({ model: m });
-            const prompt = `Accurately transcribe the spoken voice in this audio into English text.
-If spoken in Hindi, Hinglish, Marathi, or another Indian language, translate it directly into clean, natural English.
-Correct Indian travel acoustic terms (such as itinerary, Lokiva, city names, monuments, landmarks).
-Eliminate any stuttering or repeated words.
-Return ONLY the clean transcribed text without markdown, quotes, timestamps, or conversational filler.`;
-
-            const audioPart = {
-              inlineData: {
-                data: cleanBase64,
-                mimeType: mimeType.split(';')[0] || 'audio/webm',
-              },
-            };
-
-            const result = await model.generateContent([audioPart, prompt]);
-            transcriptText = (result.response.text() || '').trim();
-            if (transcriptText) break;
-          } catch (modelErr) {
-            console.warn(`[TRANSCRIBE] Gemini model ${m} attempt:`, modelErr.message?.slice(0, 80));
-          }
-        }
-
-        if (transcriptText) {
-          const sanitized = transcriptText.replace(/^["']|["']$/g, '').trim();
-          console.log('[TRANSCRIBE] Gemini audio transcription result:', sanitized);
-          return res.json({
-            transcript: sanitized,
-            provider: 'gemini',
-          });
-        }
-      } catch (geminiErr) {
-        console.warn('[TRANSCRIBE] Gemini transcription error:', geminiErr.message);
-      }
-    }
-
-    // 2. Try OpenAI Whisper if OPENAI_API_KEY is available
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith('sk-')) {
-      try {
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const buffer = Buffer.from(cleanBase64, 'base64');
-        const file = new File([buffer], 'audio.webm', { type: mimeType });
-        const transcription = await openai.audio.transcriptions.create({
-          file: file,
-          model: 'whisper-1',
-          language: language.startsWith('hi') ? 'hi' : 'en',
-        });
-        if (transcription && transcription.text) {
-          return res.json({
-            transcript: transcription.text.trim(),
-            provider: 'openai',
-          });
-        }
-      } catch (whisperErr) {
-        console.warn('[TRANSCRIBE] OpenAI Whisper error:', whisperErr.message);
-      }
-    }
-
-    return res.status(502).json({
-      error: 'transcription_unavailable',
-      detail: 'No AI transcription service (Gemini or OpenAI) succeeded or key is missing.',
-    });
-  } catch (err) {
-    console.error('[TRANSCRIBE] Error:', err);
-    return res.status(500).json({ error: 'transcription_failed', detail: err.message });
-  }
-});
 
 // ============================================================================
 // 1. WEATHER ENDPOINT (Module C)
@@ -379,11 +286,10 @@ The user communicates via voice or text.
 - If the user discusses travel destinations, greetings, or asks questions, DO NOT call any function. Respond conversationally in under 40 words with authentic local hospitality, asking where they are heading to and what their interests are.`;
 
     const candidateModels = [
-      process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
-      'gemini-3.5-flash-lite',
-      'gemini-flash-lite-latest',
-      'gemini-3.1-flash-lite-preview',
-      'gemini-3-flash-preview',
+      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
     ];
 
     const toolDeclarations = [
@@ -534,7 +440,7 @@ The user communicates via voice or text.
     const safePhrase = async (prompt, fallbackText, label) => {
       console.time(`[LATENCY] Gemini phrasing (${label})`);
       try {
-        const phrasingModel = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+        const phrasingModel = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' });
         const phrasePromise = phrasingModel.generateContent(prompt).then((r) => r.response.text().trim());
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('phrasing timeout (1500ms limit)')), 1500)
@@ -732,13 +638,12 @@ voiceRouter.post('/transcribe', async (req, res) => {
       cleanMime = 'audio/webm';
     }
 
-    // Candidate models for resilience (gemini-3.6-flash is primary active model)
+    // Candidate models for resilience (gemini-1.5-flash is primary active model)
     const modelCandidates = [
-      process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-      'gemini-3.6-flash',
+      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
       'gemini-3.5-flash',
       'gemini-flash-latest',
-      'gemini-flash-lite-latest',
+      'gemini-2.5-flash-lite',
     ].filter(Boolean);
 
     let transcript = '';
@@ -790,6 +695,14 @@ Rules:
     }
 
     if (lastError && !transcript) {
+      if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+        console.warn('[VOICE/TRANSCRIBE] GEMINI_API_KEY is not configured in server/.env');
+        return res.status(200).json({
+          transcript: '',
+          warning: 'GEMINI_API_KEY is not configured in server/.env',
+          success: false,
+        });
+      }
       console.error('[VOICE/TRANSCRIBE] All model attempts failed:', lastError?.message || lastError);
       return res.status(500).json({ error: lastError?.message || 'Transcription failed', transcript: '' });
     }

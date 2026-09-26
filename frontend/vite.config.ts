@@ -35,6 +35,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/voice/, '/voice'),
       },
+      '/voice-stream': {
+        target: 'ws://localhost:4000',
+        ws: true,
+      },
       '/voice': {
         target: 'http://localhost:4000',
         changeOrigin: true,

@@ -11,10 +11,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ordered list, remember the first one that works, and fall back to asking the API
 // what this key can actually reach.
 const DEFAULT_MODEL_CANDIDATES = [
+  'gemini-3.8-flash',
   'gemini-3.5-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-flash-lite-latest',
-  'gemini-3.6-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-pro-latest',
 ];
 
 const MODEL_CANDIDATES = process.env.GEMINI_MODEL
@@ -255,16 +257,193 @@ Which of these three atmospheres speaks to you most: **Royal Forts & Crafts**, *
 
   // 2. Specific City / Destination context
   if (city) {
+    const cityName = city.trim();
+    const isShimla = /shimla/i.test(cityName);
+    const isManali = /manali|kullu/i.test(cityName);
+    const isDharamshala = /dharamshala|mcleodganj/i.test(cityName);
+    const isJaipur = /jaipur/i.test(cityName);
+    const isVaranasi = /varanasi|banaras|kashi/i.test(cityName);
+    const isGoa = /goa/i.test(cityName);
+    const isMumbai = /mumbai|bombay/i.test(cityName);
+    const isDelhi = /delhi/i.test(cityName);
+    const isUdaipur = /udaipur/i.test(cityName);
+    const isKochi = /kochi|cochin|kerala/i.test(cityName);
+    const isHampi = /hampi/i.test(cityName);
+
+    const wantsFestivals = /festival|festivals|fairs?|mela|melas|celebration|celebrations|event|events|carnival|ritual|rituals|nati/i.test(lower);
+    const wantsNature = /nature|mountain|hill|forest|trek|trail|pine|valley|falls|waterfall|lake|peaceful|scenic|greenery|fresh\s*air|outdoor/i.test(lower);
+    const wantsFood = /food|eat|dining|cuisine|thali|dish|dishes|dham|sweet|street\s*food|culinary|taste|restaurant|cafe|breakfast|lunch|dinner|snack|siddu|madra|babru/i.test(lower);
+    const wantsHeritage = /heritage|history|historic|fort|palace|temple|monument|museum|church|architecture|ruins/i.test(lower);
+    const wantsCrafts = /craft|art|pottery|textile|handloom|weaving|wood|bazaar|market|shopping|souvenir/i.test(lower);
+    const isWeather = /weather|rain|snow|temperature|climate|best\s*time|monsoon|winter|cold|hot|degrees/i.test(lower);
+    const isBudgetStay = /budget|stay|hotel|homestay|hostel|cost|expense|cheap|affordable/i.test(lower);
+    const isPureCityGreeting = new RegExp(`^(hi|hello|hey|namaste|start|greetings|welcome)?\\s*(to\\s*)?${cityName}?[\\s!.]*$`, 'i').test(lower);
+    const asksToPlanTrip = /plan|itinerary|schedule|trip|tour|days?\b|nights?\b/i.test(lower);
+
+    // If user asked about Weather in this city
+    if (isWeather) {
+      if (isShimla) {
+        return `**Weather & Seasons in Shimla:**
+• **Spring & Summer (March - June):** Pleasantly crisp with daytime temperatures around 15°C to 24°C. Ideal for pine forest walks, Chadwick Falls, and outdoor dining on Mall Road.
+• **Monsoon (July - August):** Lush, mist-covered green cedar slopes (14°C - 20°C). Beautiful waterfalls, but keep an umbrella and check road conditions for mountain drives.
+• **Autumn (September - November):** Crystal-clear blue skies, crisp mountain air (10°C - 18°C), and panoramic views of Himalayan snow peaks.
+• **Winter (December - February):** Cold (2°C to 10°C, dipping below 0°C at night) with occasional magical snowfall around Christmas and January. Pack thermal layers and windproof jackets!`;
+      }
+      return `**Weather & Travel Advisory for ${cityName}:**
+• The daytime weather is generally pleasant for exploration. For walking tours, early mornings and late afternoons offer the best light and moderate temperatures.
+• If exploring temples or heritage corridors, keep slip-on footwear and lightweight cottons (or warm layers in winter/hill stations).`;
+    }
+
+    // Specific Festivals & Cultural Events inquiry
+    if (wantsFestivals) {
+      if (isShimla) {
+        let reply = `**Living Traditions, Festivals & Melas in Shimla:**\n\n`;
+        reply += `1. **Shimla Summer Festival (May / June):**\n`;
+        reply += `   Held right on the historic Ridge. Features vibrant Pahadi folk music, traditional **Nati dance** troupes in colourful ancestral attire, flower exhibitions, and artisan craft showcases.\n\n`;
+        reply += `2. **Sipi Fair (Mashobra, May):**\n`;
+        reply += `   A centuries-old fair dedicated to *Sip Devta* held amidst towering deodars. Villagers gather from surrounding valleys for age-old archery contests, folk games, and traditional music.\n\n`;
+        reply += `3. **Rhyali Festival (Monsoon / July):**\n`;
+        reply += `   An agrarian thanksgiving festival where locals sow saplings and barley indoors to celebrate the arrival of rains and pray for bountiful hill harvests.\n\n`;
+        reply += `4. **Bhoj Fair (November):**\n`;
+        reply += `   Celebrated in rural Shimla belts honoring local mountain devtas (deities), featuring unique ritual mask dances and generational storytelling.\n\n`;
+        reply += `5. **Winter Carnival & Ice Skating (December / January):**\n`;
+        reply += `   Centered around Shimla's open-air circular ice rink (the oldest natural ice rink in South Asia), accompanied by festive processions around Christ Church.\n\n`;
+
+        if (wantsFood) {
+          reply += `**Pairing with Authentic Himachali Food:**\n`;
+          reply += `During these fairs, make sure to taste traditional **Himachali Dham** (slow-simmered *Chana Madra* cooked in yogurt and cardamom, *Sepu Badi*, and sweet rice prepared by hereditary *Botis*), piping hot **Siddu** smothered in pure desi ghee, and fresh **Babru** (black gram stuffed kachoris).\n\n`;
+        }
+        reply += `*Would you like details on attending a specific festival season or recommendations for quiet local homestays nearby?*`;
+        return reply;
+      }
+
+      if (isJaipur) {
+        return `**Iconic Festivals & Celebrations in Jaipur:**
+1. **Teej Festival (July / August):** Royal procession of Goddess Parvati through the Old City, folk dancers, and Ghevar sweets.
+2. **Gangaur Festival (March / April):** Vibrant processions of married and unmarried women carrying brass water pots and idols.
+3. **Jaipur Literature Festival (January):** World-renowned gathering of authors, thinkers, and cultural music at Clarks Amer.
+4. **Elephant Festival (Holi eve):** Traditional Rajasthani music, folk dance, and celebratory colours.`;
+      }
+
+      if (isVaranasi) {
+        return `**Sacred Festivals & Celebrations in Varanasi:**
+1. **Dev Deepawali (Karthik Purnima, Nov):** All 84 ghats illuminated with over a million earthen oil lamps (diyas), accompanied by Vedic chants.
+2. **Maha Shivratri (Feb / March):** Grand processions toward Kashi Vishwanath temple, thandai, and night-long spiritual vigils.
+3. **Ganga Mahotsav:** Five days of classical Indian vocal music and Kathak performances on the riverbanks.`;
+      }
+
+      return `In **${cityName}**, local festivals celebrate harvest, patron deities, and generational arts. Visiting during a festival brings vibrant music, regional street food, and folk arts to life. Which season or month are you planning to visit?`;
+    }
+
+    // Specific Food Inquiry for the city (when not explicitly asking for a multi-day itinerary)
+    if (wantsFood && !durationDays && !asksToPlanTrip) {
+      if (isShimla) {
+        return `**Signature Culinary Experiences in Shimla:**
+1. **Authentic Himachali Siddu:** Steamed fermented wheat bread stuffed with spiced walnuts, poppy seeds, and mountain herbs, served piping hot and drenched in golden desi ghee.
+2. **Himachali Dham Thali:** Traditional community feast prepared by hereditary chefs (*Botis*), featuring **Chana Madra** (chickpeas in slow-simmered yogurt and cardamom gravy), Sepu Badi, Mah ki Dal, and Meethe Chawal.
+3. **Pahadi Babru:** Delicious black gram-stuffed deep-fried bread, best enjoyed on crisp mornings with spicy mint-coriander and sweet tamarind chutneys.
+4. **Heritage Mall Road Cafes:** Historic spots like *The Indian Coffee House* (cherished since 1957) and *Wake & Bake* for locally sourced apple pie, mountain honey crepes, and fresh brew.
+
+*Would you like recommendations on specific dhabas and eateries where locals eat in Shimla?*`;
+      }
+      return `In **${cityName}**, regional food is an essential doorway to its culture. I recommend seeking out generational family-run eateries for authentic thalis, seasonal snacks, and local sweets made with indigenous spices. What kind of cuisine or dietary preference do you prefer?`;
+    }
+
+    // Specific Nature Inquiry for the city (when not explicitly asking for a multi-day itinerary)
+    if (wantsNature && !durationDays && !asksToPlanTrip) {
+      if (isShimla) {
+        return `**Top Nature & Scenic Trails in and around Shimla:**
+1. **Chadwick Falls & The Glen:** A quiet downhill walking trail through dense deodar, pine, and oak forest woods leading to a natural cascading waterfall.
+2. **Jakhoo Hill & Deodar Forests:** Shimla's highest peak (8,054 ft), offering crisp mountain air, towering pines, and sweeping views of the snow-clad Shivalik ranges.
+3. **Mashobra & Craignano Nature Sanctuary:** Located 10 km from Shimla, featuring walking trails through apple orchards and one of the world's highest water-lift nature reserves.
+4. **Potter's Hill & Annandale Meadows:** Peaceful forested trails with picnic clearings away from tourist crowds.
+
+*Would you like tips on easy walking routes vs. higher elevation hikes around Shimla?*`;
+      }
+      return `In **${cityName}**, exploring natural surroundings, morning gardens, and nearby scenic reserves gives a refreshing perspective on the region. Would you prefer gentle forest walks or higher vantage point viewpoints?`;
+    }
+
+    // If user specifies duration (e.g. 5 days, 3 days, weekend) or explicitly asks to plan a trip/itinerary:
+    const effectiveDays = durationDays || (asksToPlanTrip ? 3 : null);
+
+    if (effectiveDays) {
+      if (isShimla) {
+        const days = Math.min(Math.max(effectiveDays, 2), 7);
+        let itinerary = `Namaste! For your **${days}-day journey in Shimla** focusing on ${wantsNature ? 'serene Himalayan nature' : 'scenic mountain vistas'}${wantsFood ? ' and authentic regional cuisine' : ''}, here is your curated day-by-day plan:\n\n`;
+
+        itinerary += `**Day 1: The Ridge, Cedar Sunset & Mountain Comfort Food**\n`;
+        itinerary += `• **Nature & Heritage:** Orientation walk across the historic Ridge and Mall Road at twilight as the cedar slopes turn amber. Visit the neo-Gothic Christ Church and Scandal Point.\n`;
+        itinerary += `• **Culinary Highlight:** Taste authentic steaming **Siddu** (wheat dumpling stuffed with spiced walnuts and poppy seeds, drenched in warm desi ghee) and hot spiced Pahadi tea at a traditional local vendor.\n\n`;
+
+        itinerary += `**Day 2: Deep Pine Forest & Chadwick Falls Trail**\n`;
+        itinerary += `• **Nature & Hiking:** Take a morning nature walk through deep Deodar and Himalayan Oak forest groves leading into the Glen down to **Chadwick Falls**.\n`;
+        itinerary += `• **Culinary Highlight:** Relish a traditional **Himachali Dham** for lunch: slow-cooked **Chana Madra** (chickpeas in rich yogurt and cardamom gravy), Mah ki Dal, and steamed Basmati.\n\n`;
+
+        if (days >= 3) {
+          itinerary += `**Day 3: Highest Crest, Jakhoo Peak & Himalayan Nature**\n`;
+          itinerary += `• **Nature & Panorama:** Early morning forest ascent (or ropeway) to **Jakhoo Hill** (8,054 ft), Shimla's highest peak, surrounded by ancient pine forests and panoramic snow-capped mountain views.\n`;
+          itinerary += `• **Culinary Highlight:** Head down toward Lakkar Bazaar for fresh, hot **Babru** (black gram stuffed Pahadi kachori) served with tangy tamarind and mint chutney.\n\n`;
+        }
+
+        if (days >= 4) {
+          itinerary += `**Day 4: Mashobra Pine Forest & Craignano Nature Reserve**\n`;
+          itinerary += `• **Nature Retreat:** Excursion to **Mashobra** (10 km from Shimla) and the pristine **Craignano Nature Reserve** for peaceful, uncrowded pine forest walks, apple orchard trails, and mountain mist.\n`;
+          itinerary += `• **Culinary Highlight:** Enjoy a quiet homestay lunch with regional **Sepu Badi** (steamed urad lentil cakes in rich curd-spinach gravy) and refreshing wild rhododendron (*buransh*) nectar.\n\n`;
+        }
+
+        if (days >= 5) {
+          itinerary += `**Day 5: Viceregal Botanical Grounds & Relaxed Cafe Culture**\n`;
+          itinerary += `• **Nature & Heritage:** Stroll through the heritage botanical grounds and century-old manicured gardens of the historic **Viceregal Lodge** (Indian Institute of Advanced Study).\n`;
+          itinerary += `• **Culinary Highlight:** Unwind at legendary local cafes like *Wake & Bake* or *The Indian Coffee House* on Mall Road for warm handmade apple pie, mountain honey crepes, and freshly ground filter coffee.\n\n`;
+        }
+
+        itinerary += `*Would you like me to adjust any days for trekking pacing, suggest authentic mountain homestays, or map out local taxi fares?*`;
+        return itinerary;
+      }
+
+      // If another city (e.g. Jaipur, Manali, Varanasi, etc.)
+      if (isJaipur) {
+        return `Namaste! For a **${effectiveDays}-day cultural immersion in Jaipur**:
+• **Heritage & Royal Architecture:** Amer Fort sunrise, stepwells (Panna Meena Ka Kund), City Palace courtyards, and sunset over Nahargarh Fort hills.
+• **Living Crafts:** Hands-on Sanganeri hand block-printing workshop and master Blue Pottery studio visits.
+• **Signature Regional Food:** Rawat Mishtan Bhandar's legendary Pyaz Kachori, creamy lassi in clay kulhads at Lassiwala (since 1944), and royal Dal Baati Churma.
+Would you like me to detail timings and transport for your days?`;
+      }
+
+      if (isVaranasi) {
+        return `Namaste! For a **${effectiveDays}-day spiritual and culinary journey in Varanasi**:
+• **Sacred River & Ghats:** Dawn rowboat ride from Assi to Manikarnika Ghat to watch the morning rituals, followed by evening Ganga Aarti chants at Dashashwamedh.
+• **Artisan Heritage:** Weaving heritage walks through Madanpura to observe master Zari and Banarasi silk looms.
+• **Iconic Food Trail:** Morning Kachori Jalebi at Ram Bhandar, creamy winter Malaiyo froth, refreshing Banarasi Paan, and famous Tamatar Chaat at Kashi Chaat Bhandar.
+Would you like me to structure morning and evening schedules for your stay?`;
+      }
+
+      // Generic Indian City Dynamic multi-day plan
+      return `Namaste! For your **${effectiveDays}-day visit to ${cityName}**:
+1. **Day 1 (Arrival & Heritage Orientation):** Explore the central historic corridors, main architectural landmarks, and sunset views, followed by signature regional street food.
+2. **Day 2 (Nature & Artisan Living Traditions):** Discover local green spaces, scenic natural viewpoints, and generational craft masterclasses or heritage markets.
+3. **Day 3 (Deep Cultural Immersion & Culinary Highlights):** Venture into nearby villages or historic quarters, tasting authentic home-style thalis and regional specialties.
+
+Would you like me to tailor this with exact spots, transport advice, or budget estimates for ${cityName}?`;
+    }
+
+    // If available experiences exist in the database, weave them in
     if (availableExperiences.length > 0) {
       const expList = availableExperiences.slice(0, 2).map((e) => `• **${e.title}** (${e.category || 'Cultural Spot'}): ₹${e.price || 'Free'}, approx. ${e.approx_duration_mins || 60} mins. ${e.tagline || e.description || ''}`).join('\n');
-      return `Welcome to **${city}**! Here are signature verified cultural experiences curated for your time:
+      return `Welcome to **${cityName}**! Here are signature verified cultural experiences curated for your time:
 
 ${expList}
 
 Would you like me to reserve time for any of these, or adjust based on your preferred pacing, budget, or dietary interests?`;
     }
 
-    return `Welcome to **${city}**! This destination offers remarkable living heritage and regional culinary traditions. To help me curate the top 2 spots for you, what is your available time and preferred vibe (historic monuments, hands-on craft workshops, or street food trails)?`;
+    // Only return the initial welcome question if the message was purely a greeting or city name
+    if (isPureCityGreeting) {
+      return `Welcome to **${cityName}**! This destination offers remarkable living heritage, breathtaking scenic trails, and rich regional culinary traditions. To help me curate the perfect experience for you, what is your available time and preferred vibe (nature trails, regional food trails, historic monuments, or artisan workshops)?`;
+    }
+
+    // Otherwise, answer their inquiry directly
+    return `In **${cityName}**, you can experience a rich blend of living heritage and regional culture. Tell me your available duration, preferred travel vibe (nature, food, or crafts), or budget, and I'll immediately craft your personalized itinerary!`;
   }
 
   // 3. Regional Discovery (South India / North India / East / West)
@@ -298,6 +477,7 @@ I specialize in authentic Indian heritage, master artisan workshops (such as Blu
 
 Tell me where you are heading, your available days, or your budget, and I will craft your personalized cultural itinerary!`;
 }
+
 
 /**
  * AI Cultural Concierge - Chat with Gemini about travel, culture, food.

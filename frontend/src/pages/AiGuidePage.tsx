@@ -18,6 +18,7 @@ import { VOICE_SUGGESTIONS } from '../data/voiceSuggestions';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { AudioWaveformVisualizer } from '../components/voice/AudioWaveformVisualizer';
 import { VoiceRecordingSheet } from '../components/voice/VoiceRecordingSheet';
+import { FormattedMessageContent } from '../components/ui/FormattedMessageContent';
 import {
   Sparkles,
   Send,
@@ -402,8 +403,13 @@ export function AiGuidePage() {
     resetTranscript,
     isSupported: voiceSupported,
   } = useVoiceInput({
+    onInterimTranscript: (text: string) => {
+      setInputMessage(text);
+    },
     onFinalTranscript: (text: string) => {
-      handleSend(cleanSpeechTranscript(text), true);
+      const clean = cleanSpeechTranscript(text);
+      setInputMessage(clean);
+      handleSend(clean, true);
     },
   });
 
@@ -967,8 +973,8 @@ export function AiGuidePage() {
   // Render
   // ===========================================================================
 
-  // Input display: clean input value during normal typing, empty during active voice capture
-  const inputDisplayValue = isListening || isTranscribing ? '' : inputMessage;
+  // Input display: show recognized speech (stored in inputMessage or interimTranscript)
+  const inputDisplayValue = inputMessage || (isListening || isTranscribing ? (interimTranscript || '') : '');
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-ink pb-72 sm:pb-88 pt-6 sm:pt-8 relative overflow-hidden">
@@ -1087,7 +1093,10 @@ export function AiGuidePage() {
                                 type="button"
                                 onClick={() => {
                                   unlockAudio();
-                                  handleSpeak(msg.id, msg.spokenText || msg.content);
+                                  handleSpeak(
+                                    msg.id,
+                                    msg.spokenText || msg.content.replace(/[*#_`~]/g, '')
+                                  );
                                 }}
                                 title={isSpeakingThis ? 'Stop speaking' : 'Listen to voice'}
                                 className={`px-2 py-0.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
@@ -1112,8 +1121,8 @@ export function AiGuidePage() {
                           </div>
                         </div>
 
-                        {/* Text content */}
-                        <p className="whitespace-pre-line text-xs sm:text-sm leading-relaxed">{msg.content}</p>
+                        {/* Text content with bold & markdown rendering */}
+                        <FormattedMessageContent content={msg.content} isUser={isUser} />
 
                         {/* Weather data card - distinct inset panel */}
                         {msg.weatherData && (
@@ -1534,7 +1543,10 @@ export function AiGuidePage() {
                     if (isListening) {
                       submitListening();
                     } else {
-                      handleSend();
+                      const textToSubmit = inputMessage.trim() || interimTranscript.trim();
+                      if (textToSubmit) {
+                        handleSend(textToSubmit, false);
+                      }
                     }
                   }}
                   className="flex items-center gap-1.5 sm:gap-2 bg-white border border-[#E5DFD5] rounded-2xl p-1.5 sm:p-2 shadow-lg"
@@ -1575,13 +1587,12 @@ export function AiGuidePage() {
                     ref={inputRef}
                     type="text"
                     value={inputDisplayValue}
-                    onChange={isListening || isTranscribing ? undefined : (e) => setInputMessage(e.target.value)}
-                    readOnly={isListening || isTranscribing}
+                    onChange={(e) => setInputMessage(e.target.value)}
                     placeholder={
                       isListening
-                        ? 'Listening...'
+                        ? (interimTranscript || inputMessage ? '' : 'Listening... Speak now')
                         : isTranscribing
-                        ? 'Translating...'
+                        ? 'Translating audio...'
                         : !currentCity
                         ? 'Where in India are you heading? (e.g., Jaipur, Varanasi, Goa...)'
                         : `Ask about ${currentCity}: weather, experiences, expenses...`
@@ -1593,7 +1604,7 @@ export function AiGuidePage() {
 
                   <button
                     type="submit"
-                    disabled={isLoading || isTranscribing || (!inputMessage.trim() && !isListening)}
+                    disabled={isLoading || isTranscribing || (!inputMessage.trim() && !interimTranscript.trim() && !isListening)}
                     className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#12213B] hover:bg-[#1D2E49] text-white rounded-xl text-xs font-heading font-bold transition disabled:opacity-50 flex items-center gap-1.5 shadow-xs flex-shrink-0 cursor-pointer"
                   >
                     {isTranscribing ? (
