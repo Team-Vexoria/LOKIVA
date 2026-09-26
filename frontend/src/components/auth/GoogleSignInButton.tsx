@@ -27,9 +27,7 @@ export function GoogleSignInButton({
       await loginWithGoogle(role);
       const target =
         redirectTo ||
-        (role === 'admin'
-          ? '/admin'
-          : role === 'provider'
+        (role === 'provider'
           ? '/provider'
           : '/explore');
       navigate(target);
@@ -38,9 +36,7 @@ export function GoogleSignInButton({
         // In case of any unhandled network error, loginWithGoogle still sets session, so navigate
         const target =
           redirectTo ||
-          (role === 'admin'
-            ? '/admin'
-            : role === 'provider'
+          (role === 'provider'
             ? '/provider'
             : '/explore');
         navigate(target);

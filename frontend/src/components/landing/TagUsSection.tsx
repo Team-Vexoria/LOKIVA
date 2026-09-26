@@ -122,8 +122,8 @@ export function TagUsSection() {
                   type="button"
                   onClick={(e) => toggleLike(e, moment.id)}
                   className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${isLiked
-                      ? 'bg-rose-500 text-white border-rose-400'
-                      : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600'
+                    ? 'bg-rose-500 text-white border-rose-400'
+                    : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600'
                     }`}
                   title={isLiked ? 'Saved to Favorites' : 'Save Moment'}
                 >
@@ -177,8 +177,8 @@ export function TagUsSection() {
                   type="button"
                   onClick={(e) => toggleLike(e, featured.id)}
                   className={`w-8 h-8 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
-                      ? 'bg-rose-500 text-white border-rose-400 opacity-100'
-                      : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
+                    ? 'bg-rose-500 text-white border-rose-400 opacity-100'
+                    : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
                     }`}
                   title={isLiked ? 'Saved' : 'Save Moment'}
                 >
@@ -229,8 +229,8 @@ export function TagUsSection() {
                       type="button"
                       onClick={(e) => toggleLike(e, card.id)}
                       className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
-                          ? 'bg-rose-500 text-white border-rose-400 opacity-100'
-                          : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
+                        ? 'bg-rose-500 text-white border-rose-400 opacity-100'
+                        : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
                         }`}
                       title={isLiked ? 'Saved' : 'Save Moment'}
                     >
@@ -276,8 +276,8 @@ export function TagUsSection() {
                       type="button"
                       onClick={(e) => toggleLike(e, card.id)}
                       className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
-                          ? 'bg-rose-500 text-white border-rose-400 opacity-100'
-                          : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
+                        ? 'bg-rose-500 text-white border-rose-400 opacity-100'
+                        : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
                         }`}
                       title={isLiked ? 'Saved' : 'Save Moment'}
                     >
@@ -324,8 +324,8 @@ export function TagUsSection() {
                     type="button"
                     onClick={(e) => toggleLike(e, card.id)}
                     className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/25 flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${isLiked
-                        ? 'bg-rose-500 text-white border-rose-400 opacity-100'
-                        : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
+                      ? 'bg-rose-500 text-white border-rose-400 opacity-100'
+                      : 'bg-black/35 text-white/90 hover:bg-white hover:text-rose-600 opacity-0 group-hover:opacity-100'
                       }`}
                     title={isLiked ? 'Saved' : 'Save Moment'}
                   >

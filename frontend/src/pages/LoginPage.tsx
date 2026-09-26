@@ -98,13 +98,13 @@ export function LoginPage() {
           <span className="text-[10px] font-mono font-bold text-dusk uppercase tracking-wider block text-center">
             Instant 1-Click Demo Personas
           </span>
-          <div className="grid grid-cols-3 gap-2 font-mono">
+          <div className="grid grid-cols-2 gap-2 font-mono">
             <button
               onClick={() => {
                 demoLogin('traveler', 'Piyush Kumar', 'piyush@lokiva.com');
                 navigate(redirectTo);
               }}
-              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition"
+              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition cursor-pointer"
             >
               <User className="w-3.5 h-3.5 text-teal" />
               <span>Piyush Kumar</span>
@@ -114,20 +114,10 @@ export function LoginPage() {
                 demoLogin('provider');
                 navigate('/provider');
               }}
-              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition"
+              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition cursor-pointer"
             >
               <Briefcase className="w-3.5 h-3.5 text-marigold-600" />
               <span>Artisan Host</span>
-            </button>
-            <button
-              onClick={() => {
-                demoLogin('admin');
-                navigate('/admin');
-              }}
-              className="p-2 bg-paper-100 hover:bg-paper-200 rounded-xl text-[11px] font-bold text-ink border border-paper-300 flex flex-col items-center gap-1 transition"
-            >
-              <Shield className="w-3.5 h-3.5 text-clay" />
-              <span>Admin</span>
             </button>
           </div>
         </div>

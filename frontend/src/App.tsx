@@ -20,12 +20,10 @@ import { LocationDecisionModal, useOnboardingGate } from './components/onboardin
 import { LoginPage } from './pages/LoginPage';
 import { TravelerLoginPage } from './pages/TravelerLoginPage';
 import { ProviderLoginPage } from './pages/ProviderLoginPage';
-import { AdminLoginPage } from './pages/AdminLoginPage';
 import { TravelerRegisterPage } from './pages/TravelerRegisterPage';
 import { ProviderRegisterPage } from './pages/ProviderRegisterPage';
 import { ProviderAuthPage } from './pages/ProviderAuthPage';
 import { ProviderDashboardPage } from './pages/ProviderDashboardPage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { GroupTripHubPage } from './pages/GroupTripHubPage';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { RequireProviderAuth } from './components/auth/RequireProviderAuth';
@@ -35,6 +33,13 @@ function AppShell() {
   const location = useLocation();
   const { showModal, closeModal } = useOnboardingGate();
   const isFullBleedPage = location.pathname === '/' || location.pathname === '/destinations';
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [location.pathname]);
 
   return (
     <div className="flex flex-col min-h-screen bg-paper text-ink font-sans selection:bg-marigold selection:text-ink">
@@ -75,7 +80,6 @@ function AppShell() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/login/traveler" element={<TravelerLoginPage />} />
           <Route path="/login/provider" element={<ProviderLoginPage />} />
-          <Route path="/login/admin" element={<AdminLoginPage />} />
           <Route path="/register/traveler" element={<TravelerRegisterPage />} />
           <Route path="/register/provider" element={<ProviderRegisterPage />} />
           <Route path="/provider/auth" element={<ProviderAuthPage />} />
@@ -107,8 +111,6 @@ function AppShell() {
               </RequireProviderAuth>
             }
           />
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/*" element={<AdminDashboardPage />} />
 
           {/* 404 Catch-all */}
           <Route path="*" element={<NotFoundPage />} />

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { HeroScrollExperience } from '../components/landing/HeroScrollExperience';
+import { QuickEscapeSection } from '../components/landing/QuickEscapeSection';
 import { DeviceMockupSection } from '../components/landing/DeviceMockupSection';
 import { PhotosMapsReviewsSection } from '../components/landing/PhotosMapsReviewsSection';
 import { TagUsSection } from '../components/landing/TagUsSection';
@@ -49,6 +50,14 @@ export function HomePage() {
       }
     }
     loadInitial();
+  }, []);
+
+  // Ensure page always opens cleanly at the top hero section
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
   }, []);
 
   // 1. Stacked-card parallax slide-over with dedicated interaction buffers
@@ -186,6 +195,9 @@ export function HomePage() {
     <main ref={containerRef} className="relative w-full min-h-screen bg-[#FAF7F2] text-[#12213B] overflow-x-clip">
       {/* 1. PINNED HERO + SHOWREEL (PANEL 0 - Spain Collection scroll architecture, GSAP pin) */}
       <HeroScrollExperience />
+
+      {/* QUICK ESCAPE: Interactive constrained micro-itinerary generator */}
+      <QuickEscapeSection />
 
       {/* 2. CARD-STACKED TRANSITION GROUP (Between Showcase and Everything you need) */}
       <div className="card-stack-wrapper relative w-full">

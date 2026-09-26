@@ -140,11 +140,6 @@ export function Footer() {
                   Provider Sign In
                 </Link>
               </li>
-              <li>
-                <Link to="/admin" className="hover:text-[#12213B] transition-colors">
-                  Platform Moderation
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

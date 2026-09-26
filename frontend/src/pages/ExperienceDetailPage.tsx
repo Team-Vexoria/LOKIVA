@@ -14,6 +14,14 @@ import {
   Sparkles,
   Leaf,
   Check,
+  Heart,
+  Share2,
+  ExternalLink,
+  Navigation,
+  Footprints,
+  Sun,
+  Camera,
+  Users,
 } from 'lucide-react';
 
 export function ExperienceDetailPage() {
@@ -22,6 +30,7 @@ export function ExperienceDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [partySize, setPartySize] = useState(2);
   const [isBooked, setIsBooked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +104,22 @@ export function ExperienceDetailPage() {
   const BadgeIcon = isGeotagged ? MapPin : experience.provider_id ? CheckCircle2 : Sparkles;
 
   const localImpact = Math.min(98, 85 + ((experience.id * 7) % 14));
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: experience.title,
+          text: `Explore ${experience.title} on LOKIVA`,
+          url: window.location.href,
+        })
+        .catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-paper text-ink pt-6 sm:pt-10 pb-28 lg:pb-12">
@@ -269,26 +294,54 @@ export function ExperienceDetailPage() {
             </div>
           </div>
 
-          {/* Right Col: Sticky Booking & Feasibility Action Card */}
-          <div id="booking-section">
-            <div className="sticky top-24 bg-white rounded-3xl border border-paper-400 p-6 sm:p-7 space-y-6 shadow-xl text-ink">
-              <div className="space-y-1 pb-4 border-b border-paper-300 font-mono">
-                <span className="text-[10px] text-dusk uppercase">Fair Direct Investment</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-ink">₹{experience.price}</span>
-                  <span className="text-xs text-dusk">/ person</span>
+          {/* Right Col: Booking, Visit Intelligence, Logistics & Location Cards */}
+          <div id="booking-section" className="space-y-6">
+            {/* Primary Action / Fair Direct Investment Card */}
+            <div className="bg-white rounded-3xl border border-paper-400 p-6 sm:p-7 space-y-5 shadow-xl text-ink">
+              {/* Header Price Info */}
+              <div className="space-y-1.5 pb-4 border-b border-paper-300 font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-dusk uppercase tracking-wider">
+                    {experience.price === 0 ? 'Experience Access' : 'Fair Direct Investment'}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      experience.price === 0
+                        ? 'text-teal bg-teal-50 border-teal-200'
+                        : 'text-marigold-800 bg-marigold-50 border-marigold-300'
+                    }`}
+                  >
+                    {experience.price === 0 ? 'Verified Public Access' : '100% Direct to Host'}
+                  </span>
                 </div>
-                <span className="text-[11px] text-teal font-semibold flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5 text-teal" />
-                  <span>100% goes directly to the local artisan</span>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-ink">
+                    {experience.price === 0 ? 'Free Entry' : `₹${experience.price}`}
+                  </span>
+                  <span className="text-xs text-dusk">
+                    {experience.price === 0 ? '· landmark' : '/ person'}
+                  </span>
+                </div>
+
+                <span className="text-[11px] text-teal font-semibold flex items-center gap-1 pt-0.5">
+                  <Check className="w-3.5 h-3.5 text-teal shrink-0" />
+                  <span>
+                    {experience.price === 0
+                      ? '100% open public access · zero booking fees'
+                      : '100% goes directly to the local artisan / guide'}
+                  </span>
                 </span>
               </div>
 
-              {/* Booking Form */}
+              {/* Booking & Party Size Form */}
               <form onSubmit={handleBooking} className="space-y-4 font-mono text-xs">
                 <div className="space-y-1.5">
-                  <label className="text-dusk uppercase block">Party Size</label>
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center justify-between text-dusk uppercase text-[10px]">
+                    <label>Party Size</label>
+                    <span>{partySize} {partySize === 1 ? 'Guest' : 'Guests'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     {[1, 2, 3, 4, 6].map((num) => (
                       <button
                         type="button"
@@ -296,7 +349,7 @@ export function ExperienceDetailPage() {
                         onClick={() => setPartySize(num)}
                         className={`flex-1 py-2 rounded-xl font-bold border transition cursor-pointer ${
                           partySize === num
-                            ? 'bg-ink text-paper border-ink'
+                            ? 'bg-ink text-paper border-ink shadow-xs'
                             : 'bg-paper-100 text-ink border-paper-300 hover:bg-paper-200'
                         }`}
                       >
@@ -306,37 +359,171 @@ export function ExperienceDetailPage() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300 space-y-1 text-[11px]">
+                {/* Investment Breakdown Summary Box */}
+                <div className="p-3.5 bg-paper-100 rounded-2xl border border-paper-300 space-y-1.5 text-[11px]">
                   <div className="flex justify-between">
-                    <span className="text-dusk">₹{experience.price} × {partySize} guests</span>
-                    <span className="font-bold text-ink">₹{experience.price * partySize}</span>
+                    <span className="text-dusk">
+                      {experience.price === 0
+                        ? `Admission (${partySize} guests)`
+                        : `₹${experience.price} × ${partySize} guests`}
+                    </span>
+                    <span className="font-bold text-ink">
+                      {experience.price === 0 ? 'Free Access' : `₹${experience.price * partySize}`}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-dusk">Transit buffer</span>
+                    <span className="text-dusk">Transit & Navigation Buffer</span>
                     <span className="font-bold text-teal">0 extra fees</span>
                   </div>
-                  <div className="pt-1.5 border-t border-paper-300 flex justify-between font-bold text-xs">
+                  <div className="pt-2 border-t border-paper-300 flex justify-between font-bold text-xs">
                     <span>Total Investment</span>
-                    <span className="text-ink">₹{experience.price * partySize}</span>
+                    <span className={experience.price === 0 ? 'text-teal font-extrabold' : 'text-ink font-extrabold'}>
+                      {experience.price === 0 ? '₹0 (Free Access)' : `₹${experience.price * partySize}`}
+                    </span>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-marigold hover:bg-marigold-600 text-ink font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isBooked ? <Check className="w-4 h-4 text-teal" /> : <Calendar className="w-4 h-4" />}
-                  <span>{isBooked ? 'Slot Reserved' : 'Reserve Experience Slot'}</span>
-                </button>
+                {/* CTA Buttons */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-marigold hover:bg-marigold-600 text-ink font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                  >
+                    {isBooked ? <Check className="w-4 h-4 text-teal" /> : <Calendar className="w-4 h-4" />}
+                    <span>{isBooked ? 'Slot Reserved' : experience.price === 0 ? 'Confirm & Reserve Slot' : 'Reserve Experience Slot'}</span>
+                  </button>
 
-                <Link
-                  to="/itinerary"
-                  className="w-full py-3 bg-paper-200 hover:bg-paper-300 text-ink font-bold rounded-2xl transition text-center block"
-                >
-                  Add to Day Itinerary
-                </Link>
+                  <Link
+                    to="/itinerary"
+                    className="w-full py-3 bg-paper-200 hover:bg-paper-300 text-ink font-bold rounded-2xl transition text-center block active:scale-[0.98]"
+                  >
+                    Add to Day Itinerary
+                  </Link>
+                </div>
+
+                {/* Wishlist & Share Quick Controls */}
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSaved(!isSaved)}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-[11px] font-mono font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                      isSaved
+                        ? 'bg-rose-50 text-rose-600 border-rose-200'
+                        : 'bg-paper-100 text-dusk-700 border-paper-300 hover:border-ink/30 hover:text-ink'
+                    }`}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${isSaved ? 'fill-rose-600 text-rose-600' : ''}`} />
+                    <span>{isSaved ? 'Saved to Wishlist' : 'Save Experience'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="flex-1 py-2 px-3 rounded-xl bg-paper-100 hover:bg-paper-200 border border-paper-300 hover:border-ink/30 text-dusk-700 hover:text-ink text-[11px] font-mono font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-dusk" />
+                    <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
+                  </button>
+                </div>
               </form>
             </div>
+
+            {/* Visit Intelligence & Timing Specifications */}
+            <div className="bg-white rounded-3xl border border-paper-400 p-6 space-y-4 shadow-sm text-ink">
+              <h3 className="text-base font-display font-bold text-ink flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-marigold" />
+                <span>Visit Intelligence & Timing</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300 space-y-1">
+                  <span className="text-[10px] text-dusk uppercase flex items-center gap-1">
+                    <Sun className="w-3 h-3 text-marigold" /> Prime Hours
+                  </span>
+                  <p className="font-bold text-ink">06:00 – 10:30</p>
+                  <span className="text-[10px] text-teal font-semibold">Morning mist & cool breeze</span>
+                </div>
+
+                <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300 space-y-1">
+                  <span className="text-[10px] text-dusk uppercase flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-dusk" /> Time Window
+                  </span>
+                  <p className="font-bold text-ink">{experience.approx_duration_mins || 60} mins</p>
+                  <span className="text-[10px] text-dusk-600">Padded walking circuit</span>
+                </div>
+
+                <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300 space-y-1">
+                  <span className="text-[10px] text-dusk uppercase flex items-center gap-1">
+                    <Users className="w-3 h-3 text-dusk" /> Crowd Level
+                  </span>
+                  <p className="font-bold text-ink">Light to Moderate</p>
+                  <span className="text-[10px] text-teal font-semibold">Peaceful on weekdays</span>
+                </div>
+
+                <div className="p-3 bg-paper-100 rounded-2xl border border-paper-300 space-y-1">
+                  <span className="text-[10px] text-dusk uppercase flex items-center gap-1">
+                    <Camera className="w-3 h-3 text-marigold" /> Photography
+                  </span>
+                  <p className="font-bold text-ink">Unrestricted</p>
+                  <span className="text-[10px] text-dusk-600">Scenic panoramic vistas</span>
+                </div>
+              </div>
+            </div>
+
+            {/* What's Included & What to Bring Checklist */}
+            <div className="bg-white rounded-3xl border border-paper-400 p-6 space-y-4 shadow-sm text-ink">
+              <h3 className="text-base font-display font-bold text-ink flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-teal" />
+                <span>Experience Logistics Checklist</span>
+              </h3>
+
+              <div className="space-y-3.5 text-xs font-mono">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-teal tracking-wider block mb-2">
+                    Verified Inclusions
+                  </span>
+                  <ul className="space-y-2 text-dusk-700">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+                      <span>Verified landmark & viewpoint access pathway</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+                      <span>Direct turn-by-turn routing via Google Maps</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
+                      <span>Local cultural context & safety guidance</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-3 border-t border-paper-300">
+                  <span className="text-[10px] uppercase font-bold text-marigold-600 tracking-wider block mb-2">
+                    Recommended to Carry
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-dusk-700">
+                    <div className="p-2 bg-paper-100 rounded-xl border border-paper-200 flex items-center gap-1.5">
+                      <Footprints className="w-3.5 h-3.5 text-marigold shrink-0" />
+                      <span>Walking Shoes</span>
+                    </div>
+                    <div className="p-2 bg-paper-100 rounded-xl border border-paper-200 flex items-center gap-1.5">
+                      <Leaf className="w-3.5 h-3.5 text-teal shrink-0" />
+                      <span>Water Bottle</span>
+                    </div>
+                    <div className="p-2 bg-paper-100 rounded-xl border border-paper-200 flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-ink shrink-0" />
+                      <span>Camera / Phone</span>
+                    </div>
+                    <div className="p-2 bg-paper-100 rounded-xl border border-paper-200 flex items-center gap-1.5">
+                      <Sun className="w-3.5 h-3.5 text-marigold shrink-0" />
+                      <span>Sun Protection</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
