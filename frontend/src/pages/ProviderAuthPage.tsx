@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useProviderStore } from '../store/useProviderStore';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 
 interface ProviderAuthPageProps {
   initialMode?: 'login' | 'register';
@@ -92,18 +93,18 @@ export function ProviderAuthPage({ initialMode = 'login' }: ProviderAuthPageProp
   );
 
   // Login form
-  const [loginEmail, setLoginEmail] = useState('kutch.rogan@lokiva.in');
-  const [loginPassword, setLoginPassword] = useState('artisan123');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Register form fields
-  const [guildName, setGuildName] = useState('Kutch Rogan Art & Handloom Collective');
+  const [guildName, setGuildName] = useState('');
   const [selectedDiscipline, setSelectedDiscipline] = useState(CRAFT_DISCIPLINES[0]);
   const [selectedPrecinct, setSelectedPrecinct] = useState(HERITAGE_PRECINCTS[1]); // Mumbai Bandra
   const [selectedGeneration, setSelectedGeneration] = useState(GENERATION_TIERS[1]);
   const [isStepFree, setIsStepFree] = useState(true);
-  const [regEmail, setRegEmail] = useState('host@roganartcollective.in');
-  const [regPhone, setRegPhone] = useState('+91 98201 44521');
-  const [regPassword, setRegPassword] = useState('artisan123');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -345,47 +346,58 @@ export function ProviderAuthPage({ initialMode = 'login' }: ProviderAuthPageProp
 
             {/* TAB CONTENT: LOGIN FORM */}
             {mode === 'login' && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
-                    Host Contact Email
-                  </label>
-                  <input
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3.5 py-2.5 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] transition font-sans"
-                    placeholder="host@roganartcollective.in"
-                  />
+              <div className="space-y-4">
+                <GoogleSignInButton role="provider" text="Continue as Host with Google" redirectTo="/provider" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-[#E5DFD5]" />
+                  <span className="text-[11px] font-mono text-[#556275] uppercase tracking-wider font-semibold">
+                    Or with Host Credentials
+                  </span>
+                  <div className="flex-1 h-px bg-[#E5DFD5]" />
                 </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
+                      Host Contact Email
+                    </label>
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      autoComplete="off"
+                      className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3.5 py-2.5 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] transition font-sans"
+                      placeholder=""
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
                     <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
                       Password
                     </label>
-                    <span className="text-[11px] text-[#556275] font-mono">Demo: artisan123</span>
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3.5 py-2.5 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] transition font-sans"
+                      placeholder=""
+                    />
                   </div>
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3.5 py-2.5 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] transition font-sans"
-                    placeholder="••••••••"
-                  />
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] font-heading font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
-                >
-                  <Lock className="w-3.5 h-3.5 text-[#D99B43]" />
-                  <span>{isLoading ? 'Authenticating Host Portal...' : 'Access Artisan Dashboard →'}</span>
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-[#12213B] hover:bg-[#1A2E4C] text-[#FAF7F2] font-heading font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-[#D99B43]" />
+                    <span>{isLoading ? 'Authenticating Host Portal...' : 'Access Artisan Dashboard →'}</span>
+                  </button>
+                </form>
+              </div>
             )}
 
             {/* TAB CONTENT: INTERACTIVE MULTI-STEP REGISTER FORM */}
@@ -401,8 +413,9 @@ export function ProviderAuthPage({ initialMode = 'login' }: ProviderAuthPageProp
                     value={guildName}
                     onChange={(e) => setGuildName(e.target.value)}
                     required
+                    autoComplete="off"
                     className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3.5 py-2.5 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] transition font-sans font-semibold"
-                    placeholder="e.g. Jaipur Blue Pottery Studio"
+                    placeholder=""
                   />
                 </div>
 
@@ -516,32 +529,51 @@ export function ProviderAuthPage({ initialMode = 'login' }: ProviderAuthPageProp
                   </div>
                 </div>
 
-                {/* 5. Contact Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
-                      Host Email
-                    </label>
-                    <input
-                      type="email"
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      required
-                      className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] font-sans"
-                      placeholder="host@craftcollective.in"
-                    />
+                {/* 5. Contact Details & Security */}
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
+                        Host Email
+                      </label>
+                      <input
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        required
+                        autoComplete="off"
+                        className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] font-sans"
+                        placeholder=""
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value)}
+                        autoComplete="tel"
+                        className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] font-sans"
+                        placeholder=""
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-heading font-bold text-[#12213B] uppercase tracking-wider block">
-                      Phone Number
+                      Account Password
                     </label>
                     <input
-                      type="tel"
-                      value={regPhone}
-                      onChange={(e) => setRegPhone(e.target.value)}
+                      type="password"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      autoComplete="new-password"
                       className="w-full bg-[#FAF7F2] border border-[#E5DFD5] rounded-xl px-3 py-2 text-xs text-[#12213B] focus:outline-none focus:border-[#C85A32] font-sans"
-                      placeholder="+91 98200 00000"
+                      placeholder=""
                     />
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import { ScoredExperience } from '../types';
 import { ExperienceCard } from '../components/experience/ExperienceCard';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { routeVoiceInput, UserSessionContext } from '../lib/voiceRouter';
+import { generateLocalConciergeResponse } from '../lib/localConcierge';
 import { auth } from '../lib/firebase';
 import {
   speakWithElevenLabsOrFallback,
@@ -876,9 +877,12 @@ export function AiGuidePage() {
           spokenText = chatRes.reply;
           recommendations = chatRes.suggested_experiences || [];
         } catch (conciergeErr: any) {
-          console.error('[AiGuide] chatWithConcierge failed:', conciergeErr);
-          botContent = `I could not load recommendations for "${textToSend}": ${conciergeErr.message || 'Service unavailable'}. Please verify backend connection.`;
-          spokenText = 'I could not load recommendations right now. Please try again.';
+          console.warn('[AiGuide] API chatWithConcierge fallback activated:', conciergeErr);
+          const fallbackRes = generateLocalConciergeResponse(textToSend, currentCity || undefined);
+          if (fallbackRes.context_destination) setCurrentCity(fallbackRes.context_destination);
+          botContent = fallbackRes.reply;
+          spokenText = fallbackRes.reply;
+          recommendations = fallbackRes.suggested_experiences || [];
         }
       }
 

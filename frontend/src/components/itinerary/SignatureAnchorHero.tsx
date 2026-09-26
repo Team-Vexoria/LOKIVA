@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Pencil, Sparkles, MapPin, Check } from 'lucide-react';
 import { ItineraryDay } from '../../types/itinerary';
+import { resolveImageUrl } from '../../lib/api';
 
 interface SignatureAnchorHeroProps {
   day: ItineraryDay;
@@ -28,10 +29,11 @@ export function SignatureAnchorHero({
     setIsEditingStart(false);
   };
 
-  const heroImage =
+  const rawHeroImage =
     day.heroImage ||
     day.activities[0]?.photos?.[0] ||
     'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?auto=format&fit=crop&w=1400&q=80';
+  const heroImage = resolveImageUrl(rawHeroImage, day.activities[0]?.photos);
 
   const anchorTitle = day.activities[0]?.title || day.title;
   const anchorLocation = day.activities[0]?.location || 'Heritage Precinct';

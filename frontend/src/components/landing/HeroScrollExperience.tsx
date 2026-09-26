@@ -492,13 +492,20 @@ export function HeroScrollExperience({ onOpenPlanner }: HeroScrollExperienceProp
             </motion.button>
           </div>
 
-          {/* Non-Tabular Editorial Signature */}
-          <div className="flex items-center gap-2.5 text-[#7A5C49] font-meta text-xs sm:text-[13px] italic">
-            <span className="inline-block px-2 py-0.5 rounded-md bg-[#F2E5D5] text-[#9E4726] not-italic font-bold text-[11px] tracking-wider uppercase">
-              Instant AI Solver
+          {/* Non-Tabular Editorial Signature & AI Concierge Redirect */}
+          <button
+            type="button"
+            onClick={() => navigate('/ai-guide')}
+            className="flex items-center gap-2.5 text-[#7A5C49] hover:text-[#3B2316] font-meta text-xs sm:text-[13px] italic transition-all cursor-pointer group"
+          >
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F2E5D5] group-hover:bg-[#B84A27] text-[#9E4726] group-hover:text-[#FFFDF9] not-italic font-bold text-[11px] tracking-wider uppercase transition-all shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#D99B43] group-hover:text-[#FFFDF9] transition-colors" />
+              <span>Instant AI Solver</span>
             </span>
-            <span>Solves verified micro-circuits in ~60 seconds with zero tourist markups</span>
-          </div>
+            <span className="group-hover:underline underline-offset-4 transition-all">
+              Solves verified micro-circuits in ~60 seconds with zero tourist markups →
+            </span>
+          </button>
         </div>
       </div>
 
